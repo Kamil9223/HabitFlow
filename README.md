@@ -187,11 +187,15 @@ The MVP focuses on simplicity and clarity, helping beginners easily adopt habit 
 - Past days: color-coded by performance (green = completed, red = missed, partial completion supported)
 
 **Progress Tracking:**
-- Success rate calculation: completed/scheduled (or 0 if no scheduled days)
-- For "stop" habits: daily contribution = 1 - violations/scheduled
+- Success rate is based on a per-day "daily_score"
+  - Binary: daily_score = 1 if done, else 0
+  - Quantitative/Checklist: ratio = Actual/Target clamped to [0,1]
+  - Start habits: daily_score = ratio; Stop habits: daily_score = 1 - ratio
+- Rolling window (7/30 days): success_rate = sum(daily_score in window) / planned_days_in_window; non-planned days are excluded
+- If no planned days in window, success_rate = 0 (MVP convention)
 - 75% success threshold for habits with deadlines
 - Rolling success rate chart (7-day and 30-day windows with toggle)
-- Tooltip showing completed/scheduled in the selected window
+- Tooltip shows sum(daily_score) and planned_days for the selected window
 
 **AI-Powered Notifications:**
 - In-app notification tab with message list

@@ -20,11 +20,15 @@
 - COULD: Rate-limiting dla powiadomień, drobne ulepszenia UX, proste telemetryczne liczniki aktywacji.
 
 1.5. Definicje kluczowe
-- success_rate: (liczba_zaplanowanych_wykonań_w_okresie > 0 ? liczba_wykonanych / zaplanowane : 0).
-- Próg sukcesu nawyku: 75% realizacji do dnia deadline’u (o ile zdefiniowany).
-- Harmonogram: dni tygodnia + opcjonalna liczba powtórzeń/dzień (np. 10 stron/dzień).
-- „częściowe wykonanie”: dzienna formuła 1 - wykonane/zaplanowane, przy czym wykonane <= zaplanowane. Dzień z "częściowe wykonanie" > 0 liczy się w success_rate jako 1 - "częściowe wykonanie".
-- "częściowe wykonanie" - jako opcja - checkbox przy tworzeniu nawyku.
+- success_rate: (suma daily_score w oknie) / (liczba_dni_zaplanowanych_w_oknie). Gdy brak zaplanowanych dni, success_rate = 0.
+- daily_score: dzienny wkład do sukcesu obliczany na podstawie ActualValue, TargetValue, HabitType i CompletionMode:
+  - **Binary (0/1)**: daily_score = (ActualValue > 0 ? 1.0 : 0.0)
+  - **Quantitative/Checklist**: ratio = ActualValue / TargetValue (clamped 0-1)
+    - Dla typu Start: daily_score = ratio (np. 7/10 stron = 0.7)
+    - Dla typu Stop: daily_score = 1 - ratio (np. 1/3 naruszeń = 0.67)
+- Próg sukcesu nawyku: 75% realizacji do dnia deadline'u (o ile zdefiniowany).
+- Harmonogram: dni tygodnia + wartość docelowa (TargetValue, 1-1000) z opcjonalną jednostką (TargetUnit, np. "pages", "meals").
+- CompletionMode: sposób rozliczania postępu nawyku (Binary, Quantitative, Checklist).
 
 1.6. Założenia operacyjne MVP
 - Strefa czasu użytkownika: do obliczeń przyjmujemy dobowy zakres 00:00–23:59 czasu lokalnego użytkownika.

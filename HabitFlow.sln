@@ -8,6 +8,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HabitFlow.Api", "HabitFlow.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HabitFlow.Blazor", "HabitFlow.Blazor\HabitFlow.Blazor.csproj", "{3AFEFD2D-3E44-4826-BB77-B49AE0E966B4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HabitFlow.Data", "HabitFlow.Data\HabitFlow.Data.csproj", "{6096538A-7A73-4035-A5BB-6D8B3F4F0244}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HabitFlow.Core", "HabitFlow.Core\HabitFlow.Core.csproj", "{F71F9947-570C-4D1E-90FD-80651383698D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -16,6 +20,8 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{B9802802-8BEA-4B81-A8EE-AEFAB39B6B4F} = {30AFF599-BD1E-45F6-AC56-9E968E0560E1}
 		{3AFEFD2D-3E44-4826-BB77-B49AE0E966B4} = {1837A844-8DB7-492F-B705-05A321F0F2A7}
+		{6096538A-7A73-4035-A5BB-6D8B3F4F0244} = {30AFF599-BD1E-45F6-AC56-9E968E0560E1}
+		{F71F9947-570C-4D1E-90FD-80651383698D} = {30AFF599-BD1E-45F6-AC56-9E968E0560E1}
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{B9802802-8BEA-4B81-A8EE-AEFAB39B6B4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
@@ -26,5 +32,13 @@ Global
 		{3AFEFD2D-3E44-4826-BB77-B49AE0E966B4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3AFEFD2D-3E44-4826-BB77-B49AE0E966B4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3AFEFD2D-3E44-4826-BB77-B49AE0E966B4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6096538A-7A73-4035-A5BB-6D8B3F4F0244}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6096538A-7A73-4035-A5BB-6D8B3F4F0244}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6096538A-7A73-4035-A5BB-6D8B3F4F0244}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6096538A-7A73-4035-A5BB-6D8B3F4F0244}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F71F9947-570C-4D1E-90FD-80651383698D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F71F9947-570C-4D1E-90FD-80651383698D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F71F9947-570C-4D1E-90FD-80651383698D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F71F9947-570C-4D1E-90FD-80651383698D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
