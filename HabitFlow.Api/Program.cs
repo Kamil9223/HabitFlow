@@ -1,7 +1,17 @@
 using System.Text.Json.Serialization;
 using HabitFlow.Api.Endpoints;
+using HabitFlow.Core;
+using HabitFlow.Data;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Add DbContext
+builder.Services.AddDbContext<HabitFlowDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Add Core services (Command handlers, dispatchers)
+builder.Services.AddCore();
 
 // Configure JSON serialization (camelCase)
 builder.Services.ConfigureHttpJsonOptions(options =>

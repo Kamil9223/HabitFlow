@@ -110,8 +110,17 @@
   - `ILogger` w komponentach brzegowych; centralne logowanie błędów z `ErrorBoundary`; akcje UI idempotentne.
 
 ## Wytyczne testowania
-- Brak projektów testowych na ten moment. Preferowane xUnit:
-  - Utwórz `HabitFlow.Api.Tests/` i `HabitFlow.Blazor.Tests/`.
+  - Projekt testowy: `HabitFlow.Tests`
+  - Do testów używaj XUnit.
+  - Testy jednostkowe:
+    - Testy jednostkowe powinny znajdować się w podfolderze UnitTests.
+    - Do mocków jeśli potrzebne używaj bibliotekę NSubstitute.
+  - Testy integracyjne:
+    - Testy integracyjne powinny znajdować się w podfolderze IntegrationTests.
+    - Testy integracyjne polegają na testowaniu flow logiki całych endpointów 0 bez mocków.
+    - Należy korzystać z TestContainers aby zasetupować bazę danych, oraz generowanego klienta http, dzięki któremu będzie można w testach odpytywać endpointy.
+    - Baza danych powinna być jedna dla wszystkich uruchamianych testów.
+    - Testy uruchamiaj równolegle.
   - Nazwy plików `*Tests.cs`; jedna klasa na jednostkę testowaną.
   - Uruchamiaj `dotnet test` (dodaj do rozwiązania po utworzeniu).
 

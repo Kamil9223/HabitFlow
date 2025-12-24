@@ -410,9 +410,7 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HabitResponse"
-                }
+                "schema": {}
               }
             }
           },
