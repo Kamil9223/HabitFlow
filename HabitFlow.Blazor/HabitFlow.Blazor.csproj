@@ -6,4 +6,21 @@
         <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
+    <ItemGroup>
+        <PackageReference Include="NSwag.MSBuild" Version="14.2.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <PropertyGroup>
+        <OpenApiSpecPath>$(MSBuildThisFileDirectory)..\HabitFlow.Api\openapi.json</OpenApiSpecPath>
+        <GeneratedClientPath>$(MSBuildThisFileDirectory)Generated\Api\HabitFlowApiClient.cs</GeneratedClientPath>
+    </PropertyGroup>
+
+    <Target Name="GenerateApiClient" BeforeTargets="CoreCompile" Inputs="$(OpenApiSpecPath)" Outputs="$(GeneratedClientPath)">
+        <Message Text="Generating API client from $(OpenApiSpecPath)" Importance="high" />
+        <Exec Command="$(NSwagExe_Net90) run nswag.json" WorkingDirectory="$(ProjectDir)" />
+    </Target>
+
 </Project>

@@ -55,3 +55,6 @@ nunit-*.xml
 
 # JetBrains Rider project files (do not track IDE state)
 /.idea/
+
+#My Prompts
+.ai/Prompts/

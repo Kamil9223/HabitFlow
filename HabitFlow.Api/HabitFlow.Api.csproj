@@ -4,18 +4,28 @@
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);1591</NoWarn>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.10"/>
         <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.0">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="NSwag.AspNetCore" Version="14.2.0" />
+        <PackageReference Include="NSwag.MSBuild" Version="14.2.0">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
         </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\HabitFlow.Core\HabitFlow.Core.csproj" />
     </ItemGroup>
+
+    <Target Name="GenerateOpenApi" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug'">
+        <Exec Command="$(NSwagExe_Net90) run nswag.json /variables:Configuration=$(Configuration)" WorkingDirectory="$(ProjectDir)" />
+    </Target>
 
 </Project>
