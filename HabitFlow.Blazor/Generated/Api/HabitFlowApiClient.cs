@@ -98,11 +98,11 @@ namespace HabitFlow.Client
         System.Threading.Tasks.Task<PagedResponseOfHabitResponse> GetHabitsAsync(int? page, int? pageSize, int? type, int? completionMode, bool? active, string? search, string? sort, System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<HabitResponse> CreateHabitAsync(CreateHabitRequest request);
+        System.Threading.Tasks.Task<object> CreateHabitAsync(CreateHabitRequest request);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<HabitResponse> CreateHabitAsync(CreateHabitRequest request, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<object> CreateHabitAsync(CreateHabitRequest request, System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task<HabitResponse> GetHabitAsync(int id);
@@ -1145,14 +1145,14 @@ namespace HabitFlow.Client
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<HabitResponse> CreateHabitAsync(CreateHabitRequest request)
+        public virtual System.Threading.Tasks.Task<object> CreateHabitAsync(CreateHabitRequest request)
         {
             return CreateHabitAsync(request, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<HabitResponse> CreateHabitAsync(CreateHabitRequest request, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<object> CreateHabitAsync(CreateHabitRequest request, System.Threading.CancellationToken cancellationToken)
         {
             if (request == null)
                 throw new System.ArgumentNullException("request");
@@ -1200,7 +1200,7 @@ namespace HabitFlow.Client
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 201)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<HabitResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<object>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -2683,13 +2683,13 @@ namespace HabitFlow.Client
         public string? Description { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("type")]
-        public int Type { get; set; } = default!;
+        public byte Type { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("completionMode")]
-        public int CompletionMode { get; set; } = default!;
+        public byte CompletionMode { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("daysOfWeekMask")]
-        public int DaysOfWeekMask { get; set; } = default!;
+        public byte DaysOfWeekMask { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("targetValue")]
         public int TargetValue { get; set; } = default!;

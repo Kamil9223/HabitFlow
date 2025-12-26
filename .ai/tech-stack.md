@@ -1,4 +1,4 @@
-﻿# Tech stack – HabitFlow (MVP)
+# Tech stack – HabitFlow (MVP)
 
 Stos technologiczny i decyzje dla MVP.
 
@@ -9,7 +9,8 @@ Stos technologiczny i decyzje dla MVP.
 - Autoryzacja/uwierzytelnianie: ASP.NET Core Identity (weryfikacja e-mail, reset hasła)
 
 2. Frontend
-- Blazor Server (rendering po stronie serwera, połączenia SignalR)
+- Blazor Server (rendering po stronie serwera, polaczenia SignalR)
+- UI: MudBlazor (jedyna biblioteka UI; bez mieszania z Bootstrap/Tailwind)
 - Cel: szybkie dostarczenie CRUD, ekran „Dziś”, kalendarz readonly i wykres rolling 7/30
 
 3. Baza danych

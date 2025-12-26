@@ -1201,19 +1201,18 @@
           },
           "type": {
             "type": "integer",
-            "format": "int32"
+            "format": "byte"
           },
           "completionMode": {
             "type": "integer",
-            "format": "int32"
+            "format": "byte"
           },
           "daysOfWeekMask": {
             "type": "integer",
-            "format": "int32"
+            "format": "byte"
           },
           "targetValue": {
-            "type": "integer",
-            "format": "int32"
+            "type": "integer"
           },
           "targetUnit": {
             "type": "string",

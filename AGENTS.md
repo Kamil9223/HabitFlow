@@ -98,8 +98,8 @@
   - Nawigacja chroniona `[Authorize]`; spójne przekierowania; brak wrażliwych danych w storage przeglądarki.
   - Backend egzekwuje idempotencję i rate‑limiting (np. check‑in); UI obsługuje 409/422.
 - Styl i biblioteki UI:
-  - Bazowo Bootstrap 5 + własne zmienne lub jedna biblioteka (np. MudBlazor) – bez mieszania wielu.
-  - Listy/tabele: `QuickGrid`/komponent biblioteczny; wykres: Chart.js przez mały interop lub komponent biblioteczny (jeden wybór).
+  - MudBlazor jako jedyna biblioteka UI; nie mieszaj z Bootstrap/Tailwind ani innymi frameworkami.
+  - Listy/tabele: komponenty MudBlazor; wykres: Chart.js przez maly interop lub komponent biblioteczny (jeden wybor).
 - JS interop:
   - Oszczędnie (gł. wykresy, drobne efekty); opakować w usługę/komponent; dbać o lifecycle i rozłączenia.
 - Testy:

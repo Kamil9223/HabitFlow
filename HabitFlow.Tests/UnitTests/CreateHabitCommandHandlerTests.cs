@@ -1,4 +1,4 @@
-using HabitFlow.Core.Features.Habits.Commands;
+using HabitFlow.Core.Features.Habits;
 using HabitFlow.Data;
 using HabitFlow.Data.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -125,7 +125,7 @@ public class CreateHabitCommandHandlerTests
     [Theory]
     [InlineData(0)]
     [InlineData(3)]
-    public async Task Handle_InvalidType_ReturnsValidationError(int invalidType)
+    public async Task Handle_InvalidType_ReturnsValidationError(byte invalidType)
     {
         // Arrange
         await using var context = CreateInMemoryContext();
@@ -152,7 +152,7 @@ public class CreateHabitCommandHandlerTests
     [Theory]
     [InlineData(0)]
     [InlineData(4)]
-    public async Task Handle_InvalidCompletionMode_ReturnsValidationError(int invalidMode)
+    public async Task Handle_InvalidCompletionMode_ReturnsValidationError(byte invalidMode)
     {
         // Arrange
         await using var context = CreateInMemoryContext();
@@ -179,7 +179,7 @@ public class CreateHabitCommandHandlerTests
     [Theory]
     [InlineData(0)]
     [InlineData(128)]
-    public async Task Handle_InvalidDaysOfWeekMask_ReturnsValidationError(int invalidMask)
+    public async Task Handle_InvalidDaysOfWeekMask_ReturnsValidationError(byte invalidMask)
     {
         // Arrange
         await using var context = CreateInMemoryContext();
@@ -206,7 +206,7 @@ public class CreateHabitCommandHandlerTests
     [Theory]
     [InlineData(0)]
     [InlineData(101)]
-    public async Task Handle_InvalidTargetValue_ReturnsValidationError(int invalidValue)
+    public async Task Handle_InvalidTargetValue_ReturnsValidationError(short invalidValue)
     {
         // Arrange
         await using var context = CreateInMemoryContext();

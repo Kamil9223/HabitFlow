@@ -1,7 +1,8 @@
 ﻿using HabitFlow.Api.Contracts.Common;
 using HabitFlow.Api.Contracts.Habits;
+using HabitFlow.Api.Helpers;
 using HabitFlow.Core.Abstractions;
-using HabitFlow.Core.Features.Habits.Commands;
+using HabitFlow.Core.Features.Habits;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HabitFlow.Api.Endpoints;
@@ -40,32 +41,7 @@ public static class HabitEndpoints
                 request.DeadlineDate);
 
             var result = await dispatcher.Dispatch(command, cancellationToken);
-
-            if (result.IsFailure)
-            {
-                return result.Error.Code switch
-                {
-                    var code when code.StartsWith("Habit.") && result.Error.Title == "Validation Error" =>
-                        Results.ValidationProblem(new Dictionary<string, string[]>
-                        {
-                            [result.Error.Code] = [result.Error.Description]
-                        }),
-                    var code when code == "Habit.LimitExceeded" =>
-                        Results.Conflict(new ProblemDetails
-                        {
-                            Status = 409,
-                            Title = result.Error.Title,
-                            Detail = result.Error.Description,
-                            Extensions = { ["errorCode"] = result.Error.Code }
-                        }),
-                    _ => Results.Problem(
-                        title: result.Error.Title,
-                        detail: result.Error.Description,
-                        statusCode: 500)
-                };
-            }
-
-            return Results.Created($"/api/v1/habits/{result.Value}", new { id = result.Value });
+            return result.ToHttpResult(id => Results.Created($"/api/v1/habits/{id}", new { id }));
         })
             .WithName("CreateHabit")
             .Produces<object>(201)

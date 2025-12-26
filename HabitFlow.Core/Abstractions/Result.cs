@@ -5,42 +5,51 @@ namespace HabitFlow.Core.Abstractions;
 /// </summary>
 public class Result
 {
+    private readonly List<Error> _errors = new();
+
     public bool IsSuccess { get; }
     public bool IsFailure => !IsSuccess;
-    public Error Error { get; }
 
-    protected Result(bool isSuccess, Error error)
+    public IReadOnlyList<Error> Errors => _errors;
+    
+    public Error Error => _errors.Count > 0 ? _errors[0] : Error.None;
+
+    protected Result(bool isSuccess, IEnumerable<Error>? errors = null)
     {
-        if (isSuccess && error != Error.None)
-            throw new InvalidOperationException("Success result cannot have an error.");
-        if (!isSuccess && error == Error.None)
-            throw new InvalidOperationException("Failure result must have an error.");
-
         IsSuccess = isSuccess;
-        Error = error;
+
+        if (errors != null)
+            _errors.AddRange(errors);
+
+        if (isSuccess && _errors.Count > 0)
+            throw new InvalidOperationException("Success result cannot have errors.");
+
+        if (!isSuccess && _errors.Count == 0)
+            throw new InvalidOperationException("Failure result must have at least one error.");
     }
 
-    public static Result Success() => new(true, Error.None);
-    public static Result Failure(Error error) => new(false, error);
+    public static Result Success() => new(true);
 
-    public static Result<TValue> Success<TValue>(TValue value) => new(value, true, Error.None);
-    public static Result<TValue> Failure<TValue>(Error error) => new(default!, false, error);
+    public static Result Failure(Error error) => new(false, new[] { error });
+
+    public static Result Failure(IEnumerable<Error> errors) => new(false, errors);
+
+    public static Result<T> Success<T>(T value) => new(value, true);
+
+    public static Result<T> Failure<T>(Error error) => new(default!, false, new[] { error });
+
+    public static Result<T> Failure<T>(IEnumerable<Error> errors) => new(default!, false, errors);
 }
 
-/// <summary>
-/// Represents the result of an operation with a value.
-/// </summary>
-public class Result<TValue> : Result
+public class Result<T> : Result
 {
-    private readonly TValue? _value;
+    private readonly T? _value;
 
-    protected internal Result(TValue? value, bool isSuccess, Error error)
-        : base(isSuccess, error)
-    {
-        _value = value;
-    }
+    protected internal Result(T? value, bool isSuccess, IEnumerable<Error>? errors = null)
+        : base(isSuccess, errors)
+        => _value = value;
 
-    public TValue Value => IsSuccess
+    public T Value => IsSuccess
         ? _value!
         : throw new InvalidOperationException("Cannot access value of a failed result.");
 }

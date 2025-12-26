@@ -3,10 +3,10 @@
 public record CreateHabitRequest(
     string Title,
     string? Description,
-    int Type,
-    int CompletionMode,
-    int DaysOfWeekMask,
-    int TargetValue,
+    byte Type,
+    byte CompletionMode,
+    byte DaysOfWeekMask,
+    short TargetValue,
     string? TargetUnit,
     DateOnly? DeadlineDate
 );
