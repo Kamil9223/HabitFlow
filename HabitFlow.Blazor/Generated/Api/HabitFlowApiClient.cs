@@ -91,11 +91,11 @@ namespace HabitFlow.Client
         System.Threading.Tasks.Task UpdateTimeZoneAsync(UpdateTimeZoneRequest request, System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedResponseOfHabitResponse> GetHabitsAsync(int? page, int? pageSize, int? type, int? completionMode, bool? active, string? search, string? sort);
+        System.Threading.Tasks.Task<PagedResponseOfHabitResponse> GetHabitsAsync(int? page, int? pageSize, byte? type, byte? completionMode, bool? active, string? search, HabitSortField? sortField, SortDirection? sortDirection);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedResponseOfHabitResponse> GetHabitsAsync(int? page, int? pageSize, int? type, int? completionMode, bool? active, string? search, string? sort, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<PagedResponseOfHabitResponse> GetHabitsAsync(int? page, int? pageSize, byte? type, byte? completionMode, bool? active, string? search, HabitSortField? sortField, SortDirection? sortDirection, System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task<object> CreateHabitAsync(CreateHabitRequest request);
@@ -1033,14 +1033,14 @@ namespace HabitFlow.Client
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<PagedResponseOfHabitResponse> GetHabitsAsync(int? page, int? pageSize, int? type, int? completionMode, bool? active, string? search, string? sort)
+        public virtual System.Threading.Tasks.Task<PagedResponseOfHabitResponse> GetHabitsAsync(int? page, int? pageSize, byte? type, byte? completionMode, bool? active, string? search, HabitSortField? sortField, SortDirection? sortDirection)
         {
-            return GetHabitsAsync(page, pageSize, type, completionMode, active, search, sort, System.Threading.CancellationToken.None);
+            return GetHabitsAsync(page, pageSize, type, completionMode, active, search, sortField, sortDirection, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<PagedResponseOfHabitResponse> GetHabitsAsync(int? page, int? pageSize, int? type, int? completionMode, bool? active, string? search, string? sort, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<PagedResponseOfHabitResponse> GetHabitsAsync(int? page, int? pageSize, byte? type, byte? completionMode, bool? active, string? search, HabitSortField? sortField, SortDirection? sortDirection, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -1080,9 +1080,13 @@ namespace HabitFlow.Client
                     {
                         urlBuilder_.Append(System.Uri.EscapeDataString("search")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(search, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
-                    if (sort != null)
+                    if (sortField != null)
                     {
-                        urlBuilder_.Append(System.Uri.EscapeDataString("sort")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(sort, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                        urlBuilder_.Append(System.Uri.EscapeDataString("sortField")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(sortField, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
+                    }
+                    if (sortDirection != null)
+                    {
+                        urlBuilder_.Append(System.Uri.EscapeDataString("sortDirection")).Append('=').Append(System.Uri.EscapeDataString(ConvertToString(sortDirection, System.Globalization.CultureInfo.InvariantCulture))).Append('&');
                     }
                     urlBuilder_.Length--;
 
@@ -2669,6 +2673,33 @@ namespace HabitFlow.Client
 
         [System.Text.Json.Serialization.JsonPropertyName("createdAtUtc")]
         public System.DateTimeOffset CreatedAtUtc { get; set; } = default!;
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.2.0.0 (NJsonSchema v11.1.0.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum HabitSortField
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"CreatedAtUtc")]
+        CreatedAtUtc = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Title")]
+        Title = 1,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"DeadlineDate")]
+        DeadlineDate = 2,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.2.0.0 (NJsonSchema v11.1.0.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum SortDirection
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Asc")]
+        Asc = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Desc")]
+        Desc = 1,
 
     }
 

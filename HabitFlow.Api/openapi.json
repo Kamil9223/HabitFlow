@@ -329,7 +329,7 @@
             "in": "query",
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "format": "byte",
               "nullable": true
             },
             "x-position": 3
@@ -339,7 +339,7 @@
             "in": "query",
             "schema": {
               "type": "integer",
-              "format": "int32",
+              "format": "byte",
               "nullable": true
             },
             "x-position": 4
@@ -363,13 +363,30 @@
             "x-position": 6
           },
           {
-            "name": "sort",
+            "name": "sortField",
             "in": "query",
             "schema": {
-              "type": "string",
-              "nullable": true
+              "nullable": true,
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/HabitSortField"
+                }
+              ]
             },
             "x-position": 7
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "schema": {
+              "nullable": true,
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SortDirection"
+                }
+              ]
+            },
+            "x-position": 8
           }
         ],
         "responses": {
@@ -1187,6 +1204,32 @@
             "format": "date-time"
           }
         }
+      },
+      "HabitSortField": {
+        "type": "string",
+        "description": "",
+        "x-enumNames": [
+          "CreatedAtUtc",
+          "Title",
+          "DeadlineDate"
+        ],
+        "enum": [
+          "CreatedAtUtc",
+          "Title",
+          "DeadlineDate"
+        ]
+      },
+      "SortDirection": {
+        "type": "string",
+        "description": "",
+        "x-enumNames": [
+          "Asc",
+          "Desc"
+        ],
+        "enum": [
+          "Asc",
+          "Desc"
+        ]
       },
       "CreateHabitRequest": {
         "type": "object",

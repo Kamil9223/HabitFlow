@@ -1,4 +1,5 @@
 using HabitFlow.Core.Abstractions;
+using HabitFlow.Core.Common;
 using HabitFlow.Data;
 using HabitFlow.Data.Entities;
 using Microsoft.EntityFrameworkCore;

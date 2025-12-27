@@ -1,4 +1,4 @@
-namespace HabitFlow.Core.Abstractions;
+namespace HabitFlow.Core.Common;
 
 public static class ErrorTitles
 {

@@ -1,4 +1,5 @@
 ﻿using HabitFlow.Core.Abstractions;
+using HabitFlow.Core.Common;
 
 namespace HabitFlow.Core.Features.Habits;
 

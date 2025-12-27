@@ -1,4 +1,4 @@
-namespace HabitFlow.Core.Abstractions;
+namespace HabitFlow.Core.Common;
 
 /// <summary>
 /// Represents the result of an operation without a value.

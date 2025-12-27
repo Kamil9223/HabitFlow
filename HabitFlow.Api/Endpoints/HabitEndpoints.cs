@@ -2,6 +2,7 @@
 using HabitFlow.Api.Contracts.Habits;
 using HabitFlow.Api.Helpers;
 using HabitFlow.Core.Abstractions;
+using HabitFlow.Core.Common;
 using HabitFlow.Core.Features.Habits;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,8 +16,50 @@ public static class HabitEndpoints
             .WithTags("Habits")
             .RequireAuthorization();
 
-        group.MapGet("/", (int? page, int? pageSize, int? type, int? completionMode, bool? active, string? search, string? sort) =>
-            Results.StatusCode(501))
+        group.MapGet("/", async (
+            IQueryDispatcher dispatcher,
+            int? page,
+            int? pageSize,
+            byte? type,
+            byte? completionMode,
+            bool? active,
+            string? search,
+            HabitSortField? sortField,
+            SortDirection? sortDirection,
+            CancellationToken cancellationToken) =>
+        {
+            // TODO: Get real UserId from authenticated user context
+            var userId = "temp-user-id";
+
+            var query = new GetHabitsQuery(
+                userId,
+                page ?? 1,
+                pageSize ?? 20,
+                type,
+                completionMode,
+                active,
+                search,
+                sortField ?? HabitSortField.CreatedAtUtc,
+                sortDirection ?? SortDirection.Desc);
+
+            var result = await dispatcher.Dispatch(query, cancellationToken);
+
+            return result.ToHttpResult(pagedDto => Results.Ok(new PagedResponse<HabitResponse>(
+                pagedDto.TotalCount,
+                pagedDto.Items.Select(h => new HabitResponse(
+                    h.Id,
+                    h.Title,
+                    h.Description,
+                    h.Type,
+                    h.CompletionMode,
+                    h.DaysOfWeekMask,
+                    h.TargetValue,
+                    h.TargetUnit,
+                    h.DeadlineDate,
+                    new DateTimeOffset(h.CreatedAtUtc, TimeSpan.Zero)
+                )).ToList()
+            )));
+        })
             .WithName("GetHabits")
             .Produces<PagedResponse<HabitResponse>>(200)
             .Produces(401);
