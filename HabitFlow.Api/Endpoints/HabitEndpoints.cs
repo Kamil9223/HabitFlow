@@ -179,8 +179,35 @@ public static class HabitEndpoints
             .Produces(401)
             .Produces(404);
 
-        group.MapGet("/{id:int}/calendar", (int id, DateOnly from, DateOnly to) =>
-            Results.StatusCode(501))
+        group.MapGet("/{id:int}/calendar", async (
+            int id,
+            DateOnly from,
+            DateOnly to,
+            IQueryDispatcher dispatcher,
+            CancellationToken cancellationToken) =>
+        {
+            // TODO: Get real UserId from authenticated user context
+            var userId = "temp-user-id";
+
+            var query = new GetHabitCalendarQuery(id, userId, from, to);
+
+            var result = await dispatcher.Dispatch(query, cancellationToken);
+
+            return result.ToHttpResult(calendarDto => Results.Ok(new HabitCalendarResponse(
+                calendarDto.HabitId,
+                calendarDto.From,
+                calendarDto.To,
+                calendarDto.Days.Select(d => new HabitCalendarDay(
+                    d.Date,
+                    d.IsPlanned,
+                    d.ActualValue,
+                    d.TargetValueSnapshot,
+                    d.CompletionModeSnapshot,
+                    d.HabitTypeSnapshot,
+                    d.DailyScore
+                )).ToList()
+            )));
+        })
             .WithName("GetHabitCalendar")
             .Produces<HabitCalendarResponse>(200)
             .Produces(400)
