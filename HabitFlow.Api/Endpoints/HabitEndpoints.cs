@@ -49,8 +49,31 @@ public static class HabitEndpoints
             .Produces(401)
             .Produces(409);
 
-        group.MapGet("/{id:int}", (int id) =>
-            Results.StatusCode(501))
+        group.MapGet("/{id:int}", async (
+            int id,
+            IQueryDispatcher dispatcher,
+            CancellationToken cancellationToken) =>
+        {
+            // TODO: Get real UserId from authenticated user context
+            var userId = "temp-user-id";
+
+            var query = new GetHabitQuery(id, userId);
+
+            var result = await dispatcher.Dispatch(query, cancellationToken);
+
+            return result.ToHttpResult(habitDto => Results.Ok(new HabitResponse(
+                habitDto.Id,
+                habitDto.Title,
+                habitDto.Description,
+                habitDto.Type,
+                habitDto.CompletionMode,
+                habitDto.DaysOfWeekMask,
+                habitDto.TargetValue,
+                habitDto.TargetUnit,
+                habitDto.DeadlineDate,
+                new DateTimeOffset(habitDto.CreatedAtUtc, TimeSpan.Zero)
+            )));
+        })
             .WithName("GetHabit")
             .Produces<HabitResponse>(200)
             .Produces(401)

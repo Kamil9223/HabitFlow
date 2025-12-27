@@ -9,18 +9,34 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddCore(this IServiceCollection services)
     {
+        var assembly = Assembly.GetExecutingAssembly();
+
         // Register Command Dispatcher
         services.AddScoped<ICommandDispatcher, CommandDispatcher>();
 
         // Auto-register all command handlers from this assembly
-        var assembly = Assembly.GetExecutingAssembly();
-        var handlerTypes = assembly.GetTypes()
+        var commandHandlerTypes = assembly.GetTypes()
             .Where(t => t.IsClass && !t.IsAbstract)
             .SelectMany(t => t.GetInterfaces(), (type, iface) => new { type, iface })
             .Where(x => x.iface.IsGenericType && x.iface.GetGenericTypeDefinition() == typeof(ICommandHandler<,>))
             .Select(x => new { Implementation = x.type, Interface = x.iface });
 
-        foreach (var handler in handlerTypes)
+        foreach (var handler in commandHandlerTypes)
+        {
+            services.AddScoped(handler.Interface, handler.Implementation);
+        }
+
+        // Register Query Dispatcher
+        services.AddScoped<IQueryDispatcher, QueryDispatcher>();
+
+        // Auto-register all query handlers from this assembly
+        var queryHandlerTypes = assembly.GetTypes()
+            .Where(t => t.IsClass && !t.IsAbstract)
+            .SelectMany(t => t.GetInterfaces(), (type, iface) => new { type, iface })
+            .Where(x => x.iface.IsGenericType && x.iface.GetGenericTypeDefinition() == typeof(IQueryHandler<,>))
+            .Select(x => new { Implementation = x.type, Interface = x.iface });
+
+        foreach (var handler in queryHandlerTypes)
         {
             services.AddScoped(handler.Interface, handler.Implementation);
         }
