@@ -514,9 +514,7 @@
             "description": "",
             "content": {
               "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HabitResponse"
-                }
+                "schema": {}
               }
             }
           },
@@ -1282,22 +1280,21 @@
           },
           "type": {
             "type": "integer",
-            "format": "int32",
+            "format": "byte",
             "nullable": true
           },
           "completionMode": {
             "type": "integer",
-            "format": "int32",
+            "format": "byte",
             "nullable": true
           },
           "daysOfWeekMask": {
             "type": "integer",
-            "format": "int32",
+            "format": "byte",
             "nullable": true
           },
           "targetValue": {
             "type": "integer",
-            "format": "int32",
             "nullable": true
           },
           "targetUnit": {
@@ -1307,6 +1304,10 @@
           "deadlineDate": {
             "type": "string",
             "format": "date",
+            "nullable": true
+          },
+          "clearDeadline": {
+            "type": "boolean",
             "nullable": true
           }
         }

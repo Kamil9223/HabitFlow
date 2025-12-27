@@ -122,10 +122,40 @@ public static class HabitEndpoints
             .Produces(401)
             .Produces(404);
 
-        group.MapPatch("/{id:int}", (int id, UpdateHabitRequest request) =>
-            Results.StatusCode(501))
+        group.MapPatch("/{id:int}", async (
+            int id,
+            UpdateHabitRequest request,
+            ICommandDispatcher dispatcher,
+            CancellationToken cancellationToken) =>
+        {
+            // TODO: Get real UserId from authenticated user context
+            var userId = "temp-user-id";
+
+            var command = new UpdateHabitCommand(
+                id,
+                userId,
+                request.Title,
+                request.Description,
+                request.Type,
+                request.CompletionMode,
+                request.DaysOfWeekMask,
+                request.TargetValue,
+                request.TargetUnit,
+                request.DeadlineDate,
+                request.ClearDeadline ?? false
+            );
+
+            var result = await dispatcher.Dispatch(command, cancellationToken);
+
+            return result.ToHttpResult(habitId => Results.Ok(new { id = habitId }));
+        })
             .WithName("UpdateHabit")
-            .Produces<HabitResponse>(200)
+            .WithSummary("Update habit mutable fields")
+            .WithDescription(
+                "Updates habit properties. Only provided fields are modified. " +
+                "Past check-ins remain unchanged with their snapshot values. " +
+                "To clear the deadline, set 'clearDeadline' to true.")
+            .Produces<object>(200)
             .Produces(400)
             .Produces(401)
             .Produces(404);

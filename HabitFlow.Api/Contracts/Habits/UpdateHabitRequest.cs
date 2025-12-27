@@ -3,10 +3,11 @@
 public record UpdateHabitRequest(
     string? Title,
     string? Description,
-    int? Type,
-    int? CompletionMode,
-    int? DaysOfWeekMask,
-    int? TargetValue,
+    byte? Type,
+    byte? CompletionMode,
+    byte? DaysOfWeekMask,
+    short? TargetValue,
     string? TargetUnit,
-    DateOnly? DeadlineDate
+    DateOnly? DeadlineDate,
+    bool? ClearDeadline = null
 );
