@@ -130,8 +130,20 @@ public static class HabitEndpoints
             .Produces(401)
             .Produces(404);
 
-        group.MapDelete("/{id:int}", (int id) =>
-            Results.StatusCode(501))
+        group.MapDelete("/{id:int}", async (
+            int id,
+            ICommandDispatcher dispatcher,
+            CancellationToken cancellationToken) =>
+        {
+            // TODO: Get real UserId from authenticated user context
+            var userId = "temp-user-id";
+
+            var command = new DeleteHabitCommand(id, userId);
+
+            var result = await dispatcher.Dispatch(command, cancellationToken);
+
+            return result.ToHttpResult(Results.NoContent);
+        })
             .WithName("DeleteHabit")
             .Produces(204)
             .Produces(401)

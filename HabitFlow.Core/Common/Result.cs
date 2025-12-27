@@ -11,7 +11,7 @@ public class Result
     public bool IsFailure => !IsSuccess;
 
     public IReadOnlyList<Error> Errors => _errors;
-    
+
     public Error Error => _errors.Count > 0 ? _errors[0] : Error.None;
 
     protected Result(bool isSuccess, IEnumerable<Error>? errors = null)

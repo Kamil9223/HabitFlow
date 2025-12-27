@@ -30,4 +30,30 @@ public static class ResultHttpMapper
             _ => Results.Problem(statusCode: 500)
         };
     }
+
+    public static IResult ToHttpResult(
+        this Result result,
+        Func<IResult> onSuccess)
+    {
+        if (result.IsSuccess)
+            return onSuccess();
+
+        if (result.Errors.All(e => e.Title == ErrorTitles.ValidationError))
+        {
+            var dict = result.Errors
+                .GroupBy(e => e.Code)
+                .ToDictionary(
+                    g => g.Key,
+                    g => g.Select(x => x.Description).ToArray());
+
+            return Results.ValidationProblem(dict, statusCode: 400);
+        }
+
+        return result.Error.Title switch
+        {
+            ErrorTitles.Conflict => Results.Conflict(),
+            ErrorTitles.NotFound => Results.NotFound(),
+            _ => Results.Problem(statusCode: 500)
+        };
+    }
 }

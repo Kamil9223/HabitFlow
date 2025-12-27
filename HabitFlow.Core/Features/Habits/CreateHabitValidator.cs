@@ -8,7 +8,7 @@ public static class CreateHabitValidator
     public static IReadOnlyList<Error> Validate(CreateHabitCommand command)
     {
         var errors = new List<Error>();
-        
+
         // Title validation
         if (string.IsNullOrWhiteSpace(command.Title))
             errors.Add(Error.Validation("Habit.TitleRequired", "Title is required."));
