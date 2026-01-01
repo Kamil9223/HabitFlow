@@ -1,10 +1,12 @@
-﻿namespace HabitFlow.Api.Contracts.Habits;
+﻿using HabitFlow.Data.Enums;
+
+namespace HabitFlow.Api.Contracts.Habits;
 
 public record UpdateHabitRequest(
     string? Title,
     string? Description,
-    byte? Type,
-    byte? CompletionMode,
+    HabitType? Type,
+    CompletionMode? CompletionMode,
     byte? DaysOfWeekMask,
     short? TargetValue,
     string? TargetUnit,

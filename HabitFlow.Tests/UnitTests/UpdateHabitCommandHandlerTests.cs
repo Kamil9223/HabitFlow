@@ -1,6 +1,7 @@
 using HabitFlow.Core.Features.Habits;
 using HabitFlow.Data;
 using HabitFlow.Data.Entities;
+using HabitFlow.Data.Enums;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -27,8 +28,8 @@ public class UpdateHabitCommandHandlerTests
             UserId = "user-123",
             Title = "Old Title",
             Description = "Old Description",
-            Type = 1,
-            CompletionMode = 1,
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Binary,
             DaysOfWeekMask = 127,
             TargetValue = 10,
             TargetUnit = "pages",
@@ -44,8 +45,8 @@ public class UpdateHabitCommandHandlerTests
             UserId: "user-123",
             Title: "New Title",
             Description: "New Description",
-            Type: 2,
-            CompletionMode: 2,
+            Type: HabitType.Stop,
+            CompletionMode: CompletionMode.Quantitative,
             DaysOfWeekMask: 85,
             TargetValue: 20,
             TargetUnit: "minutes",
@@ -63,8 +64,8 @@ public class UpdateHabitCommandHandlerTests
         Assert.NotNull(updatedHabit);
         Assert.Equal("New Title", updatedHabit.Title);
         Assert.Equal("New Description", updatedHabit.Description);
-        Assert.Equal((byte)2, updatedHabit.Type);
-        Assert.Equal((byte)2, updatedHabit.CompletionMode);
+        Assert.Equal(HabitType.Stop, updatedHabit.Type);
+        Assert.Equal(CompletionMode.Quantitative, updatedHabit.CompletionMode);
         Assert.Equal((byte)85, updatedHabit.DaysOfWeekMask);
         Assert.Equal((short)20, updatedHabit.TargetValue);
         Assert.Equal("minutes", updatedHabit.TargetUnit);
@@ -80,8 +81,8 @@ public class UpdateHabitCommandHandlerTests
             UserId = "user-123",
             Title = "Original Title",
             Description = "Original Description",
-            Type = 1,
-            CompletionMode = 1,
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Binary,
             DaysOfWeekMask = 127,
             TargetValue = 10,
             TargetUnit = "pages",
@@ -114,8 +115,8 @@ public class UpdateHabitCommandHandlerTests
         Assert.NotNull(updatedHabit);
         Assert.Equal("Updated Title", updatedHabit.Title);
         Assert.Equal("Original Description", updatedHabit.Description); // Unchanged
-        Assert.Equal((byte)1, updatedHabit.Type); // Unchanged
-        Assert.Equal((byte)1, updatedHabit.CompletionMode); // Unchanged
+        Assert.Equal(HabitType.Start, updatedHabit.Type); // Unchanged
+        Assert.Equal(CompletionMode.Binary, updatedHabit.CompletionMode); // Unchanged
     }
 
     [Fact]
@@ -127,8 +128,8 @@ public class UpdateHabitCommandHandlerTests
         {
             UserId = "user-123",
             Title = "Title",
-            Type = 1,
-            CompletionMode = 1,
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Binary,
             DaysOfWeekMask = 127,
             TargetValue = 10,
             DeadlineDate = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(1)),
@@ -198,8 +199,8 @@ public class UpdateHabitCommandHandlerTests
         {
             UserId = "user-456", // Different user
             Title = "Title",
-            Type = 1,
-            CompletionMode = 1,
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Binary,
             DaysOfWeekMask = 127,
             TargetValue = 10,
             CreatedAtUtc = DateTime.UtcNow
@@ -243,8 +244,8 @@ public class UpdateHabitCommandHandlerTests
         {
             UserId = "user-123",
             Title = "Original Title",
-            Type = 1,
-            CompletionMode = 1,
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Binary,
             DaysOfWeekMask = 127,
             TargetValue = 10,
             CreatedAtUtc = DateTime.UtcNow
@@ -283,8 +284,8 @@ public class UpdateHabitCommandHandlerTests
         {
             UserId = "user-123",
             Title = "Original Title",
-            Type = 1,
-            CompletionMode = 1,
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Binary,
             DaysOfWeekMask = 127,
             TargetValue = 10,
             CreatedAtUtc = DateTime.UtcNow
@@ -325,8 +326,8 @@ public class UpdateHabitCommandHandlerTests
         {
             UserId = "user-123",
             Title = "Title",
-            Type = 1,
-            CompletionMode = 1,
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Binary,
             DaysOfWeekMask = 127,
             TargetValue = 10,
             CreatedAtUtc = DateTime.UtcNow
@@ -365,8 +366,8 @@ public class UpdateHabitCommandHandlerTests
         {
             UserId = "user-123",
             Title = "Title",
-            Type = 1,
-            CompletionMode = 1,
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Binary,
             DaysOfWeekMask = 127,
             TargetValue = 10,
             CreatedAtUtc = DateTime.UtcNow
@@ -405,8 +406,8 @@ public class UpdateHabitCommandHandlerTests
         {
             UserId = "user-123",
             Title = "Title",
-            Type = 1,
-            CompletionMode = 1,
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Binary,
             DaysOfWeekMask = 127,
             TargetValue = 10,
             CreatedAtUtc = DateTime.UtcNow

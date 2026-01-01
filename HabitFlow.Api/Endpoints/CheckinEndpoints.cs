@@ -11,7 +11,18 @@ public static class CheckinEndpoints
             .RequireAuthorization();
 
         group.MapPost("/habits/{habitId:int}/checkins", (int habitId, CreateCheckinRequest request) =>
-            Results.StatusCode(501))
+        {
+            // TODO: Get habit to check CompletionMode
+            // For Binary mode (completionMode=1):
+            //   - UI sends actualValue as 0 or 1 (checkbox → bool → int conversion)
+            //   - Validation can be added when habit data is available in the endpoint
+            // For Quantitative mode (completionMode=2):
+            //   - actualValue is user input (0 to TargetValueSnapshot)
+            //   - Values above TargetValueSnapshot should be clamped
+            //   - Negative values should return 400
+
+            return Results.StatusCode(501);
+        })
             .WithName("CreateCheckin")
             .Produces<CheckinResponse>(201)
             .Produces(400)

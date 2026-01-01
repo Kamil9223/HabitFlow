@@ -1,3 +1,5 @@
+using HabitFlow.Data.Enums;
+
 namespace HabitFlow.Data.Entities;
 
 /// <summary>
@@ -23,14 +25,14 @@ public class Habit
     public string? Description { get; set; }
 
     /// <summary>
-    /// Habit type: 1 = Start (begin doing), 2 = Stop (quit doing).
+    /// Habit type: Start (begin doing) or Stop (quit doing).
     /// </summary>
-    public byte Type { get; set; }
+    public HabitType Type { get; set; }
 
     /// <summary>
-    /// Completion mode: 1 = Binary, 2 = Quantitative, 3 = Checklist.
+    /// Completion mode: Binary, Quantitative, or Checklist.
     /// </summary>
-    public byte CompletionMode { get; set; }
+    public CompletionMode CompletionMode { get; set; }
 
     /// <summary>
     /// Days of week bitmask (bit 0=Mon, ..., bit 6=Sun). Value 1-127.

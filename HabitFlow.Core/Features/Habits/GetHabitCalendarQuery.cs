@@ -1,6 +1,7 @@
 ﻿using HabitFlow.Core.Abstractions;
 using HabitFlow.Core.Common;
 using HabitFlow.Data;
+using HabitFlow.Data.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace HabitFlow.Core.Features.Habits;
@@ -33,9 +34,9 @@ public record CalendarDayDto(
     DateOnly Date,
     bool IsPlanned,
     int ActualValue,
-    int? TargetValueSnapshot,
-    byte? CompletionModeSnapshot,
-    byte? HabitTypeSnapshot,
+    short? TargetValueSnapshot,
+    CompletionMode? CompletionModeSnapshot,
+    HabitType? HabitTypeSnapshot,
     double DailyScore
 );
 
@@ -172,26 +173,24 @@ public class GetHabitCalendarQueryHandler(HabitFlowDbContext context)
     private static double CalculateDailyScore(
         int actualValue,
         short targetValueSnapshot,
-        byte completionModeSnapshot,
-        byte habitTypeSnapshot)
+        CompletionMode completionModeSnapshot,
+        HabitType habitTypeSnapshot)
     {
         if (targetValueSnapshot <= 0)
             return 0.0;
 
         double score;
-
-        // CompletionMode: 1=Binary, 2=Quantitative, 3=Checklist
-        if (completionModeSnapshot == 1) // Binary
+        
+        if (completionModeSnapshot == CompletionMode.Binary)
         {
             score = actualValue > 0 ? 1.0 : 0.0;
         }
-        else // Quantitative (2) or Checklist (3)
+        else
         {
             var ratio = (double)actualValue / targetValueSnapshot;
             var ratioClamped = Math.Clamp(ratio, 0.0, 1.0);
-
-            // HabitType: 1=Start, 2=Stop
-            if (habitTypeSnapshot == 2) // Stop
+            
+            if (habitTypeSnapshot == HabitType.Stop)
             {
                 // For Stop habits, lower actual value is better
                 score = 1.0 - ratioClamped;

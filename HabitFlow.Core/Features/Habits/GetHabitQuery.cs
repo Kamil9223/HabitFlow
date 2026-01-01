@@ -1,6 +1,7 @@
 using HabitFlow.Core.Abstractions;
 using HabitFlow.Core.Common;
 using HabitFlow.Data;
+using HabitFlow.Data.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace HabitFlow.Core.Features.Habits;
@@ -20,8 +21,8 @@ public record HabitDto(
     int Id,
     string Title,
     string? Description,
-    byte Type,
-    byte CompletionMode,
+    HabitType Type,
+    CompletionMode CompletionMode,
     byte DaysOfWeekMask,
     short TargetValue,
     string? TargetUnit,

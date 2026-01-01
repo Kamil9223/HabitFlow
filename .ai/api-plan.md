@@ -109,6 +109,11 @@ Conventions:
 }
 - Errors: 401
 
+8) POST /api/v1/auth/logout
+- Description: Invalidate current session/token and end user session.
+- Response 204 No Content
+- Errors: 401
+
 ### 2.2 Profile
 
 1) GET /api/v1/profile
@@ -132,18 +137,27 @@ Conventions:
 - Response 204 No Content
 - Errors: 400 (missing/invalid), 422 (unsupported time zone)
 
+3) DELETE /api/v1/profile
+- Description: Permanently delete user account and all associated data (hard delete with cascade).
+- Request:
+{
+  "confirmation": "DELETE"
+}
+- Response 204 No Content
+- Errors: 400 (missing/invalid confirmation), 401
+
 ### 2.3 Habits
 
 Entity enums:
 - type: 1 = Start, 2 = Stop
-- completionMode: 1 = Binary, 2 = Quantitative, 3 = Checklist
+- completionMode: 1 = Binary, 2 = Quantitative
 
 1) GET /api/v1/habits
 - Description: List current user’s habits with filters and pagination.
 - Query:
   - page, pageSize
   - type=1|2 (optional)
-  - completionMode=1|2|3 (optional)
+  - completionMode=1|2 (optional)
   - active=true|false (optional; default true means deadline is null or >= today local)
   - search=string (title contains, optional)
   - sort=createdAtUtc:desc|title:asc|deadlineDate:asc (default createdAtUtc:desc)
@@ -207,13 +221,16 @@ Entity enums:
   "title": "string (<=80)",
   "description": "string (<=280)",
   "type": 1|2,
-  "completionMode": 1|2|3,
+  "completionMode": 1|2,
   "daysOfWeekMask": 1..127,
   "targetValue": 1..100,
   "targetUnit": "string (<=32|null)",
   "deadlineDate": "YYYY-MM-DD|null"
 }
-- Response 200: Updated habit
+- Response 200:
+{
+  "id": 101
+}
 - Errors: 400, 401, 404
 
 5) DELETE /api/v1/habits/{id}
@@ -432,13 +449,16 @@ Notes:
 
 ### 4.1 Common Validation
 - Strings: title <= 80; description <= 280; targetUnit <= 32; email valid format.
-- Enumerations: type ∈ {1,2}; completionMode ∈ {1,2,3}; notification type ∈ {1}.
+- Enumerations: type ∈ {1,2}; completionMode ∈ {1,2}; notification type ∈ {1}.
 - Time zone: timeZoneId must be a valid IANA identifier supported by the runtime.
 - Dates: localDate uses user’s time zone calendar; deadlineDate optional; from/to ranges max 90 days for public endpoints (recommendation).
 
 ### 4.2 Habit Rules
 - daysOfWeekMask: 1..127 (bitmask: Mon=1, ..., Sun=64); API validates 1 ≤ mask ≤ 127.
 - targetValue: 1..100 (per PRD; DB allows up to 1000, API tightens to 100).
+- Completion mode handling:
+  - For completionMode=1 (Binary): targetValue is automatically set to 1 (not user-selectable in UI).
+  - For completionMode=2 (Quantitative): targetValue is user-defined, range 1..100.
 - Limit: Max 20 habits per user; creation returns 409 when limit exceeded.
 - Editing: Affects future computation only; historical checkins keep snapshot values unchanged.
 - Deletion: Hard delete; cascades to checkins and notifications.
@@ -448,13 +468,15 @@ Notes:
 - Planning: Checkin allowed only if the day is planned by daysOfWeekMask (isPlanned=true), else 422.
 - Deadline: If deadlineDate exists, localDate must be ≤ deadlineDate; otherwise 422.
 - Backfill window: localDate must be within [today-7, today] in user’s time zone; otherwise 422.
-- Range: 0 ≤ actualValue ≤ TargetValueSnapshot. Values above are clamped to TargetValueSnapshot before save; invalid negative values return 400.
+- Range validation:
+  - For completionMode=1 (Binary): actualValue is automatically converted from boolean (done/not done) to 0 or 1 in UI.
+  - For completionMode=2 (Quantitative): 0 ≤ actualValue ≤ TargetValueSnapshot. Negative values return 400. Values above TargetValueSnapshot are clamped before save.
 - Snapshots: On creation, copy targetValue, completionMode, and type from Habit to snapshot fields in Checkins; no updates later.
 - Immutability: No update/delete endpoint for checkins in MVP.
 
 ### 4.4 Daily Score and Success Rate
 - For completionMode=1 (Binary): dailyScore = actualValue > 0 ? 1.0 : 0.0 (actualValue ∈ {0,1}).
-- For completionMode ∈ {2,3} (Quantitative/Checklist):
+- For completionMode=2 (Quantitative):
   - ratio = actualValue / TargetValueSnapshot
   - ratioClamped = min(max(ratio, 0), 1)
 - For type=Start: dailyScore = ratioClamped.
@@ -464,10 +486,10 @@ Notes:
 - The API computes and returns successRate in progress endpoints; storage remains in normalized tables without views in MVP.
 
 ### 4.5 Notifications
-- Trigger: Background job runs after end of user’s local day and generates MissDue for planned but missing checkins.
+- Trigger: Background job runs after end of user's local day (after 23:59:59 in user's time zone) and generates MissDue for planned but missing checkins. If a check-in is completed before the end of the day, no miss due notification is generated for that habit and date. One notification per (habitId, localDate, type=MissDue).
 - Uniqueness: One notification per (habitId, localDate, type); unique constraint enforced. Attempted duplicates are ignored or yield 409 in internal ops.
 - AI Generation: Primary: LLM-based content. On timeout/error, fallback static templates are used; aiStatus and aiError (truncated) recorded for diagnostics.
-- Exposure: Read-only via API; users can’t mutate content in MVP.
+- Exposure: Read-only via API; users can't mutate content in MVP.
 
 ### 4.6 Error Responses (ProblemDetails examples)
 - 400 Bad Request:

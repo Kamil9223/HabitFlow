@@ -1,6 +1,7 @@
 using HabitFlow.Core.Features.Habits;
 using HabitFlow.Data;
 using HabitFlow.Data.Entities;
+using HabitFlow.Data.Enums;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -27,8 +28,8 @@ public class DeleteHabitCommandHandlerTests
         {
             UserId = userId,
             Title = "Read books",
-            Type = 1,
-            CompletionMode = 1,
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Binary,
             DaysOfWeekMask = 127,
             TargetValue = 1,
             CreatedAtUtc = DateTime.UtcNow
@@ -75,8 +76,8 @@ public class DeleteHabitCommandHandlerTests
         {
             UserId = ownerUserId,
             Title = "Read books",
-            Type = 1,
-            CompletionMode = 1,
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Binary,
             DaysOfWeekMask = 127,
             TargetValue = 1,
             CreatedAtUtc = DateTime.UtcNow
@@ -109,8 +110,8 @@ public class DeleteHabitCommandHandlerTests
         {
             UserId = userId,
             Title = "Read books",
-            Type = 1,
-            CompletionMode = 1,
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Binary,
             DaysOfWeekMask = 127,
             TargetValue = 10,
             CreatedAtUtc = DateTime.UtcNow
@@ -126,8 +127,8 @@ public class DeleteHabitCommandHandlerTests
             LocalDate = DateOnly.FromDateTime(DateTime.UtcNow),
             ActualValue = 5,
             TargetValueSnapshot = 10,
-            CompletionModeSnapshot = 1,
-            HabitTypeSnapshot = 1,
+            CompletionModeSnapshot = CompletionMode.Binary,
+            HabitTypeSnapshot = HabitType.Start,
             IsPlanned = true,
             CreatedAtUtc = DateTime.UtcNow
         };
@@ -138,8 +139,8 @@ public class DeleteHabitCommandHandlerTests
             LocalDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)),
             ActualValue = 8,
             TargetValueSnapshot = 10,
-            CompletionModeSnapshot = 1,
-            HabitTypeSnapshot = 1,
+            CompletionModeSnapshot = CompletionMode.Binary,
+            HabitTypeSnapshot = HabitType.Start,
             IsPlanned = true,
             CreatedAtUtc = DateTime.UtcNow
         };
@@ -174,8 +175,8 @@ public class DeleteHabitCommandHandlerTests
         {
             UserId = userId,
             Title = "Read books",
-            Type = 1,
-            CompletionMode = 1,
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Binary,
             DaysOfWeekMask = 127,
             TargetValue = 1,
             CreatedAtUtc = DateTime.UtcNow
@@ -189,9 +190,9 @@ public class DeleteHabitCommandHandlerTests
             UserId = userId,
             HabitId = habit.Id,
             LocalDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)),
-            Type = 1,
+            Type = NotificationType.MissDue,
             Content = "You missed yesterday!",
-            AiStatus = 1,
+            AiStatus = AiGenerationStatus.Success,
             CreatedAtUtc = DateTime.UtcNow
         };
         context.Notifications.Add(notification);

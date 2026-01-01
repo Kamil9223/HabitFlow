@@ -25,7 +25,8 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
 
         // Type
         builder.Property(n => n.Type)
-            .IsRequired();
+            .IsRequired()
+            .HasConversion<byte>();
 
         // Content
         builder.Property(n => n.Content)
@@ -34,7 +35,8 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
 
         // AiStatus
         builder.Property(n => n.AiStatus)
-            .IsRequired(false);
+            .IsRequired(false)
+            .HasConversion<byte>();
 
         // AiError
         builder.Property(n => n.AiError)

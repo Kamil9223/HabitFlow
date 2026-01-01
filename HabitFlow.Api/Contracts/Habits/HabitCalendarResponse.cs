@@ -1,4 +1,6 @@
-﻿namespace HabitFlow.Api.Contracts.Habits;
+﻿using HabitFlow.Data.Enums;
+
+namespace HabitFlow.Api.Contracts.Habits;
 
 public record HabitCalendarResponse(
     int HabitId,
@@ -12,7 +14,7 @@ public record HabitCalendarDay(
     bool IsPlanned,
     int ActualValue,
     int? TargetValueSnapshot,
-    int? CompletionModeSnapshot,
-    int? HabitTypeSnapshot,
+    CompletionMode? CompletionModeSnapshot,
+    HabitType? HabitTypeSnapshot,
     double DailyScore
 );

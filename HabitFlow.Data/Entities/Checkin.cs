@@ -1,3 +1,5 @@
+using HabitFlow.Data.Enums;
+
 namespace HabitFlow.Data.Entities;
 
 /// <summary>
@@ -33,14 +35,14 @@ public class Checkin
     public short TargetValueSnapshot { get; set; }
 
     /// <summary>
-    /// Snapshot of CompletionMode at check-in time (1=Binary, 2=Quantitative, 3=Checklist).
+    /// Snapshot of CompletionMode at check-in time (Binary, Quantitative).
     /// </summary>
-    public byte CompletionModeSnapshot { get; set; }
+    public CompletionMode CompletionModeSnapshot { get; set; }
 
     /// <summary>
-    /// Snapshot of Type at check-in time (1=Start, 2=Stop).
+    /// Snapshot of Type at check-in time (Start or Stop).
     /// </summary>
-    public byte HabitTypeSnapshot { get; set; }
+    public HabitType HabitTypeSnapshot { get; set; }
 
     /// <summary>
     /// Whether the day was planned (according to DaysOfWeekMask).

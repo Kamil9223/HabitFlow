@@ -1,6 +1,7 @@
 ﻿using HabitFlow.Core.Features.Habits;
 using HabitFlow.Data;
 using HabitFlow.Data.Entities;
+using HabitFlow.Data.Enums;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -27,8 +28,8 @@ public class GetHabitCalendarQueryHandlerTests
         {
             UserId = userId,
             Title = "Read books",
-            Type = 1, // Start
-            CompletionMode = 2, // Quantitative
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Quantitative,
             DaysOfWeekMask = 127, // Every day
             TargetValue = 10,
             TargetUnit = "pages",
@@ -44,8 +45,8 @@ public class GetHabitCalendarQueryHandlerTests
             LocalDate = new DateOnly(2025, 12, 15),
             ActualValue = 7,
             TargetValueSnapshot = 10,
-            CompletionModeSnapshot = 2,
-            HabitTypeSnapshot = 1,
+            CompletionModeSnapshot = CompletionMode.Quantitative,
+            HabitTypeSnapshot = HabitType.Start,
             IsPlanned = true,
             CreatedAtUtc = DateTime.UtcNow
         };
@@ -72,9 +73,9 @@ public class GetHabitCalendarQueryHandlerTests
         Assert.Equal(new DateOnly(2025, 12, 15), day.Date);
         Assert.True(day.IsPlanned);
         Assert.Equal(7, day.ActualValue);
-        Assert.Equal(10, day.TargetValueSnapshot);
-        Assert.Equal((byte)2, day.CompletionModeSnapshot);
-        Assert.Equal((byte)1, day.HabitTypeSnapshot);
+        Assert.Equal(10, day.TargetValueSnapshot!.Value);
+        Assert.Equal(CompletionMode.Quantitative, day.CompletionModeSnapshot);
+        Assert.Equal(HabitType.Start, day.HabitTypeSnapshot);
         Assert.Equal(0.7, day.DailyScore, precision: 2);
     }
 
@@ -88,8 +89,8 @@ public class GetHabitCalendarQueryHandlerTests
         {
             UserId = userId,
             Title = "Exercise",
-            Type = 1,
-            CompletionMode = 1,
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Binary,
             DaysOfWeekMask = 127,
             TargetValue = 1,
             CreatedAtUtc = DateTime.UtcNow
@@ -133,8 +134,8 @@ public class GetHabitCalendarQueryHandlerTests
         {
             UserId = userId,
             Title = "Weekday habit",
-            Type = 1,
-            CompletionMode = 1,
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Binary,
             DaysOfWeekMask = 31, // Mon-Fri (bits 0-4)
             TargetValue = 1,
             CreatedAtUtc = DateTime.UtcNow
@@ -191,8 +192,8 @@ public class GetHabitCalendarQueryHandlerTests
         {
             UserId = userId,
             Title = "Binary habit",
-            Type = 1,
-            CompletionMode = 1, // Binary
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Binary,
             DaysOfWeekMask = 127,
             TargetValue = 1,
             CreatedAtUtc = DateTime.UtcNow
@@ -207,8 +208,8 @@ public class GetHabitCalendarQueryHandlerTests
             LocalDate = new DateOnly(2025, 12, 1),
             ActualValue = 1,
             TargetValueSnapshot = 1,
-            CompletionModeSnapshot = 1,
-            HabitTypeSnapshot = 1,
+            CompletionModeSnapshot = CompletionMode.Binary,
+            HabitTypeSnapshot = HabitType.Start,
             IsPlanned = true,
             CreatedAtUtc = DateTime.UtcNow
         };
@@ -219,8 +220,8 @@ public class GetHabitCalendarQueryHandlerTests
             LocalDate = new DateOnly(2025, 12, 2),
             ActualValue = 0,
             TargetValueSnapshot = 1,
-            CompletionModeSnapshot = 1,
-            HabitTypeSnapshot = 1,
+            CompletionModeSnapshot = CompletionMode.Binary,
+            HabitTypeSnapshot = HabitType.Start,
             IsPlanned = true,
             CreatedAtUtc = DateTime.UtcNow
         };
@@ -254,8 +255,8 @@ public class GetHabitCalendarQueryHandlerTests
         {
             UserId = userId,
             Title = "Stop habit",
-            Type = 2, // Stop
-            CompletionMode = 2, // Quantitative
+            Type = HabitType.Stop,
+            CompletionMode = CompletionMode.Quantitative, // Quantitative
             DaysOfWeekMask = 127,
             TargetValue = 3, // Max 3 violations
             CreatedAtUtc = DateTime.UtcNow
@@ -270,8 +271,8 @@ public class GetHabitCalendarQueryHandlerTests
             LocalDate = new DateOnly(2025, 12, 1),
             ActualValue = 0, // Perfect (no violations)
             TargetValueSnapshot = 3,
-            CompletionModeSnapshot = 2,
-            HabitTypeSnapshot = 2,
+            CompletionModeSnapshot = CompletionMode.Quantitative,
+            HabitTypeSnapshot = HabitType.Stop,
             IsPlanned = true,
             CreatedAtUtc = DateTime.UtcNow
         };
@@ -282,8 +283,8 @@ public class GetHabitCalendarQueryHandlerTests
             LocalDate = new DateOnly(2025, 12, 2),
             ActualValue = 3, // Max violations
             TargetValueSnapshot = 3,
-            CompletionModeSnapshot = 2,
-            HabitTypeSnapshot = 2,
+            CompletionModeSnapshot = CompletionMode.Quantitative,
+            HabitTypeSnapshot = HabitType.Stop,
             IsPlanned = true,
             CreatedAtUtc = DateTime.UtcNow
         };
@@ -294,8 +295,8 @@ public class GetHabitCalendarQueryHandlerTests
             LocalDate = new DateOnly(2025, 12, 3),
             ActualValue = 1, // 1 violation out of 3
             TargetValueSnapshot = 3,
-            CompletionModeSnapshot = 2,
-            HabitTypeSnapshot = 2,
+            CompletionModeSnapshot = CompletionMode.Quantitative,
+            HabitTypeSnapshot = HabitType.Stop,
             IsPlanned = true,
             CreatedAtUtc = DateTime.UtcNow
         };
@@ -349,8 +350,8 @@ public class GetHabitCalendarQueryHandlerTests
         {
             UserId = "user-123",
             Title = "Test habit",
-            Type = 1,
-            CompletionMode = 1,
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Binary,
             DaysOfWeekMask = 127,
             TargetValue = 1,
             CreatedAtUtc = DateTime.UtcNow
@@ -470,8 +471,8 @@ public class GetHabitCalendarQueryHandlerTests
         {
             UserId = userId,
             Title = "Test habit",
-            Type = 1,
-            CompletionMode = 1,
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Binary,
             DaysOfWeekMask = 127,
             TargetValue = 1,
             CreatedAtUtc = DateTime.UtcNow
@@ -504,8 +505,8 @@ public class GetHabitCalendarQueryHandlerTests
         {
             UserId = userId,
             Title = "Mixed habit",
-            Type = 1,
-            CompletionMode = 2,
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Quantitative,
             DaysOfWeekMask = 127,
             TargetValue = 10,
             CreatedAtUtc = DateTime.UtcNow
@@ -521,8 +522,8 @@ public class GetHabitCalendarQueryHandlerTests
             LocalDate = new DateOnly(2025, 12, 1),
             ActualValue = 8,
             TargetValueSnapshot = 10,
-            CompletionModeSnapshot = 2,
-            HabitTypeSnapshot = 1,
+            CompletionModeSnapshot = CompletionMode.Quantitative,
+            HabitTypeSnapshot = HabitType.Start,
             IsPlanned = true,
             CreatedAtUtc = DateTime.UtcNow
         };
@@ -533,8 +534,8 @@ public class GetHabitCalendarQueryHandlerTests
             LocalDate = new DateOnly(2025, 12, 3),
             ActualValue = 5,
             TargetValueSnapshot = 10,
-            CompletionModeSnapshot = 2,
-            HabitTypeSnapshot = 1,
+            CompletionModeSnapshot = CompletionMode.Quantitative,
+            HabitTypeSnapshot = HabitType.Start,
             IsPlanned = true,
             CreatedAtUtc = DateTime.UtcNow
         };
@@ -557,7 +558,7 @@ public class GetHabitCalendarQueryHandlerTests
 
         // Day 1 - has check-in
         Assert.Equal(8, result.Value.Days[0].ActualValue);
-        Assert.Equal(10, result.Value.Days[0].TargetValueSnapshot);
+        Assert.Equal(10, result.Value.Days[0].TargetValueSnapshot!.Value);
         Assert.Equal(0.8, result.Value.Days[0].DailyScore, precision: 2);
 
         // Day 2 - no check-in
@@ -567,58 +568,7 @@ public class GetHabitCalendarQueryHandlerTests
 
         // Day 3 - has check-in
         Assert.Equal(5, result.Value.Days[2].ActualValue);
-        Assert.Equal(10, result.Value.Days[2].TargetValueSnapshot);
+        Assert.Equal(10, result.Value.Days[2].TargetValueSnapshot!.Value);
         Assert.Equal(0.5, result.Value.Days[2].DailyScore, precision: 2);
-    }
-
-    [Fact]
-    public async Task Handle_ChecklistCompletionMode_CalculatesScoreCorrectly()
-    {
-        // Arrange
-        await using var context = CreateInMemoryContext();
-        var userId = "user-123";
-        var habit = new Habit
-        {
-            UserId = userId,
-            Title = "Checklist habit",
-            Type = 1,
-            CompletionMode = 3, // Checklist
-            DaysOfWeekMask = 127,
-            TargetValue = 5,
-            TargetUnit = "tasks",
-            CreatedAtUtc = DateTime.UtcNow
-        };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
-
-        var checkin = new Checkin
-        {
-            HabitId = habit.Id,
-            UserId = userId,
-            LocalDate = new DateOnly(2025, 12, 1),
-            ActualValue = 3,
-            TargetValueSnapshot = 5,
-            CompletionModeSnapshot = 3,
-            HabitTypeSnapshot = 1,
-            IsPlanned = true,
-            CreatedAtUtc = DateTime.UtcNow
-        };
-        context.Checkins.Add(checkin);
-        await context.SaveChangesAsync();
-
-        var handler = new GetHabitCalendarQueryHandler(context);
-        var query = new GetHabitCalendarQuery(
-            habit.Id,
-            userId,
-            new DateOnly(2025, 12, 1),
-            new DateOnly(2025, 12, 1));
-
-        // Act
-        var result = await handler.Handle(query, CancellationToken.None);
-
-        // Assert
-        Assert.True(result.IsSuccess);
-        Assert.Single(result.Value.Days);
-        Assert.Equal(0.6, result.Value.Days[0].DailyScore, precision: 2); // 3/5 = 0.6
     }
 }

@@ -1,6 +1,7 @@
 using HabitFlow.Core.Features.Habits;
 using HabitFlow.Data;
 using HabitFlow.Data.Entities;
+using HabitFlow.Data.Enums;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -27,8 +28,8 @@ public class CreateHabitCommandHandlerTests
             UserId: "user-123",
             Title: "Read books",
             Description: "Read 10 pages daily",
-            Type: 1,
-            CompletionMode: 2,
+            Type: HabitType.Start,
+            CompletionMode: CompletionMode.Quantitative,
             DaysOfWeekMask: 127,
             TargetValue: 10,
             TargetUnit: "pages",
@@ -57,8 +58,8 @@ public class CreateHabitCommandHandlerTests
             UserId: "user-123",
             Title: "",
             Description: null,
-            Type: 1,
-            CompletionMode: 1,
+            Type: HabitType.Start,
+            CompletionMode: CompletionMode.Binary,
             DaysOfWeekMask: 127,
             TargetValue: 1,
             TargetUnit: null,
@@ -82,8 +83,8 @@ public class CreateHabitCommandHandlerTests
             UserId: "user-123",
             Title: new string('A', 81),
             Description: null,
-            Type: 1,
-            CompletionMode: 1,
+            Type: HabitType.Start,
+            CompletionMode: CompletionMode.Binary,
             DaysOfWeekMask: 127,
             TargetValue: 1,
             TargetUnit: null,
@@ -107,8 +108,8 @@ public class CreateHabitCommandHandlerTests
             UserId: "user-123",
             Title: "Valid Title",
             Description: new string('A', 281),
-            Type: 1,
-            CompletionMode: 1,
+            Type: HabitType.Start,
+            CompletionMode: CompletionMode.Binary,
             DaysOfWeekMask: 127,
             TargetValue: 1,
             TargetUnit: null,
@@ -124,60 +125,6 @@ public class CreateHabitCommandHandlerTests
 
     [Theory]
     [InlineData(0)]
-    [InlineData(3)]
-    public async Task Handle_InvalidType_ReturnsValidationError(byte invalidType)
-    {
-        // Arrange
-        await using var context = CreateInMemoryContext();
-        var handler = new CreateHabitCommandHandler(context);
-        var command = new CreateHabitCommand(
-            UserId: "user-123",
-            Title: "Valid Title",
-            Description: null,
-            Type: invalidType,
-            CompletionMode: 1,
-            DaysOfWeekMask: 127,
-            TargetValue: 1,
-            TargetUnit: null,
-            DeadlineDate: null);
-
-        // Act
-        var result = await handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        Assert.True(result.IsFailure);
-        Assert.Equal("Habit.InvalidType", result.Error.Code);
-    }
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(4)]
-    public async Task Handle_InvalidCompletionMode_ReturnsValidationError(byte invalidMode)
-    {
-        // Arrange
-        await using var context = CreateInMemoryContext();
-        var handler = new CreateHabitCommandHandler(context);
-        var command = new CreateHabitCommand(
-            UserId: "user-123",
-            Title: "Valid Title",
-            Description: null,
-            Type: 1,
-            CompletionMode: invalidMode,
-            DaysOfWeekMask: 127,
-            TargetValue: 1,
-            TargetUnit: null,
-            DeadlineDate: null);
-
-        // Act
-        var result = await handler.Handle(command, CancellationToken.None);
-
-        // Assert
-        Assert.True(result.IsFailure);
-        Assert.Equal("Habit.InvalidCompletionMode", result.Error.Code);
-    }
-
-    [Theory]
-    [InlineData(0)]
     [InlineData(128)]
     public async Task Handle_InvalidDaysOfWeekMask_ReturnsValidationError(byte invalidMask)
     {
@@ -188,8 +135,8 @@ public class CreateHabitCommandHandlerTests
             UserId: "user-123",
             Title: "Valid Title",
             Description: null,
-            Type: 1,
-            CompletionMode: 1,
+            Type: HabitType.Start,
+            CompletionMode: CompletionMode.Binary,
             DaysOfWeekMask: invalidMask,
             TargetValue: 1,
             TargetUnit: null,
@@ -215,8 +162,8 @@ public class CreateHabitCommandHandlerTests
             UserId: "user-123",
             Title: "Valid Title",
             Description: null,
-            Type: 1,
-            CompletionMode: 1,
+            Type: HabitType.Start,
+            CompletionMode: CompletionMode.Binary,
             DaysOfWeekMask: 127,
             TargetValue: invalidValue,
             TargetUnit: null,
@@ -240,8 +187,8 @@ public class CreateHabitCommandHandlerTests
             UserId: "user-123",
             Title: "Valid Title",
             Description: null,
-            Type: 1,
-            CompletionMode: 1,
+            Type: HabitType.Start,
+            CompletionMode: CompletionMode.Binary,
             DaysOfWeekMask: 127,
             TargetValue: 10,
             TargetUnit: new string('A', 33),
@@ -265,8 +212,8 @@ public class CreateHabitCommandHandlerTests
             UserId: "user-123",
             Title: "Valid Title",
             Description: null,
-            Type: 1,
-            CompletionMode: 1,
+            Type: HabitType.Start,
+            CompletionMode: CompletionMode.Binary,
             DaysOfWeekMask: 127,
             TargetValue: 10,
             TargetUnit: null,
@@ -294,8 +241,8 @@ public class CreateHabitCommandHandlerTests
             {
                 UserId = userId,
                 Title = $"Habit {i}",
-                Type = 1,
-                CompletionMode = 1,
+                Type = HabitType.Start,
+                CompletionMode = CompletionMode.Binary,
                 DaysOfWeekMask = 127,
                 TargetValue = 1,
                 CreatedAtUtc = DateTime.UtcNow
@@ -308,8 +255,8 @@ public class CreateHabitCommandHandlerTests
             UserId: userId,
             Title: "Habit 21",
             Description: null,
-            Type: 1,
-            CompletionMode: 1,
+            Type: HabitType.Start,
+            CompletionMode: CompletionMode.Binary,
             DaysOfWeekMask: 127,
             TargetValue: 1,
             TargetUnit: null,
@@ -337,8 +284,8 @@ public class CreateHabitCommandHandlerTests
             {
                 UserId = userId,
                 Title = $"Habit {i}",
-                Type = 1,
-                CompletionMode = 1,
+                Type = HabitType.Start,
+                CompletionMode = CompletionMode.Binary,
                 DaysOfWeekMask = 127,
                 TargetValue = 1,
                 CreatedAtUtc = DateTime.UtcNow
@@ -351,8 +298,8 @@ public class CreateHabitCommandHandlerTests
             UserId: userId,
             Title: "Habit 20",
             Description: null,
-            Type: 1,
-            CompletionMode: 1,
+            Type: HabitType.Start,
+            CompletionMode: CompletionMode.Binary,
             DaysOfWeekMask: 127,
             TargetValue: 1,
             TargetUnit: null,

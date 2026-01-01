@@ -20,15 +20,6 @@ public static class CreateHabitValidator
         if (command.Description?.Length > 280)
             errors.Add(Error.Validation("Habit.DescriptionTooLong", "Description must not exceed 280 characters."));
 
-        // Type validation (1 = Start, 2 = Stop)
-        if (command.Type is < 1 or > 2)
-            errors.Add(Error.Validation("Habit.InvalidType", "Type must be 1 (Start) or 2 (Stop)."));
-
-        // CompletionMode validation (1 = Binary, 2 = Quantitative, 3 = Checklist)
-        if (command.CompletionMode is < 1 or > 3)
-            errors.Add(Error.Validation("Habit.InvalidCompletionMode",
-                "CompletionMode must be 1 (Binary), 2 (Quantitative), or 3 (Checklist)."));
-
         // DaysOfWeekMask validation (1-127, bitmask for 7 days)
         if (command.DaysOfWeekMask is < 1 or > 127)
             errors.Add(Error.Validation("Habit.InvalidDaysOfWeekMask", "DaysOfWeekMask must be between 1 and 127."));

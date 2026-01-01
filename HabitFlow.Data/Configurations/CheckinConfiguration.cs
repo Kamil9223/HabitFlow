@@ -34,11 +34,13 @@ public class CheckinConfiguration : IEntityTypeConfiguration<Checkin>
 
         // CompletionModeSnapshot
         builder.Property(c => c.CompletionModeSnapshot)
-            .IsRequired();
+            .IsRequired()
+            .HasConversion<byte>();
 
         // HabitTypeSnapshot
         builder.Property(c => c.HabitTypeSnapshot)
-            .IsRequired();
+            .IsRequired()
+            .HasConversion<byte>();
 
         // IsPlanned
         builder.Property(c => c.IsPlanned)

@@ -1,6 +1,7 @@
 using HabitFlow.Core.Abstractions;
 using HabitFlow.Core.Common;
 using HabitFlow.Data;
+using HabitFlow.Data.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace HabitFlow.Core.Features.Habits;
@@ -22,8 +23,8 @@ public record GetHabitsQuery(
     string UserId,
     int Page = 1,
     int PageSize = 20,
-    byte? Type = null,
-    byte? CompletionMode = null,
+    HabitType? Type = null,
+    CompletionMode? CompletionMode = null,
     bool? Active = true,
     string? Search = null,
     HabitSortField SortField = HabitSortField.CreatedAtUtc,

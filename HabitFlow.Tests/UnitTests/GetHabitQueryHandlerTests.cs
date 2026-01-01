@@ -1,6 +1,7 @@
 using HabitFlow.Core.Features.Habits;
 using HabitFlow.Data;
 using HabitFlow.Data.Entities;
+using HabitFlow.Data.Enums;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -28,8 +29,8 @@ public class GetHabitQueryHandlerTests
             UserId = userId,
             Title = "Read books",
             Description = "Read 10 pages daily",
-            Type = 1,
-            CompletionMode = 2,
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Quantitative,
             DaysOfWeekMask = 127,
             TargetValue = 10,
             TargetUnit = "pages",
@@ -51,8 +52,8 @@ public class GetHabitQueryHandlerTests
         Assert.Equal(habit.Id, result.Value.Id);
         Assert.Equal("Read books", result.Value.Title);
         Assert.Equal("Read 10 pages daily", result.Value.Description);
-        Assert.Equal((byte)1, result.Value.Type);
-        Assert.Equal((byte)2, result.Value.CompletionMode);
+        Assert.Equal(HabitType.Start, result.Value.Type);
+        Assert.Equal(CompletionMode.Quantitative, result.Value.CompletionMode);
         Assert.Equal((byte)127, result.Value.DaysOfWeekMask);
         Assert.Equal((short)10, result.Value.TargetValue);
         Assert.Equal("pages", result.Value.TargetUnit);
@@ -84,8 +85,8 @@ public class GetHabitQueryHandlerTests
         {
             UserId = "user-123",
             Title = "Read books",
-            Type = 1,
-            CompletionMode = 1,
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Binary,
             DaysOfWeekMask = 127,
             TargetValue = 10,
             CreatedAtUtc = DateTime.UtcNow
@@ -153,8 +154,8 @@ public class GetHabitQueryHandlerTests
             UserId = userId,
             Title = "Simple habit",
             Description = null,
-            Type = 1,
-            CompletionMode = 1,
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Binary,
             DaysOfWeekMask = 1,
             TargetValue = 1,
             TargetUnit = null,
@@ -190,8 +191,8 @@ public class GetHabitQueryHandlerTests
         {
             UserId = userId,
             Title = "Habit 1",
-            Type = 1,
-            CompletionMode = 1,
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Binary,
             DaysOfWeekMask = 127,
             TargetValue = 1,
             CreatedAtUtc = DateTime.UtcNow
@@ -200,24 +201,14 @@ public class GetHabitQueryHandlerTests
         {
             UserId = userId,
             Title = "Habit 2",
-            Type = 2,
-            CompletionMode = 2,
+            Type = HabitType.Stop,
+            CompletionMode = CompletionMode.Quantitative,
             DaysOfWeekMask = 63,
             TargetValue = 5,
             CreatedAtUtc = DateTime.UtcNow
         };
-        var habit3 = new Habit
-        {
-            UserId = userId,
-            Title = "Habit 3",
-            Type = 1,
-            CompletionMode = 3,
-            DaysOfWeekMask = 31,
-            TargetValue = 10,
-            CreatedAtUtc = DateTime.UtcNow
-        };
 
-        context.Habits.AddRange(habit1, habit2, habit3);
+        context.Habits.AddRange(habit1, habit2);
         await context.SaveChangesAsync();
 
         var handler = new GetHabitQueryHandler(context);
@@ -231,8 +222,8 @@ public class GetHabitQueryHandlerTests
         Assert.NotNull(result.Value);
         Assert.Equal(habit2.Id, result.Value.Id);
         Assert.Equal("Habit 2", result.Value.Title);
-        Assert.Equal((byte)2, result.Value.Type);
-        Assert.Equal((byte)2, result.Value.CompletionMode);
+        Assert.Equal(HabitType.Stop, result.Value.Type);
+        Assert.Equal(CompletionMode.Quantitative, result.Value.CompletionMode);
         Assert.Equal((byte)63, result.Value.DaysOfWeekMask);
         Assert.Equal((short)5, result.Value.TargetValue);
     }

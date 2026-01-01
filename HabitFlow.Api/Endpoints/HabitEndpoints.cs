@@ -4,6 +4,7 @@ using HabitFlow.Api.Helpers;
 using HabitFlow.Core.Abstractions;
 using HabitFlow.Core.Common;
 using HabitFlow.Core.Features.Habits;
+using HabitFlow.Data.Enums;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HabitFlow.Api.Endpoints;
@@ -20,8 +21,8 @@ public static class HabitEndpoints
             IQueryDispatcher dispatcher,
             int? page,
             int? pageSize,
-            byte? type,
-            byte? completionMode,
+            HabitType? type,
+            CompletionMode? completionMode,
             bool? active,
             string? search,
             HabitSortField? sortField,
@@ -72,6 +73,11 @@ public static class HabitEndpoints
             // TODO: Get real UserId from authenticated user context
             var userId = "temp-user-id";
 
+            // Auto-set targetValue=1 for Binary mode (user doesn't select this in UI)
+            var targetValue = request.CompletionMode == CompletionMode.Binary
+                ? (short)1
+                : request.TargetValue;
+
             var command = new CreateHabitCommand(
                 userId,
                 request.Title,
@@ -79,7 +85,7 @@ public static class HabitEndpoints
                 request.Type,
                 request.CompletionMode,
                 request.DaysOfWeekMask,
-                request.TargetValue,
+                targetValue,
                 request.TargetUnit,
                 request.DeadlineDate);
 

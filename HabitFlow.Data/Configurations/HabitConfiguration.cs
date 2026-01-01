@@ -32,11 +32,13 @@ public class HabitConfiguration : IEntityTypeConfiguration<Habit>
 
         // Type
         builder.Property(h => h.Type)
-            .IsRequired();
+            .IsRequired()
+            .HasConversion<byte>();
 
         // CompletionMode
         builder.Property(h => h.CompletionMode)
-            .IsRequired();
+            .IsRequired()
+            .HasConversion<byte>();
 
         // DaysOfWeekMask
         builder.Property(h => h.DaysOfWeekMask)

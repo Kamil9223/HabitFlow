@@ -243,6 +243,22 @@
         }
       }
     },
+    "/api/v1/auth/logout": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "operationId": "Logout",
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "401": {
+            "description": ""
+          }
+        }
+      }
+    },
     "/api/v1/profile": {
       "get": {
         "tags": [
@@ -259,6 +275,35 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": ""
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Profile"
+        ],
+        "operationId": "DeleteAccount",
+        "requestBody": {
+          "x-name": "request",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DeleteAccountRequest"
+              }
+            }
+          },
+          "required": true,
+          "x-position": 1
+        },
+        "responses": {
+          "204": {
+            "description": ""
+          },
+          "400": {
+            "description": ""
           },
           "401": {
             "description": ""
@@ -328,9 +373,12 @@
             "name": "type",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "byte",
-              "nullable": true
+              "nullable": true,
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/HabitType"
+                }
+              ]
             },
             "x-position": 3
           },
@@ -338,9 +386,12 @@
             "name": "completionMode",
             "in": "query",
             "schema": {
-              "type": "integer",
-              "format": "byte",
-              "nullable": true
+              "nullable": true,
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/CompletionMode"
+                }
+              ]
             },
             "x-position": 4
           },
@@ -1141,6 +1192,15 @@
           }
         }
       },
+      "DeleteAccountRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "confirmation": {
+            "type": "string"
+          }
+        }
+      },
       "PagedResponseOfHabitResponse": {
         "type": "object",
         "additionalProperties": false,
@@ -1173,12 +1233,10 @@
             "nullable": true
           },
           "type": {
-            "type": "integer",
-            "format": "int32"
+            "$ref": "#/components/schemas/HabitType"
           },
           "completionMode": {
-            "type": "integer",
-            "format": "int32"
+            "$ref": "#/components/schemas/CompletionMode"
           },
           "daysOfWeekMask": {
             "type": "integer",
@@ -1202,6 +1260,30 @@
             "format": "date-time"
           }
         }
+      },
+      "HabitType": {
+        "type": "string",
+        "description": "",
+        "x-enumNames": [
+          "Start",
+          "Stop"
+        ],
+        "enum": [
+          "Start",
+          "Stop"
+        ]
+      },
+      "CompletionMode": {
+        "type": "string",
+        "description": "",
+        "x-enumNames": [
+          "Binary",
+          "Quantitative"
+        ],
+        "enum": [
+          "Binary",
+          "Quantitative"
+        ]
       },
       "HabitSortField": {
         "type": "string",
@@ -1241,12 +1323,10 @@
             "nullable": true
           },
           "type": {
-            "type": "integer",
-            "format": "byte"
+            "$ref": "#/components/schemas/HabitType"
           },
           "completionMode": {
-            "type": "integer",
-            "format": "byte"
+            "$ref": "#/components/schemas/CompletionMode"
           },
           "daysOfWeekMask": {
             "type": "integer",
@@ -1279,14 +1359,20 @@
             "nullable": true
           },
           "type": {
-            "type": "integer",
-            "format": "byte",
-            "nullable": true
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/HabitType"
+              }
+            ]
           },
           "completionMode": {
-            "type": "integer",
-            "format": "byte",
-            "nullable": true
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CompletionMode"
+              }
+            ]
           },
           "daysOfWeekMask": {
             "type": "integer",
@@ -1357,14 +1443,20 @@
             "nullable": true
           },
           "completionModeSnapshot": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/CompletionMode"
+              }
+            ]
           },
           "habitTypeSnapshot": {
-            "type": "integer",
-            "format": "int32",
-            "nullable": true
+            "nullable": true,
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/HabitType"
+              }
+            ]
           },
           "dailyScore": {
             "type": "number",

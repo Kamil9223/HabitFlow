@@ -3,6 +3,7 @@ using HabitFlow.Core.Common;
 using HabitFlow.Core.Features.Habits;
 using HabitFlow.Data;
 using HabitFlow.Data.Entities;
+using HabitFlow.Data.Enums;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
 
@@ -30,8 +31,8 @@ public class GetHabitsQueryHandlerTests
         {
             UserId = userId,
             Title = "Read books",
-            Type = 1,
-            CompletionMode = 2,
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Quantitative,
             DaysOfWeekMask = 127,
             TargetValue = 10,
             TargetUnit = "pages",
@@ -41,8 +42,8 @@ public class GetHabitsQueryHandlerTests
         {
             UserId = userId,
             Title = "Exercise",
-            Type = 1,
-            CompletionMode = 1,
+            Type = HabitType.Start,
+            CompletionMode = CompletionMode.Binary,
             DaysOfWeekMask = 85,
             TargetValue = 1,
             CreatedAtUtc = DateTime.UtcNow.AddDays(-1)
@@ -114,8 +115,8 @@ public class GetHabitsQueryHandlerTests
             {
                 UserId = userId,
                 Title = $"Habit {i}",
-                Type = 1,
-                CompletionMode = 1,
+                Type = HabitType.Start,
+                CompletionMode = CompletionMode.Binary,
                 DaysOfWeekMask = 127,
                 TargetValue = 1,
                 CreatedAtUtc = DateTime.UtcNow.AddDays(-i)
@@ -149,8 +150,8 @@ public class GetHabitsQueryHandlerTests
             {
                 UserId = userId,
                 Title = $"Habit {i}",
-                Type = 1,
-                CompletionMode = 1,
+                Type = HabitType.Start,
+                CompletionMode = CompletionMode.Binary,
                 DaysOfWeekMask = 127,
                 TargetValue = 1,
                 CreatedAtUtc = DateTime.UtcNow
@@ -179,14 +180,14 @@ public class GetHabitsQueryHandlerTests
         var userId = "user-123";
 
         context.Habits.AddRange(
-            new Habit { UserId = userId, Title = "Start habit 1", Type = 1, CompletionMode = 1, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow },
-            new Habit { UserId = userId, Title = "Stop habit 1", Type = 2, CompletionMode = 1, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow },
-            new Habit { UserId = userId, Title = "Start habit 2", Type = 1, CompletionMode = 1, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow }
+            new Habit { UserId = userId, Title = "Start habit 1", Type = HabitType.Start, CompletionMode = CompletionMode.Binary, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow },
+            new Habit { UserId = userId, Title = "Stop habit 1", Type = HabitType.Stop, CompletionMode = CompletionMode.Binary, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow },
+            new Habit { UserId = userId, Title = "Start habit 2", Type = HabitType.Start, CompletionMode = CompletionMode.Binary, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow }
         );
         await context.SaveChangesAsync();
 
         var handler = new GetHabitsQueryHandler(context);
-        var query = new GetHabitsQuery(userId, Type: 1);
+        var query = new GetHabitsQuery(userId, Type: HabitType.Start);
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -195,7 +196,7 @@ public class GetHabitsQueryHandlerTests
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
         Assert.Equal(2, result.Value.TotalCount);
-        Assert.All(result.Value.Items, h => Assert.Equal((byte)1, h.Type));
+        Assert.All(result.Value.Items, h => Assert.Equal(HabitType.Start, h.Type));
     }
 
     [Fact]
@@ -206,14 +207,13 @@ public class GetHabitsQueryHandlerTests
         var userId = "user-123";
 
         context.Habits.AddRange(
-            new Habit { UserId = userId, Title = "Binary habit", Type = 1, CompletionMode = 1, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow },
-            new Habit { UserId = userId, Title = "Quantitative habit", Type = 1, CompletionMode = 2, DaysOfWeekMask = 127, TargetValue = 10, CreatedAtUtc = DateTime.UtcNow },
-            new Habit { UserId = userId, Title = "Checklist habit", Type = 1, CompletionMode = 3, DaysOfWeekMask = 127, TargetValue = 5, CreatedAtUtc = DateTime.UtcNow }
+            new Habit { UserId = userId, Title = "Binary habit", Type = HabitType.Start, CompletionMode = CompletionMode.Binary, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow },
+            new Habit { UserId = userId, Title = "Quantitative habit", Type = HabitType.Start, CompletionMode = CompletionMode.Quantitative, DaysOfWeekMask = 127, TargetValue = 10, CreatedAtUtc = DateTime.UtcNow }
         );
         await context.SaveChangesAsync();
 
         var handler = new GetHabitsQueryHandler(context);
-        var query = new GetHabitsQuery(userId, CompletionMode: 2);
+        var query = new GetHabitsQuery(userId, CompletionMode: CompletionMode.Quantitative);
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -222,7 +222,7 @@ public class GetHabitsQueryHandlerTests
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.Value);
         Assert.Equal(1, result.Value.TotalCount);
-        Assert.Equal((byte)2, result.Value.Items[0].CompletionMode);
+        Assert.Equal(CompletionMode.Quantitative, result.Value.Items[0].CompletionMode);
     }
 
     [Fact]
@@ -234,9 +234,9 @@ public class GetHabitsQueryHandlerTests
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
         context.Habits.AddRange(
-            new Habit { UserId = userId, Title = "Active 1", Type = 1, CompletionMode = 1, DaysOfWeekMask = 127, TargetValue = 1, DeadlineDate = null, CreatedAtUtc = DateTime.UtcNow },
-            new Habit { UserId = userId, Title = "Active 2", Type = 1, CompletionMode = 1, DaysOfWeekMask = 127, TargetValue = 1, DeadlineDate = today.AddDays(10), CreatedAtUtc = DateTime.UtcNow },
-            new Habit { UserId = userId, Title = "Expired", Type = 1, CompletionMode = 1, DaysOfWeekMask = 127, TargetValue = 1, DeadlineDate = today.AddDays(-1), CreatedAtUtc = DateTime.UtcNow }
+            new Habit { UserId = userId, Title = "Active 1", Type = HabitType.Start, CompletionMode = CompletionMode.Binary, DaysOfWeekMask = 127, TargetValue = 1, DeadlineDate = null, CreatedAtUtc = DateTime.UtcNow },
+            new Habit { UserId = userId, Title = "Active 2", Type = HabitType.Start, CompletionMode = CompletionMode.Binary, DaysOfWeekMask = 127, TargetValue = 1, DeadlineDate = today.AddDays(10), CreatedAtUtc = DateTime.UtcNow },
+            new Habit { UserId = userId, Title = "Expired", Type = HabitType.Start, CompletionMode = CompletionMode.Binary, DaysOfWeekMask = 127, TargetValue = 1, DeadlineDate = today.AddDays(-1), CreatedAtUtc = DateTime.UtcNow }
         );
         await context.SaveChangesAsync();
 
@@ -263,9 +263,9 @@ public class GetHabitsQueryHandlerTests
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
         context.Habits.AddRange(
-            new Habit { UserId = userId, Title = "Active", Type = 1, CompletionMode = 1, DaysOfWeekMask = 127, TargetValue = 1, DeadlineDate = null, CreatedAtUtc = DateTime.UtcNow },
-            new Habit { UserId = userId, Title = "Expired 1", Type = 1, CompletionMode = 1, DaysOfWeekMask = 127, TargetValue = 1, DeadlineDate = today.AddDays(-1), CreatedAtUtc = DateTime.UtcNow },
-            new Habit { UserId = userId, Title = "Expired 2", Type = 1, CompletionMode = 1, DaysOfWeekMask = 127, TargetValue = 1, DeadlineDate = today.AddDays(-10), CreatedAtUtc = DateTime.UtcNow }
+            new Habit { UserId = userId, Title = "Active", Type = HabitType.Start, CompletionMode = CompletionMode.Binary, DaysOfWeekMask = 127, TargetValue = 1, DeadlineDate = null, CreatedAtUtc = DateTime.UtcNow },
+            new Habit { UserId = userId, Title = "Expired 1", Type = HabitType.Start, CompletionMode = CompletionMode.Binary, DaysOfWeekMask = 127, TargetValue = 1, DeadlineDate = today.AddDays(-1), CreatedAtUtc = DateTime.UtcNow },
+            new Habit { UserId = userId, Title = "Expired 2", Type = HabitType.Start, CompletionMode = CompletionMode.Binary, DaysOfWeekMask = 127, TargetValue = 1, DeadlineDate = today.AddDays(-10), CreatedAtUtc = DateTime.UtcNow }
         );
         await context.SaveChangesAsync();
 
@@ -291,9 +291,9 @@ public class GetHabitsQueryHandlerTests
         var userId = "user-123";
 
         context.Habits.AddRange(
-            new Habit { UserId = userId, Title = "Read books", Type = 1, CompletionMode = 1, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow },
-            new Habit { UserId = userId, Title = "Exercise daily", Type = 1, CompletionMode = 1, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow },
-            new Habit { UserId = userId, Title = "Write journal", Type = 1, CompletionMode = 1, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow }
+            new Habit { UserId = userId, Title = "Read books", Type = HabitType.Start, CompletionMode = CompletionMode.Binary, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow },
+            new Habit { UserId = userId, Title = "Exercise daily", Type = HabitType.Start, CompletionMode = CompletionMode.Binary, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow },
+            new Habit { UserId = userId, Title = "Write journal", Type = HabitType.Start, CompletionMode = CompletionMode.Binary, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow }
         );
         await context.SaveChangesAsync();
 
@@ -318,9 +318,9 @@ public class GetHabitsQueryHandlerTests
         var userId = "user-123";
 
         context.Habits.AddRange(
-            new Habit { UserId = userId, Title = "Zebra", Type = 1, CompletionMode = 1, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow },
-            new Habit { UserId = userId, Title = "Apple", Type = 1, CompletionMode = 1, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow },
-            new Habit { UserId = userId, Title = "Mango", Type = 1, CompletionMode = 1, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow }
+            new Habit { UserId = userId, Title = "Zebra", Type = HabitType.Start, CompletionMode = CompletionMode.Binary, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow },
+            new Habit { UserId = userId, Title = "Apple", Type = HabitType.Start, CompletionMode = CompletionMode.Binary, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow },
+            new Habit { UserId = userId, Title = "Mango", Type = HabitType.Start, CompletionMode = CompletionMode.Binary, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow }
         );
         await context.SaveChangesAsync();
 
@@ -347,9 +347,9 @@ public class GetHabitsQueryHandlerTests
         var userId = "user-123";
 
         context.Habits.AddRange(
-            new Habit { UserId = userId, Title = "Oldest", Type = 1, CompletionMode = 1, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow.AddDays(-10) },
-            new Habit { UserId = userId, Title = "Newest", Type = 1, CompletionMode = 1, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow },
-            new Habit { UserId = userId, Title = "Middle", Type = 1, CompletionMode = 1, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow.AddDays(-5) }
+            new Habit { UserId = userId, Title = "Oldest", Type = HabitType.Start, CompletionMode = CompletionMode.Binary, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow.AddDays(-10) },
+            new Habit { UserId = userId, Title = "Newest", Type = HabitType.Start, CompletionMode = CompletionMode.Binary, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow },
+            new Habit { UserId = userId, Title = "Middle", Type = HabitType.Start, CompletionMode = CompletionMode.Binary, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow.AddDays(-5) }
         );
         await context.SaveChangesAsync();
 
@@ -377,14 +377,14 @@ public class GetHabitsQueryHandlerTests
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
 
         context.Habits.AddRange(
-            new Habit { UserId = userId, Title = "Read Start", Type = 1, CompletionMode = 2, DaysOfWeekMask = 127, TargetValue = 10, DeadlineDate = today.AddDays(10), CreatedAtUtc = DateTime.UtcNow.AddDays(-2) },
-            new Habit { UserId = userId, Title = "Write Start", Type = 1, CompletionMode = 2, DaysOfWeekMask = 127, TargetValue = 5, DeadlineDate = today.AddDays(5), CreatedAtUtc = DateTime.UtcNow.AddDays(-1) },
-            new Habit { UserId = userId, Title = "Exercise Stop", Type = 2, CompletionMode = 2, DaysOfWeekMask = 127, TargetValue = 3, DeadlineDate = today.AddDays(20), CreatedAtUtc = DateTime.UtcNow }
+            new Habit { UserId = userId, Title = "Read Start", Type = HabitType.Start, CompletionMode = CompletionMode.Quantitative, DaysOfWeekMask = 127, TargetValue = 10, DeadlineDate = today.AddDays(10), CreatedAtUtc = DateTime.UtcNow.AddDays(-2) },
+            new Habit { UserId = userId, Title = "Write Start", Type = HabitType.Start, CompletionMode = CompletionMode.Quantitative, DaysOfWeekMask = 127, TargetValue = 5, DeadlineDate = today.AddDays(5), CreatedAtUtc = DateTime.UtcNow.AddDays(-1) },
+            new Habit { UserId = userId, Title = "Exercise Stop", Type = HabitType.Stop, CompletionMode = CompletionMode.Quantitative, DaysOfWeekMask = 127, TargetValue = 3, DeadlineDate = today.AddDays(20), CreatedAtUtc = DateTime.UtcNow }
         );
         await context.SaveChangesAsync();
 
         var handler = new GetHabitsQueryHandler(context);
-        var query = new GetHabitsQuery(userId, Type: 1, CompletionMode: 2, Active: true, SortField: HabitSortField.Title, SortDirection: SortDirection.Asc);
+        var query = new GetHabitsQuery(userId, Type: HabitType.Start, CompletionMode: CompletionMode.Quantitative, Active: true, SortField: HabitSortField.Title, SortDirection: SortDirection.Asc);
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -404,9 +404,9 @@ public class GetHabitsQueryHandlerTests
         await using var context = CreateInMemoryContext();
 
         context.Habits.AddRange(
-            new Habit { UserId = "user-123", Title = "User 123 Habit", Type = 1, CompletionMode = 1, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow },
-            new Habit { UserId = "user-456", Title = "User 456 Habit", Type = 1, CompletionMode = 1, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow },
-            new Habit { UserId = "user-123", Title = "Another User 123 Habit", Type = 1, CompletionMode = 1, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow }
+            new Habit { UserId = "user-123", Title = "User 123 Habit", Type = HabitType.Start, CompletionMode = CompletionMode.Binary, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow },
+            new Habit { UserId = "user-456", Title = "User 456 Habit", Type = HabitType.Start, CompletionMode = CompletionMode.Binary, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow },
+            new Habit { UserId = "user-123", Title = "Another User 123 Habit", Type = HabitType.Start, CompletionMode = CompletionMode.Binary, DaysOfWeekMask = 127, TargetValue = 1, CreatedAtUtc = DateTime.UtcNow }
         );
         await context.SaveChangesAsync();
 

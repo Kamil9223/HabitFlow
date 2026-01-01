@@ -58,5 +58,21 @@ public static class AuthEndpoints
             .Produces<MeResponse>(200)
             .Produces(401)
             .RequireAuthorization();
+
+        group.MapPost("/logout", () =>
+        {
+            // TODO: Get real UserId from authenticated user context
+            // TODO: Implement logout logic (invalidate token/session)
+            // For JWT: typically client-side token deletion
+            // For session-based: invalidate server session
+
+            return Results.NoContent();
+        })
+            .WithName("Logout")
+            .WithSummary("End user session")
+            .WithDescription("Invalidates current session/token. Client should discard stored tokens.")
+            .Produces(204)
+            .Produces(401)
+            .RequireAuthorization();
     }
 }

@@ -31,7 +31,7 @@ Główna tabela przechowująca nawyki użytkowników.
 | Title | nvarchar(80)   | NOT NULL | Tytuł nawyku |
 | Description | nvarchar(1000) | NULL | Opis nawyku |
 | Type | tinyint        | NOT NULL | Typ: 1 = Start (zacząć), 2 = Stop (przestać) |
-| CompletionMode | tinyint | NOT NULL | Sposób rozliczania: 1 = Binary (0/1), 2 = Quantitative (ilościowy), 3 = Checklist (zadania składowe, agregowane) |
+| CompletionMode | tinyint | NOT NULL | Sposób rozliczania: 1 = Binary (0/1), 2 = Quantitative (ilościowy) |
 | DaysOfWeekMask | tinyint        | NOT NULL, CHECK (DaysOfWeekMask BETWEEN 1 AND 127) | Maska dni tygodnia (bit 0=Pon, ..., bit 6=Niedz) |
 | TargetValue | smallint | NOT NULL, DEFAULT 1, CHECK (TargetValue BETWEEN 1 AND 1000) | Wartość docelowa na dzień (np. liczba stron/posiłków/zadań) |
 | TargetUnit | nvarchar(32) | NULL | Jednostka celu (np. 'pages', 'meals', 'tasks') – pole opisowe dla UI |
@@ -54,7 +54,7 @@ Tabela przechowująca dzienne check-iny dla nawyków.
 | LocalDate | date | NOT NULL | Data lokalna check-inu (wg strefy czasu użytkownika) |
 | ActualValue | int | NOT NULL | Rzeczywista wartość z dnia (np. przeczytane strony, liczba posiłków, liczba naruszeń) |
 | TargetValueSnapshot | smallint | NOT NULL | Snapshot Habits.TargetValue z momentu check-inu |
-| CompletionModeSnapshot | tinyint | NOT NULL | Snapshot CompletionMode (1=Binary, 2=Quantitative, 3=Checklist) |
+| CompletionModeSnapshot | tinyint | NOT NULL | Snapshot CompletionMode (1=Binary, 2=Quantitative) |
 | HabitTypeSnapshot | tinyint | NOT NULL | Snapshot Type z momentu check-inu (1=Start, 2=Stop) |
 | IsPlanned | bit | NOT NULL | Czy dzień był zaplanowany (wg DaysOfWeekMask) |
 | CreatedAtUtc | datetime2 | NOT NULL, DEFAULT GETUTCDATE() | Moment utworzenia check-inu (UTC) |
@@ -254,11 +254,11 @@ Następujące reguły **NIE są** implementowane na poziomie bazy danych (CHECK 
   - ActualValue (rzeczywisty wynik dnia),
   - TargetValueSnapshot (wartość docelowa z momentu check-inu),
   - HabitTypeSnapshot (1 = Start, 2 = Stop),
-  - CompletionModeSnapshot (1 = Binary, 2 = Quantitative, 3 = Checklist).
+  - CompletionModeSnapshot (1 = Binary, 2 = Quantitative).
 - Dla CompletionMode = Binary (1)
   - Zakres: ActualValue ∈ {0, 1}
   - Dzienny wkład: 'daily_score = (ActualValue > 0 ? 1.0 : 0.0)'
-- CompletionMode = Quantitative (2) lub Checklist (3)
+- CompletionMode = Quantitative (2)
   - Normalizacja:
   - ratio = ActualValue / TargetValueSnapshot
   - ratio_clamped = min(max(ratio, 0), 1)

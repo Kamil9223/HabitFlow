@@ -1,3 +1,5 @@
+using HabitFlow.Data.Enums;
+
 namespace HabitFlow.Data.Entities;
 
 /// <summary>
@@ -23,9 +25,9 @@ public class Notification
     public DateOnly LocalDate { get; set; }
 
     /// <summary>
-    /// Notification type: 1 = MissDue.
+    /// Notification type (e.g., MissDue).
     /// </summary>
-    public byte Type { get; set; }
+    public NotificationType Type { get; set; }
 
     /// <summary>
     /// Notification content (max 1024 characters).
@@ -33,9 +35,9 @@ public class Notification
     public string Content { get; set; } = null!;
 
     /// <summary>
-    /// AI generation status: 1=Success, 2=Fallback, 3=Error.
+    /// AI generation status: Success, Fallback, or Error.
     /// </summary>
-    public byte? AiStatus { get; set; }
+    public AiGenerationStatus? AiStatus { get; set; }
 
     /// <summary>
     /// AI error description (max 512 characters, for diagnostic purposes).
