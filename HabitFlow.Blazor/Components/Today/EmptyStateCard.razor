@@ -1,0 +1,25 @@
+﻿@* Karta stanu pustego, gdy brak zaplanowanych itemów *@
+
+<MudPaper Elevation="2" Class="pa-8 text-center">
+    <MudStack AlignItems="AlignItems.Center" Spacing="3">
+        <MudIcon Icon="@Icons.Material.Filled.EventAvailable" Size="Size.Large" Color="Color.Default" />
+        <MudText Typo="Typo.h6">@Message</MudText>
+        @if (!string.IsNullOrEmpty(ActionHref))
+        {
+            <MudButton 
+                Variant="Variant.Filled" 
+                Color="Color.Primary" 
+                Href="@ActionHref">
+                Utwórz nowy nawyk
+            </MudButton>
+        }
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Message { get; set; } = string.Empty;
+
+    [Parameter]
+    public string? ActionHref { get; set; }
+}

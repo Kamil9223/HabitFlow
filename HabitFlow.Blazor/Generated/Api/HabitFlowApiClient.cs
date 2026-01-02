@@ -105,11 +105,11 @@ namespace HabitFlow.Client
         System.Threading.Tasks.Task UpdateTimeZoneAsync(UpdateTimeZoneRequest request, System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedResponseOfHabitResponse> GetHabitsAsync(int? page, int? pageSize, byte? type, byte? completionMode, bool? active, string? search, HabitSortField? sortField, SortDirection? sortDirection);
+        System.Threading.Tasks.Task<PagedResponseOfHabitResponse> GetHabitsAsync(int? page, int? pageSize, HabitType? type, CompletionMode? completionMode, bool? active, string? search, HabitSortField? sortField, SortDirection? sortDirection);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<PagedResponseOfHabitResponse> GetHabitsAsync(int? page, int? pageSize, byte? type, byte? completionMode, bool? active, string? search, HabitSortField? sortField, SortDirection? sortDirection, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<PagedResponseOfHabitResponse> GetHabitsAsync(int? page, int? pageSize, HabitType? type, CompletionMode? completionMode, bool? active, string? search, HabitSortField? sortField, SortDirection? sortDirection, System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
         System.Threading.Tasks.Task<object> CreateHabitAsync(CreateHabitRequest request);
@@ -1213,14 +1213,14 @@ namespace HabitFlow.Client
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<PagedResponseOfHabitResponse> GetHabitsAsync(int? page, int? pageSize, byte? type, byte? completionMode, bool? active, string? search, HabitSortField? sortField, SortDirection? sortDirection)
+        public virtual System.Threading.Tasks.Task<PagedResponseOfHabitResponse> GetHabitsAsync(int? page, int? pageSize, HabitType? type, CompletionMode? completionMode, bool? active, string? search, HabitSortField? sortField, SortDirection? sortDirection)
         {
             return GetHabitsAsync(page, pageSize, type, completionMode, active, search, sortField, sortDirection, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<PagedResponseOfHabitResponse> GetHabitsAsync(int? page, int? pageSize, byte? type, byte? completionMode, bool? active, string? search, HabitSortField? sortField, SortDirection? sortDirection, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<PagedResponseOfHabitResponse> GetHabitsAsync(int? page, int? pageSize, HabitType? type, CompletionMode? completionMode, bool? active, string? search, HabitSortField? sortField, SortDirection? sortDirection, System.Threading.CancellationToken cancellationToken)
         {
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -2842,10 +2842,12 @@ namespace HabitFlow.Client
         public string? Description { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("type")]
-        public int Type { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
+        public HabitType Type { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("completionMode")]
-        public int CompletionMode { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
+        public CompletionMode CompletionMode { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("daysOfWeekMask")]
         public int DaysOfWeekMask { get; set; } = default!;
@@ -2862,6 +2864,30 @@ namespace HabitFlow.Client
 
         [System.Text.Json.Serialization.JsonPropertyName("createdAtUtc")]
         public System.DateTimeOffset CreatedAtUtc { get; set; } = default!;
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.2.0.0 (NJsonSchema v11.1.0.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum HabitType
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Start")]
+        Start = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Stop")]
+        Stop = 1,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.2.0.0 (NJsonSchema v11.1.0.0 (Newtonsoft.Json v13.0.0.0))")]
+    public enum CompletionMode
+    {
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Binary")]
+        Binary = 0,
+
+        [System.Runtime.Serialization.EnumMember(Value = @"Quantitative")]
+        Quantitative = 1,
 
     }
 
@@ -2903,10 +2929,12 @@ namespace HabitFlow.Client
         public string? Description { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("type")]
-        public byte Type { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
+        public HabitType Type { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("completionMode")]
-        public byte CompletionMode { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
+        public CompletionMode CompletionMode { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("daysOfWeekMask")]
         public byte DaysOfWeekMask { get; set; } = default!;
@@ -2934,10 +2962,12 @@ namespace HabitFlow.Client
         public string? Description { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("type")]
-        public byte? Type { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
+        public HabitType? Type { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("completionMode")]
-        public byte? CompletionMode { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
+        public CompletionMode? CompletionMode { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("daysOfWeekMask")]
         public byte? DaysOfWeekMask { get; set; } = default!;
@@ -2995,10 +3025,12 @@ namespace HabitFlow.Client
         public int? TargetValueSnapshot { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("completionModeSnapshot")]
-        public int? CompletionModeSnapshot { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
+        public CompletionMode? CompletionModeSnapshot { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("habitTypeSnapshot")]
-        public int? HabitTypeSnapshot { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
+        public HabitType? HabitTypeSnapshot { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("dailyScore")]
         public double DailyScore { get; set; } = default!;

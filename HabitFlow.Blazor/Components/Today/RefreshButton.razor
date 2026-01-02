@@ -1,0 +1,16 @@
+﻿@* Przycisk odświeżający dane *@
+
+<MudIconButton 
+    Icon="@Icons.Material.Filled.Refresh" 
+    Color="Color.Primary" 
+    OnClick="OnRefresh"
+    Disabled="IsBusy"
+    title="Odśwież dane" />
+
+@code {
+    [Parameter, EditorRequired]
+    public EventCallback OnRefresh { get; set; }
+
+    [Parameter]
+    public bool IsBusy { get; set; }
+}

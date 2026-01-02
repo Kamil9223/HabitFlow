@@ -1,11 +1,15 @@
 using HabitFlow.Blazor.Components;
 using HabitFlow.Client;
+using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// Add MudBlazor services
+builder.Services.AddMudServices();
 
 // Configure HttpClient for API
 var apiBaseUrl = builder.Configuration["Api:BaseUrl"]

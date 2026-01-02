@@ -1,0 +1,162 @@
+﻿@using HabitFlow.Client
+@using MudBlazor
+@* Modal do wprowadzenia wartości check-in i potwierdzenia zapisu *@
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.h6">@Item.Title</MudText>
+            
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                @GetCheckinPrompt()
+            </MudText>
+
+            @if (IsBinaryType())
+            {
+                <MudCheckBox @bind-Value="_isCompleted" 
+                             Label="Zrobione" 
+                             Color="Color.Primary" />
+            }
+            else
+            {
+                <MudNumericField @bind-Value="_actualValue"
+                                 Label="Wartość wykonana"
+                                 Variant="Variant.Outlined"
+                                 Min="0"
+                                 Max="Item.TargetValue"
+                                 HelperText="@($"Cel: {Item.TargetLabel}")"
+                                 Error="@_hasValidationError"
+                                 ErrorText="@_validationErrorMessage" />
+            }
+
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <MudAlert Severity="Severity.Error">@_errorMessage</MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" Variant="Variant.Text">Anuluj</MudButton>
+        <MudButton OnClick="Submit" 
+                   Variant="Variant.Filled" 
+                   Color="Color.Primary" 
+                   Disabled="_isSubmitting">
+            @(_isSubmitting ? "Zapisywanie..." : "Zapisz")
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter, EditorRequired]
+    public TodayChecklist.TodayItemVm Item { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public DateOnly LocalDate { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<CheckinResult> OnSubmit { get; set; }
+    
+    [Parameter, EditorRequired]
+    public EventCallback OnCancel { get; set; }
+
+    private int _actualValue;
+    private bool _isCompleted;
+    private bool _isSubmitting;
+    private bool _hasValidationError;
+    private string? _validationErrorMessage;
+    private string? _errorMessage;
+
+    protected override void OnInitialized()
+    {
+        if (IsBinaryType())
+        {
+            _isCompleted = false;
+        }
+        else
+        {
+            _actualValue = 0;
+        }
+    }
+
+    private bool IsBinaryType() => Item.Type == 0;
+
+    private string GetCheckinPrompt()
+    {
+        return IsBinaryType() 
+            ? "Czy wykonałeś ten nawyk dzisiaj?" 
+            : $"Ile udało Ci się wykonać? (cel: {Item.TargetLabel})";
+    }
+
+    private bool ValidateInput()
+    {
+        _hasValidationError = false;
+        _validationErrorMessage = null;
+
+        if (IsBinaryType())
+        {
+            return true;
+        }
+
+        if (_actualValue < 0)
+        {
+            _hasValidationError = true;
+            _validationErrorMessage = "Wartość nie może być ujemna";
+            return false;
+        }
+
+        if (_actualValue > Item.TargetValue)
+        {
+            _hasValidationError = true;
+            _validationErrorMessage = $"Wartość nie może przekraczać celu ({Item.TargetValue})";
+            return false;
+        }
+
+        return true;
+    }
+
+    private async Task Submit()
+    {
+        if (!ValidateInput())
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+        _errorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            var actualValue = IsBinaryType() ? (_isCompleted ? 1 : 0) : _actualValue;
+            
+            var result = new CheckinResult
+            {
+                Success = true,
+                ActualValue = actualValue
+            };
+
+            await OnSubmit.InvokeAsync(result);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+        }
+        finally
+        {
+            _isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task Cancel()
+    {
+        await OnCancel.InvokeAsync();
+    }
+
+    public class CheckinResult
+    {
+        public bool Success { get; set; }
+        public int ActualValue { get; set; }
+        public string? ErrorMessage { get; set; }
+    }
+}

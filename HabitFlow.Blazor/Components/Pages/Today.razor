@@ -1,0 +1,198 @@
+@page "/today"
+@using HabitFlow.Client
+@using HabitFlow.Blazor.Components.Today
+@using TodayItemVm = HabitFlow.Blazor.Components.Today.TodayChecklist.TodayItemVm
+@inject IHabitFlowApiClient ApiClient
+@inject IDialogService DialogService
+@rendermode InteractiveServer
+
+<PageTitle>Dzisiaj - HabitFlow</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    @if (_state.IsLoading)
+    {
+        <MudStack AlignItems="AlignItems.Center" Class="mt-8">
+            <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+            <MudText Typo="Typo.body1">Ładowanie...</MudText>
+        </MudStack>
+    }
+    else if (!string.IsNullOrEmpty(_state.ErrorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Class="mb-4">
+            @_state.ErrorMessage
+        </MudAlert>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadDataAsync">
+            Spróbuj ponownie
+        </MudButton>
+    }
+    else if (_state.Items.Count == 0)
+    {
+        <EmptyStateCard
+            Message="Brak zaplanowanych nawyków na dzisiaj"
+            ActionHref="/habits/new" />
+    }
+    else if (_state.Date.HasValue)
+    {
+        <MudStack Spacing="4">
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <TodayProgressHeader
+                    Date="_state.Date.Value"
+                    CompletedCount="_completedCount"
+                    TotalCount="_state.Items.Count" />
+                <RefreshButton OnRefresh="LoadDataAsync" IsBusy="_state.IsLoading" />
+            </MudStack>
+
+            <MudDivider />
+
+            <TodayChecklist Items="_state.Items" OnCheckin="OpenCheckinDialogAsync" />
+        </MudStack>
+    }
+</MudContainer>
+
+@code {
+    private TodayViewState _state = new();
+    private int _completedCount => _state.Items.Count(i => i.HasCheckin);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        _state.IsLoading = true;
+        _state.ErrorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            var response = await ApiClient.GetTodayAsync(null, CancellationToken.None);
+
+            _state.Date = DateOnly.FromDateTime(response.Date.DateTime);
+            _state.Items = response.Items.Select(MapToViewModel).ToList();
+        }
+        catch (ApiException ex)
+        {
+            _state.ErrorMessage = ex.StatusCode switch
+            {
+                401 => "Musisz się zalogować, aby zobaczyć swoje nawyki",
+                403 => "Brak dostępu do tych danych",
+                _ => "Wystąpił błąd podczas ładowania danych. Spróbuj ponownie."
+            };
+        }
+        catch (Exception)
+        {
+            _state.ErrorMessage = "Wystąpił problem z połączeniem. Sprawdź internet i spróbuj ponownie.";
+        }
+        finally
+        {
+            _state.IsLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private TodayItemVm MapToViewModel(TodayItem item)
+    {
+        var targetLabel = item.TargetUnit != null
+            ? $"{item.TargetValue} {item.TargetUnit}"
+            : item.TargetValue.ToString();
+
+        return new TodayItemVm
+        {
+            HabitId = item.HabitId,
+            Title = item.Title,
+            Type = item.Type,
+            CompletionMode = item.CompletionMode,
+            TargetValue = item.TargetValue,
+            TargetUnit = item.TargetUnit,
+            IsPlanned = item.IsPlanned,
+            HasCheckin = item.HasCheckin,
+            IsSubmitting = false,
+            TargetLabel = targetLabel
+        };
+    }
+
+    private async Task OpenCheckinDialogAsync(TodayItemVm item)
+    {
+        if (item.HasCheckin || item.IsSubmitting)
+        {
+            return;
+        }
+
+        var parameters = new DialogParameters
+        {
+            ["Item"] = item,
+            ["LocalDate"] = _state.Date!.Value,
+            ["OnSubmit"] = EventCallback.Factory.Create<CheckinDialog.CheckinResult>(this, 
+                async (result) => await HandleCheckinSubmitAsync(item, result)),
+            ["OnCancel"] = EventCallback.Factory.Create(this, () => { })
+        };
+
+        var options = new DialogOptions
+        {
+            CloseOnEscapeKey = true,
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+
+        var dialog = await DialogService.ShowAsync<CheckinDialog>("Check-in", parameters, options);
+        await dialog.Result;
+    }
+
+    private async Task HandleCheckinSubmitAsync(TodayItemVm item, CheckinDialog.CheckinResult result)
+    {
+        // Ustawienie stanu submitting
+        item.IsSubmitting = true;
+        StateHasChanged();
+
+        try
+        {
+            var request = new CreateCheckinRequest
+            {
+                LocalDate = new DateTimeOffset(_state.Date!.Value.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero),
+                ActualValue = result.ActualValue
+            };
+
+            await ApiClient.CreateCheckinAsync(item.HabitId, request, CancellationToken.None);
+
+            // Optymistyczna aktualizacja - oznacz jako wykonane
+            item.HasCheckin = true;
+            result.Success = true;
+        }
+        catch (ApiException ex)
+        {
+            result.Success = false;
+            result.ErrorMessage = ex.StatusCode switch
+            {
+                400 => "Niepoprawna wartość check-in",
+                401 => "Musisz się zalogować",
+                403 => "Brak dostępu do tego nawyku",
+                404 => "Nawyk nie istnieje",
+                409 => "Check-in dla tego dnia już istnieje",
+                422 => "Check-in niedozwolony (deadline, niezaplanowany lub ponad 7 dni wstecz)",
+                _ => "Wystąpił błąd podczas zapisywania. Spróbuj ponownie."
+            };
+            throw new Exception(result.ErrorMessage);
+        }
+        catch (Exception)
+        {
+            result.Success = false;
+            result.ErrorMessage = "Wystąpił problem z połączeniem. Sprawdź internet i spróbuj ponownie.";
+            throw;
+        }
+        finally
+        {
+            item.IsSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    // ViewModels
+    private class TodayViewState
+    {
+        public bool IsLoading { get; set; }
+        public string? ErrorMessage { get; set; }
+        public DateOnly? Date { get; set; }
+        public List<TodayItemVm> Items { get; set; } = new();
+    }
+}

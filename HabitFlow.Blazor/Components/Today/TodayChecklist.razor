@@ -1,0 +1,30 @@
+﻿@* Lista dzisiejszych itemów z akcją check-in *@
+
+<MudList T="string">
+    @foreach (var item in Items)
+    {
+        <TodayChecklistItem Item="item" OnCheckin="OnCheckin" />
+    }
+</MudList>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<TodayItemVm> Items { get; set; } = Array.Empty<TodayItemVm>();
+
+    [Parameter, EditorRequired]
+    public EventCallback<TodayItemVm> OnCheckin { get; set; }
+
+    public class TodayItemVm
+    {
+        public int HabitId { get; set; }
+        public string Title { get; set; } = string.Empty;
+        public int Type { get; set; }
+        public int CompletionMode { get; set; }
+        public int TargetValue { get; set; }
+        public string? TargetUnit { get; set; }
+        public bool IsPlanned { get; set; }
+        public bool HasCheckin { get; set; }
+        public bool IsSubmitting { get; set; }
+        public string TargetLabel { get; set; } = string.Empty;
+    }
+}

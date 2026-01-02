@@ -1,0 +1,21 @@
+﻿@* Nagłówek z lokalną datą i licznikiem postępu dnia (X/Y) *@
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+    <MudText Typo="Typo.h5">
+        @Date.ToString("dddd, d MMMM yyyy", new System.Globalization.CultureInfo("pl-PL"))
+    </MudText>
+    <MudChip T="string" Color="Color.Primary" Size="Size.Medium">
+        @CompletedCount / @TotalCount
+    </MudChip>
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired]
+    public DateOnly Date { get; set; }
+
+    [Parameter, EditorRequired]
+    public int CompletedCount { get; set; }
+
+    [Parameter, EditorRequired]
+    public int TotalCount { get; set; }
+}
