@@ -1492,12 +1492,10 @@
             "type": "string"
           },
           "type": {
-            "type": "integer",
-            "format": "int32"
+            "$ref": "#/components/schemas/HabitType"
           },
           "completionMode": {
-            "type": "integer",
-            "format": "int32"
+            "$ref": "#/components/schemas/CompletionMode"
           },
           "targetValue": {
             "type": "integer",
