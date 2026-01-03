@@ -3061,10 +3061,12 @@ namespace HabitFlow.Client
         public string Title { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("type")]
-        public int Type { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
+        public HabitType Type { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("completionMode")]
-        public int CompletionMode { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
+        public CompletionMode CompletionMode { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("targetValue")]
         public int TargetValue { get; set; } = default!;

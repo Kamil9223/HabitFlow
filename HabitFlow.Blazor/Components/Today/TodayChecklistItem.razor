@@ -34,6 +34,8 @@
 </MudListItem>
 <MudDivider />
 
+@using HabitFlow.Client
+
 @code {
     [Parameter, EditorRequired]
     public TodayChecklist.TodayItemVm Item { get; set; } = null!;
@@ -43,11 +45,10 @@
 
     private string GetTypeLabel()
     {
-        // Type: 0 = Binary, 1 = Quantitative (zgodnie z API)
         return Item.Type switch
         {
-            0 => "Tak/Nie",
-            1 => "Ilościowy",
+            HabitType.Start => "Tak/Nie",
+            HabitType.Stop => "Ilościowy",
             _ => "Nieznany"
         };
     }
