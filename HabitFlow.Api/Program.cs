@@ -2,6 +2,8 @@ using System.Text.Json.Serialization;
 using HabitFlow.Api.Endpoints;
 using HabitFlow.Core;
 using HabitFlow.Data;
+using HabitFlow.Data.Entities;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,7 +12,27 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<HabitFlowDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Add Core services (Command handlers, dispatchers)
+// Add Identity
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+{
+    // Password requirements
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequiredLength = 8;
+    options.Password.RequiredUniqueChars = 1;
+
+    // User settings
+    options.User.RequireUniqueEmail = true;
+
+    // Sign-in settings
+    options.SignIn.RequireConfirmedEmail = false; // Can be enabled later with email confirmation
+})
+.AddEntityFrameworkStores<HabitFlowDbContext>()
+.AddDefaultTokenProviders();
+
+// Add Core services (Command handlers, dispatchers, EmailSender)
 builder.Services.AddCore();
 
 // Configure JSON serialization (camelCase)

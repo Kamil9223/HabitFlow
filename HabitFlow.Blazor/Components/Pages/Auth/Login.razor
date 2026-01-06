@@ -1,0 +1,212 @@
+@page "/auth/login"
+@layout AuthLayout
+@using HabitFlow.Blazor.Components.Layout
+@using HabitFlow.Client
+@inject IHabitFlowApiClient ApiClient
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Logowanie - HabitFlow</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Elevation="3" Class="pa-6">
+        <MudStack Spacing="4">
+            <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true">
+                Witaj ponownie!
+            </MudText>
+
+            <MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Secondary">
+                Zaloguj się, aby kontynuować budowanie nawyków
+            </MudText>
+
+            @if (_showRegisteredMessage)
+            {
+                <MudAlert Severity="Severity.Success" Class="mb-2">
+                    Konto zostało utworzone! Sprawdź email, aby potwierdzić adres.
+                </MudAlert>
+            }
+
+            @if (!string.IsNullOrEmpty(_state.ErrorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Class="mb-2">
+                    @_state.ErrorMessage
+                </MudAlert>
+            }
+
+            <EditForm Model="_model" OnValidSubmit="HandleLoginAsync">
+                <DataAnnotationsValidator />
+
+                <MudStack Spacing="3">
+                    <MudTextField
+                        @bind-Value="_model.Email"
+                        Label="Email"
+                        Variant="Variant.Outlined"
+                        InputType="InputType.Email"
+                        Required="true"
+                        RequiredError="Email jest wymagany"
+                        Disabled="_state.IsSubmitting"
+                        Adornment="Adornment.Start"
+                        AdornmentIcon="@Icons.Material.Filled.Email" />
+
+                    <MudTextField
+                        @bind-Value="_model.Password"
+                        Label="Hasło"
+                        Variant="Variant.Outlined"
+                        InputType="@(_showPassword ? InputType.Text : InputType.Password)"
+                        Required="true"
+                        RequiredError="Hasło jest wymagane"
+                        Disabled="_state.IsSubmitting"
+                        Adornment="Adornment.End"
+                        AdornmentIcon="@(_showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                        OnAdornmentClick="TogglePasswordVisibility" />
+
+                    <MudStack Row="true" Justify="Justify.FlexEnd">
+                        <MudLink Href="/auth/forgot-password" Color="Color.Primary" Typo="Typo.body2">
+                            Zapomniałem hasła
+                        </MudLink>
+                    </MudStack>
+
+                    <MudButton
+                        ButtonType="ButtonType.Submit"
+                        Variant="Variant.Filled"
+                        Color="Color.Primary"
+                        FullWidth="true"
+                        Size="Size.Large"
+                        Disabled="_state.IsSubmitting">
+                        @if (_state.IsSubmitting)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>Logowanie...</span>
+                        }
+                        else
+                        {
+                            <span>Zaloguj się</span>
+                        }
+                    </MudButton>
+                </MudStack>
+            </EditForm>
+
+            <MudDivider Class="my-2" />
+
+            <MudText Typo="Typo.body2" Align="Align.Center">
+                Nie masz jeszcze konta?
+                <MudLink Href="/auth/register" Color="Color.Primary">Zarejestruj się</MudLink>
+            </MudText>
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private LoginFormModel _model = new();
+    private LoginState _state = new();
+    private bool _showPassword;
+    private bool _showRegisteredMessage;
+
+    protected override void OnInitialized()
+    {
+        // Check if user was redirected from registration
+        var uri = new Uri(Navigation.Uri);
+        var queryParams = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        _showRegisteredMessage = queryParams["registered"] == "true";
+    }
+
+    private void TogglePasswordVisibility() => _showPassword = !_showPassword;
+
+    private async Task HandleLoginAsync()
+    {
+        // Reset errors
+        _state.ErrorMessage = null;
+
+        // Client-side validation
+        if (!ValidateForm())
+        {
+            StateHasChanged();
+            return;
+        }
+
+        _state.IsSubmitting = true;
+        StateHasChanged();
+
+        try
+        {
+            var request = new LoginRequest
+            {
+                Email = _model.Email!,
+                Password = _model.Password!
+            };
+
+            var response = await ApiClient.LoginAsync(request, CancellationToken.None);
+
+            // Success - redirect to today page
+            Navigation.NavigateTo("/today", forceLoad: true);
+        }
+        catch (ApiException ex) when (ex.StatusCode == 401)
+        {
+            _state.ErrorMessage = "Nieprawidłowy email lub hasło.";
+        }
+        catch (ApiException ex) when (ex.StatusCode == 403)
+        {
+            _state.ErrorMessage = "Potwierdź swój adres email, aby się zalogować. Sprawdź skrzynkę pocztową.";
+        }
+        catch (ApiException ex) when (ex.StatusCode == 400)
+        {
+            _state.ErrorMessage = "Niepoprawne dane logowania.";
+        }
+        catch (ApiException)
+        {
+            _state.ErrorMessage = "Wystąpił błąd podczas logowania. Spróbuj ponownie później.";
+        }
+        catch (HttpRequestException ex)
+        {
+            _state.ErrorMessage = $"Nie można połączyć się z API: {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            _state.ErrorMessage = $"Wystąpił nieoczekiwany błąd: {ex.Message}";
+        }
+        finally
+        {
+            _state.IsSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private bool ValidateForm()
+    {
+        var isValid = true;
+
+        // Email validation
+        if (string.IsNullOrWhiteSpace(_model.Email))
+        {
+            _state.ErrorMessage = "Email jest wymagany";
+            isValid = false;
+        }
+        else if (!System.Text.RegularExpressions.Regex.IsMatch(_model.Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+        {
+            _state.ErrorMessage = "Niepoprawny format adresu email";
+            isValid = false;
+        }
+
+        // Password validation
+        if (string.IsNullOrWhiteSpace(_model.Password))
+        {
+            _state.ErrorMessage = "Hasło jest wymagane";
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
+    // ViewModels
+    private class LoginFormModel
+    {
+        public string? Email { get; set; }
+        public string? Password { get; set; }
+    }
+
+    private class LoginState
+    {
+        public bool IsSubmitting { get; set; }
+        public string? ErrorMessage { get; set; }
+    }
+}

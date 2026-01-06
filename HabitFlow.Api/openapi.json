@@ -123,47 +123,6 @@
         }
       }
     },
-    "/api/v1/auth/refresh": {
-      "post": {
-        "tags": [
-          "Auth"
-        ],
-        "operationId": "RefreshToken",
-        "requestBody": {
-          "x-name": "request",
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RefreshRequest"
-              }
-            }
-          },
-          "required": true,
-          "x-position": 1
-        },
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/RefreshResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": ""
-          },
-          "401": {
-            "description": ""
-          },
-          "409": {
-            "description": ""
-          }
-        }
-      }
-    },
     "/api/v1/auth/forgot-password": {
       "post": {
         "tags": [
@@ -259,31 +218,10 @@
         }
       }
     },
-    "/api/v1/profile": {
-      "get": {
+    "/api/v1/auth/delete-account": {
+      "post": {
         "tags": [
-          "Profile"
-        ],
-        "operationId": "GetProfile",
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProfileResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": ""
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Profile"
+          "Auth"
         ],
         "operationId": "DeleteAccount",
         "requestBody": {
@@ -304,6 +242,29 @@
           },
           "400": {
             "description": ""
+          },
+          "401": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/api/v1/profile": {
+      "get": {
+        "tags": [
+          "Profile"
+        ],
+        "operationId": "GetProfile",
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileResponse"
+                }
+              }
+            }
           },
           "401": {
             "description": ""
@@ -1045,6 +1006,10 @@
           },
           "password": {
             "type": "string"
+          },
+          "displayName": {
+            "type": "string",
+            "nullable": true
           }
         }
       },
@@ -1064,16 +1029,14 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "accessToken": {
+          "userId": {
             "type": "string"
           },
-          "expiresIn": {
-            "type": "integer",
-            "format": "int32"
+          "email": {
+            "type": "string"
           },
-          "refreshToken": {
-            "type": "string",
-            "nullable": true
+          "emailConfirmed": {
+            "type": "boolean"
           }
         }
       },
@@ -1085,32 +1048,6 @@
             "type": "string"
           },
           "password": {
-            "type": "string"
-          }
-        }
-      },
-      "RefreshResponse": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "accessToken": {
-            "type": "string"
-          },
-          "expiresIn": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "refreshToken": {
-            "type": "string",
-            "nullable": true
-          }
-        }
-      },
-      "RefreshRequest": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "refreshToken": {
             "type": "string"
           }
         }
@@ -1161,6 +1098,15 @@
           }
         }
       },
+      "DeleteAccountRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "confirmation": {
+            "type": "string"
+          }
+        }
+      },
       "ProfileResponse": {
         "type": "object",
         "additionalProperties": false,
@@ -1188,15 +1134,6 @@
         "additionalProperties": false,
         "properties": {
           "timeZoneId": {
-            "type": "string"
-          }
-        }
-      },
-      "DeleteAccountRequest": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "confirmation": {
             "type": "string"
           }
         }

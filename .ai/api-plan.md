@@ -18,7 +18,7 @@ Conventions:
 - Sorting: ?sort=createdAtUtc:desc (field:direction). Default sorts noted per endpoint.
 - Filtering: simple eq/in parameters where applicable.
 - Errors: RFC7807 ProblemDetails. Common statuses: 400, 401, 403, 404, 409, 422, 429, 500.
-- Security: All non-auth endpoints require Bearer JWT and enforce per-user isolation; DB session context is set per request to support RLS.
+- Security: All non-auth endpoints require authenticated cookie and enforce per-user isolation; DB session context is set per request to support RLS.
 
 ### 2.1 Auth
 
@@ -49,7 +49,7 @@ Conventions:
 - Errors: 400 (invalid token), 404 (user not found), 409 (already confirmed)
 
 3) POST /api/v1/auth/login
-- Description: Authenticate and issue JWT access (and refresh, if enabled).
+- Description: Authenticate and issue an auth cookie (server-managed session).
 - Request:
 {
   "email": "user@example.com",
@@ -57,27 +57,13 @@ Conventions:
 }
 - Response 200:
 {
-  "accessToken": "jwt-token",
-  "expiresIn": 3600,
-  "refreshToken": "optional-string"
+  "userId": "string",
+  "email": "user@example.com",
+  "emailConfirmed": true
 }
 - Errors: 400 (validation), 401 (invalid credentials), 403 (email not confirmed)
 
-4) POST /api/v1/auth/refresh
-- Description: Exchange refresh token for new access token (if refresh tokens are enabled).
-- Request:
-{
-  "refreshToken": "string"
-}
-- Response 200:
-{
-  "accessToken": "jwt-token",
-  "expiresIn": 3600,
-  "refreshToken": "optional-new"
-}
-- Errors: 400, 401 (invalid/expired), 409 (revoked)
-
-5) POST /api/v1/auth/forgot-password
+4) POST /api/v1/auth/forgot-password
 - Description: Send password reset link.
 - Request:
 {
@@ -86,7 +72,7 @@ Conventions:
 - Response 204 No Content
 - Errors: 400 (invalid email format)
 
-6) POST /api/v1/auth/reset-password
+5) POST /api/v1/auth/reset-password
 - Description: Reset password with token.
 - Request:
 {
@@ -97,7 +83,7 @@ Conventions:
 - Response 204 No Content
 - Errors: 400 (invalid token/policies)
 
-7) GET /api/v1/auth/me
+6) GET /api/v1/auth/me
 - Description: Return current user essentials for the app shell.
 - Response 200:
 {
@@ -109,8 +95,8 @@ Conventions:
 }
 - Errors: 401
 
-8) POST /api/v1/auth/logout
-- Description: Invalidate current session/token and end user session.
+7) POST /api/v1/auth/logout
+- Description: Invalidate current session/cookie and end user session.
 - Response 204 No Content
 - Errors: 401
 
@@ -431,14 +417,13 @@ Notes:
 
 ## 3. Authentication and Authorization
 
-- Mechanism: JWT Bearer tokens issued by ASP.NET Core Identity.
-- Token contents: sub (userId), email, emailConfirmed, iat, exp; optional roles (user).
-- Storage: Access token stored on client; refresh token (if used) is rotating and revocable.
+- Mechanism: Cookie-based authentication issued by ASP.NET Core Identity.
+- Storage: Session cookie managed by the server; no access/refresh tokens on the client in MVP.
 - Authorization:
-  - All /api/v1/** except /auth/** require Authorization: Bearer <token>.
+- All /api/v1/** except /auth/** require an authenticated cookie.
   - Per-request DB session context is set: EXEC sp_set_session_context @key=N'user_id', @value=@currentUserId, @read_only=1 to enforce row-level security (RLS) at the database layer.
-  - Ownership: Every resource access is filtered by currentUserId via RLS and application-level checks, returning 404 when accessing others’ resources.
-- CSRF: Not applicable for pure Bearer-based API; Blazor Server UI uses its own session model.
+  - Ownership: Every resource access is filtered by currentUserId via RLS and application-level checks, returning 404 when accessing others' resources.
+- CSRF: Cookie-based endpoints should use antiforgery protection and SameSite cookies.
 - Rate Limiting:
   - Default: 60 requests/min per client.
   - Auth endpoints: 10 requests/min per client.
@@ -617,7 +602,7 @@ Note: These are representative JSON contracts; server may include additional met
 
 - DB Row-Level Security (RLS): Per-connection session context sets user_id to authenticated user; the database filters/blocks cross-user access.
 - Application layer mirrors RLS with ownership checks and avoids exposing existence of foreign resources (404 preferred over 403 where appropriate).
-- Secrets: Email tokens and refresh tokens are short-lived and stored securely server-side (hashed) if rotation is used.
+- Secrets: Email tokens are short-lived and stored securely server-side (hashed).
 - Transport: HTTPS enforced; production with HSTS; cookie flags secure if cookies are used in the UI.
 
 ## 8. Rate Limiting and Abuse Mitigation
@@ -629,7 +614,7 @@ Note: These are representative JSON contracts; server may include additional met
 
 ## 9. Assumptions
 
-- API consumers will use Bearer JWT; Blazor Server UI may rely on a separate session, but the REST layer is token-based.
+- API consumers use cookie-based auth for MVP; the REST layer is not token-based.
 - Time zone identifiers follow IANA database; conversion is performed server-side for localDate logic.
 - For description, the API enforces <=280 chars to match PRD (DB allows longer, but API tightens the constraint).
 - Calendar and progress endpoints are read-only and computed in the application layer without DB views/TVFs in MVP.

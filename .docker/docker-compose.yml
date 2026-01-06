@@ -26,6 +26,16 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
+  smtp4dev:
+    image: rnwood/smtp4dev:latest
+    container_name: habitflow-smtp4dev
+    hostname: habitflow-smtp4dev
+    ports:
+      - "2525:25"
+      - "3000:80"
+    networks:
+      - habitflow-network
+    restart: unless-stopped
 
 volumes:
   mssql-data:

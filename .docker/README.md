@@ -111,3 +111,28 @@ Dla produkcji:
 - Skonfiguruj backupy
 - Włącz SSL/TLS
 - Ogranicz dostęp sieciowy
+
+## SMTP (lokalne testy maili)
+
+W docker-compose jest dodany lokalny serwer SMTP: smtp4dev.
+
+### Uruchomienie
+```bash
+cd .docker
+docker-compose up -d
+```
+
+### Dostep do UI
+- Web UI: http://localhost:3000
+- SMTP: localhost:2525
+
+### Logi
+```bash
+docker-compose logs -f smtp4dev
+```
+
+### User-secrets (opcjonalnie)
+W repo jest skrypt konfigurujacy user-secrets:
+```bash
+./dev-setup.ps1
+```

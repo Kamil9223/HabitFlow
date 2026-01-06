@@ -1,7 +1,7 @@
-﻿namespace HabitFlow.Api.Contracts.Auth;
+namespace HabitFlow.Api.Contracts.Auth;
 
 public record LoginResponse(
-    string AccessToken,
-    int ExpiresIn,
-    string? RefreshToken
+    string UserId,
+    string Email,
+    bool EmailConfirmed
 );

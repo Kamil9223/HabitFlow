@@ -27,6 +27,11 @@ public static class ResultHttpMapper
         {
             ErrorTitles.Conflict => Results.Conflict(),
             ErrorTitles.NotFound => Results.NotFound(),
+            ErrorTitles.Unauthorized => Results.Unauthorized(),
+            ErrorTitles.Forbidden => Results.Problem(
+                title: result.Error.Title,
+                detail: result.Error.Description,
+                statusCode: 403),
             _ => Results.Problem(statusCode: 500)
         };
     }
@@ -53,6 +58,11 @@ public static class ResultHttpMapper
         {
             ErrorTitles.Conflict => Results.Conflict(),
             ErrorTitles.NotFound => Results.NotFound(),
+            ErrorTitles.Unauthorized => Results.Unauthorized(),
+            ErrorTitles.Forbidden => Results.Problem(
+                title: result.Error.Title,
+                detail: result.Error.Description,
+                statusCode: 403),
             _ => Results.Problem(statusCode: 500)
         };
     }

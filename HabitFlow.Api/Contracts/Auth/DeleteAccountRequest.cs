@@ -1,3 +1,3 @@
-namespace HabitFlow.Api.Contracts.Profile;
+namespace HabitFlow.Api.Contracts.Auth;
 
 public record DeleteAccountRequest(string Confirmation);

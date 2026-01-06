@@ -58,6 +58,7 @@ The MVP focuses on simplicity and clarity, helping beginners easily adopt habit 
 
 - [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
 - [SQL Server 2022](https://www.microsoft.com/sql-server/sql-server-downloads) or SQL Server Express
+- Docker (optional, for local SQL Server and SMTP test inbox)
 - Git
 
 ### Installation
@@ -73,7 +74,13 @@ The MVP focuses on simplicity and clarity, helping beginners easily adopt habit 
    dotnet restore
    ```
 
-3. **Configure connection strings:**
+3. **Start local infrastructure (SQL Server + SMTP test inbox):**
+   ```bash
+   cd .docker
+   docker-compose up -d
+   ```
+
+4. **Configure connection strings:**
    - Update `appsettings.Development.json` in both `HabitFlow.Api/` and `HabitFlow.Blazor/` with your SQL Server connection string
    - For sensitive data, use `dotnet user-secrets`:
      ```bash
@@ -81,17 +88,40 @@ The MVP focuses on simplicity and clarity, helping beginners easily adopt habit 
      dotnet user-secrets set "ConnectionStrings:DefaultConnection" "your-connection-string"
      ```
 
-4. **Apply database migrations:**
+5. **Optional: run the dev setup script (user-secrets):**
+   ```bash
+   # from repo root
+   ./dev-setup.ps1
+   ```
+
+6. **Configure SMTP for local email testing:**
+   - `smtp4dev` is available at `http://localhost:3000`
+   - Use these settings in `HabitFlow.Api/appsettings.Development.json`:
+      - `Email:Smtp:Host = localhost`
+      - `Email:Smtp:Port = 2525`
+      - `Email:LinkBaseUrl = https://localhost:7231`
+      - `Email:FromEmail = no-reply@habitflow.local`
+     - `Email:FromName = HabitFlow`
+     - `App:BaseUrl = http://localhost:5000` (or your app URL)
+   - If you need credentials, set user-secrets:
+     ```bash
+     cd HabitFlow.Api
+     dotnet user-secrets init
+     dotnet user-secrets set "Email:Smtp:Username" "dev"
+     dotnet user-secrets set "Email:Smtp:Password" "dev"
+     ```
+
+7. **Apply database migrations:**
    ```bash
    dotnet ef database update --project HabitFlow.Api
    ```
 
-5. **Trust the HTTPS development certificate:**
+8. **Trust the HTTPS development certificate:**
    ```bash
    dotnet dev-certs https --trust
    ```
 
-6. **Run the application:**
+9. **Run the application:**
 
    **Option A:** Run API and Blazor app separately:
    ```bash
@@ -109,7 +139,7 @@ The MVP focuses on simplicity and clarity, helping beginners easily adopt habit 
    dotnet watch run --project HabitFlow.Blazor
    ```
 
-7. **Access the application:**
+10. **Access the application:**
    - Blazor app: `https://localhost:5001` (or port specified in launch settings)
    - API documentation (Development mode): `https://localhost:7001/swagger` (or port specified in launch settings)
 

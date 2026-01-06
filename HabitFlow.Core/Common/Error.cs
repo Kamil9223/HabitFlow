@@ -5,6 +5,8 @@ public static class ErrorTitles
     public const string ValidationError = "Validation Error";
     public const string NotFound = "Not Found";
     public const string Conflict = "Conflict";
+    public const string Unauthorized = "Unauthorized";
+    public const string Forbidden = "Forbidden";
 }
 
 /// <summary>
@@ -22,6 +24,12 @@ public record Error(string Code, string Title, string Description)
 
     public static Error Conflict(string code, string description) =>
         new(code, ErrorTitles.Conflict, description);
+
+    public static Error Unauthorized(string code, string description) =>
+        new(code, ErrorTitles.Unauthorized, description);
+
+    public static Error Forbidden(string code, string description) =>
+        new(code, ErrorTitles.Forbidden, description);
 
     public static Error Failure(string code, string description) =>
         new(code, "Failure", description);

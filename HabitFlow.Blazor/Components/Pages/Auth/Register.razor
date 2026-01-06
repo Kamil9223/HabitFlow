@@ -1,0 +1,286 @@
+@page "/auth/register"
+@layout AuthLayout
+@using HabitFlow.Blazor.Components.Layout
+@using HabitFlow.Client
+@inject IHabitFlowApiClient ApiClient
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Rejestracja - HabitFlow</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Elevation="3" Class="pa-6">
+        <MudStack Spacing="4">
+            <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true">
+                Utwórz konto
+            </MudText>
+
+            <MudText Typo="Typo.body2" Align="Align.Center" Color="Color.Secondary">
+                Zacznij budować dobre nawyki już dziś
+            </MudText>
+
+            @if (!string.IsNullOrEmpty(_state.ErrorMessage))
+            {
+                <MudAlert Severity="Severity.Error" Class="mb-2">
+                    @_state.ErrorMessage
+                </MudAlert>
+            }
+
+            @if (_state.ValidationErrors.Count > 0)
+            {
+                <MudAlert Severity="Severity.Warning" Class="mb-2">
+                    <ul class="ma-0 pl-4">
+                        @foreach (var error in _state.ValidationErrors)
+                        {
+                            <li>@error</li>
+                        }
+                    </ul>
+                </MudAlert>
+            }
+
+            <EditForm Model="_model" OnValidSubmit="HandleRegisterAsync">
+                <DataAnnotationsValidator />
+
+                <MudStack Spacing="3">
+                    <MudTextField
+                        @bind-Value="_model.Email"
+                        Label="Email"
+                        Variant="Variant.Outlined"
+                        InputType="InputType.Email"
+                        Required="true"
+                        RequiredError="Email jest wymagany"
+                        Disabled="_state.IsSubmitting"
+                        Adornment="Adornment.Start"
+                        AdornmentIcon="@Icons.Material.Filled.Email" />
+
+                    <MudTextField
+                        @bind-Value="_model.Password"
+                        Label="Hasło"
+                        Variant="Variant.Outlined"
+                        InputType="@(_showPassword ? InputType.Text : InputType.Password)"
+                        Required="true"
+                        RequiredError="Hasło jest wymagane"
+                        Disabled="_state.IsSubmitting"
+                        Adornment="Adornment.End"
+                        AdornmentIcon="@(_showPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                        OnAdornmentClick="TogglePasswordVisibility" />
+
+                    <MudText Typo="Typo.caption" Color="Color.Secondary">
+                        Hasło musi mieć minimum 8 znaków, zawierać wielką literę, małą literę i cyfrę
+                    </MudText>
+
+                    <MudTextField
+                        @bind-Value="_model.ConfirmPassword"
+                        Label="Potwierdź hasło"
+                        Variant="Variant.Outlined"
+                        InputType="@(_showConfirmPassword ? InputType.Text : InputType.Password)"
+                        Required="true"
+                        RequiredError="Potwierdzenie hasła jest wymagane"
+                        Disabled="_state.IsSubmitting"
+                        Adornment="Adornment.End"
+                        AdornmentIcon="@(_showConfirmPassword ? Icons.Material.Filled.VisibilityOff : Icons.Material.Filled.Visibility)"
+                        OnAdornmentClick="ToggleConfirmPasswordVisibility" />
+
+                    <MudTextField
+                        @bind-Value="_model.DisplayName"
+                        Label="Nazwa użytkownika (opcjonalnie)"
+                        Variant="Variant.Outlined"
+                        Disabled="_state.IsSubmitting"
+                        Adornment="Adornment.Start"
+                        AdornmentIcon="@Icons.Material.Filled.Person"
+                        HelperText="Jak chcesz być nazywany w aplikacji?" />
+
+                    <MudButton
+                        ButtonType="ButtonType.Submit"
+                        Variant="Variant.Filled"
+                        Color="Color.Primary"
+                        FullWidth="true"
+                        Size="Size.Large"
+                        Disabled="_state.IsSubmitting">
+                        @if (_state.IsSubmitting)
+                        {
+                            <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                            <span>Tworzenie konta...</span>
+                        }
+                        else
+                        {
+                            <span>Zarejestruj się</span>
+                        }
+                    </MudButton>
+                </MudStack>
+            </EditForm>
+
+            <MudDivider Class="my-2" />
+
+            <MudText Typo="Typo.body2" Align="Align.Center">
+                Masz już konto?
+                <MudLink Href="/auth/login" Color="Color.Primary">Zaloguj się</MudLink>
+            </MudText>
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private RegisterFormModel _model = new();
+    private RegisterState _state = new();
+    private bool _showPassword;
+    private bool _showConfirmPassword;
+
+    private void TogglePasswordVisibility() => _showPassword = !_showPassword;
+    private void ToggleConfirmPasswordVisibility() => _showConfirmPassword = !_showConfirmPassword;
+
+    private async Task HandleRegisterAsync()
+    {
+        // Reset errors
+        _state.ErrorMessage = null;
+        _state.ValidationErrors.Clear();
+
+        // Client-side validation
+        if (!ValidateForm())
+        {
+            StateHasChanged();
+            return;
+        }
+
+        _state.IsSubmitting = true;
+        StateHasChanged();
+
+        try
+        {
+            var request = new RegisterRequest
+            {
+                Email = _model.Email!,
+                Password = _model.Password!,
+                DisplayName = string.IsNullOrWhiteSpace(_model.DisplayName) ? null : _model.DisplayName
+            };
+
+            var response = await ApiClient.RegisterAsync(request, CancellationToken.None);
+
+            // Success - redirect to login page
+            Navigation.NavigateTo("/auth/login?registered=true");
+        }
+        catch (ApiException ex) when (ex.StatusCode == 400)
+        {
+            // Validation errors from server
+            if (ex.Response != null)
+            {
+                // Try to parse validation errors from ProblemDetails
+                _state.ValidationErrors.Add("Sprawdź poprawność danych i spróbuj ponownie.");
+            }
+            else
+            {
+                _state.ErrorMessage = "Niepoprawne dane. Sprawdź formularz i spróbuj ponownie.";
+            }
+        }
+        catch (ApiException ex) when (ex.StatusCode == 409)
+        {
+            _state.ErrorMessage = "Użytkownik z tym adresem email już istnieje.";
+        }
+        catch (ApiException ex) when (ex.StatusCode == 422)
+        {
+            _state.ValidationErrors.Add("Dane nie spełniają wymagań. Sprawdź wszystkie pola.");
+        }
+        catch (ApiException)
+        {
+            _state.ErrorMessage = "Wystąpił błąd podczas rejestracji. Spróbuj ponownie później.";
+        }
+        catch (HttpRequestException ex)
+        {
+            _state.ErrorMessage = $"Nie można połączyć się z API: {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            _state.ErrorMessage = $"Wystąpił nieoczekiwany błąd: {ex.Message}";
+        }
+        finally
+        {
+            _state.IsSubmitting = false;
+            StateHasChanged();
+        }
+    }
+
+    private bool ValidateForm()
+    {
+        var isValid = true;
+
+        // Email validation
+        if (string.IsNullOrWhiteSpace(_model.Email))
+        {
+            _state.ValidationErrors.Add("Email jest wymagany");
+            isValid = false;
+        }
+        else if (!System.Text.RegularExpressions.Regex.IsMatch(_model.Email, @"^[^@\s]+@[^@\s]+\.[^@\s]+$"))
+        {
+            _state.ValidationErrors.Add("Niepoprawny format adresu email");
+            isValid = false;
+        }
+
+        // Password validation
+        if (string.IsNullOrWhiteSpace(_model.Password))
+        {
+            _state.ValidationErrors.Add("Hasło jest wymagane");
+            isValid = false;
+        }
+        else
+        {
+            if (_model.Password.Length < 8)
+                _state.ValidationErrors.Add("Hasło musi mieć minimum 8 znaków");
+
+            if (!System.Text.RegularExpressions.Regex.IsMatch(_model.Password, @"[A-Z]"))
+                _state.ValidationErrors.Add("Hasło musi zawierać wielką literę");
+
+            if (!System.Text.RegularExpressions.Regex.IsMatch(_model.Password, @"[a-z]"))
+                _state.ValidationErrors.Add("Hasło musi zawierać małą literę");
+
+            if (!System.Text.RegularExpressions.Regex.IsMatch(_model.Password, @"\d"))
+                _state.ValidationErrors.Add("Hasło musi zawierać cyfrę");
+
+            isValid = isValid && _state.ValidationErrors.Count == 0;
+        }
+
+        // Confirm password validation
+        if (string.IsNullOrWhiteSpace(_model.ConfirmPassword))
+        {
+            _state.ValidationErrors.Add("Potwierdzenie hasła jest wymagane");
+            isValid = false;
+        }
+        else if (_model.Password != _model.ConfirmPassword)
+        {
+            _state.ValidationErrors.Add("Hasła muszą być identyczne");
+            isValid = false;
+        }
+
+        // Display name validation (optional)
+        if (!string.IsNullOrWhiteSpace(_model.DisplayName))
+        {
+            if (_model.DisplayName.Length < 2)
+            {
+                _state.ValidationErrors.Add("Nazwa użytkownika musi mieć minimum 2 znaki");
+                isValid = false;
+            }
+            else if (_model.DisplayName.Length > 50)
+            {
+                _state.ValidationErrors.Add("Nazwa użytkownika może mieć maksymalnie 50 znaków");
+                isValid = false;
+            }
+        }
+
+        return isValid;
+    }
+
+    // ViewModels
+    private class RegisterFormModel
+    {
+        public string? Email { get; set; }
+        public string? Password { get; set; }
+        public string? ConfirmPassword { get; set; }
+        public string? DisplayName { get; set; }
+    }
+
+    private class RegisterState
+    {
+        public bool IsSubmitting { get; set; }
+        public string? ErrorMessage { get; set; }
+        public List<string> ValidationErrors { get; set; } = new();
+    }
+}

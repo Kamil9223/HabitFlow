@@ -1,0 +1,129 @@
+@page "/auth/confirm-email"
+@layout AuthLayout
+@using HabitFlow.Blazor.Components.Layout
+@using HabitFlow.Client
+@using Microsoft.AspNetCore.WebUtilities
+@inject IHabitFlowApiClient ApiClient
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Potwierdzenie email - HabitFlow</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="mt-8">
+    <MudPaper Elevation="3" Class="pa-6">
+        <MudStack Spacing="4">
+            <MudText Typo="Typo.h4" Align="Align.Center" GutterBottom="true">
+                Potwierdzenie email
+            </MudText>
+
+            @if (_state.IsLoading)
+            {
+                <MudStack Spacing="2" AlignItems="AlignItems.Center">
+                    <MudProgressCircular Size="Size.Large" Indeterminate="true" />
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        Weryfikujemy link, prosze czekac...
+                    </MudText>
+                </MudStack>
+            }
+            else if (_state.IsSuccess)
+            {
+                <MudAlert Severity="Severity.Success" Class="mb-2">
+                    @_state.Message
+                </MudAlert>
+
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/auth/login">
+                    Przejdz do logowania
+                </MudButton>
+            }
+            else
+            {
+                <MudAlert Severity="Severity.Error" Class="mb-2">
+                    @_state.Message
+                </MudAlert>
+
+                <MudText Typo="Typo.body2">
+                    Jesli link wygasl, sprobuj ponownie zalozyc konto lub uzyc resetu hasla.
+                </MudText>
+
+                <MudStack Direction="Row" Spacing="2">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" Href="/auth/register">
+                        Rejestracja
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Primary" Href="/auth/login">
+                        Logowanie
+                    </MudButton>
+                </MudStack>
+            }
+        </MudStack>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    private ConfirmEmailState _state = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _state.IsLoading = true;
+
+        var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
+        var query = QueryHelpers.ParseQuery(uri.Query);
+
+        if (!query.TryGetValue("userId", out var userIdValues) ||
+            !query.TryGetValue("token", out var tokenValues) ||
+            string.IsNullOrWhiteSpace(userIdValues) ||
+            string.IsNullOrWhiteSpace(tokenValues))
+        {
+            _state.IsLoading = false;
+            _state.Message = "Brak wymaganych parametrow w linku potwierdzenia.";
+            return;
+        }
+
+        var request = new ConfirmEmailRequest
+        {
+            UserId = userIdValues.ToString(),
+            Token = tokenValues.ToString()
+        };
+
+        try
+        {
+            await ApiClient.ConfirmEmailAsync(request, CancellationToken.None);
+            _state.IsSuccess = true;
+            _state.Message = "Email zostal potwierdzony. Mozesz sie zalogowac.";
+        }
+        catch (ApiException ex) when (ex.StatusCode == 400)
+        {
+            _state.Message = "Link potwierdzenia jest nieprawidlowy lub wygasl.";
+        }
+        catch (ApiException ex) when (ex.StatusCode == 404)
+        {
+            _state.Message = "Nie znaleziono konta dla tego linku.";
+        }
+        catch (ApiException ex) when (ex.StatusCode == 409)
+        {
+            _state.Message = "Email byl juz potwierdzony. Mozesz sie zalogowac.";
+        }
+        catch (ApiException)
+        {
+            _state.Message = "Wystapil blad podczas potwierdzania emaila.";
+        }
+        catch (HttpRequestException ex)
+        {
+            _state.Message = $"Nie mozna polaczyc sie z API: {ex.Message}";
+        }
+        catch (Exception ex)
+        {
+            _state.Message = $"Wystapil nieoczekiwany blad: {ex.Message}";
+        }
+        finally
+        {
+            _state.IsLoading = false;
+        }
+    }
+
+    private sealed class ConfirmEmailState
+    {
+        public bool IsLoading { get; set; }
+        public bool IsSuccess { get; set; }
+        public string Message { get; set; } = "Weryfikujemy link potwierdzenia...";
+    }
+}
