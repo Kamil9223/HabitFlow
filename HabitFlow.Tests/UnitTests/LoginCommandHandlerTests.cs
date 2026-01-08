@@ -20,7 +20,8 @@ public class LoginCommandHandlerTests
                 Substitute.For<IUserClaimsPrincipalFactory<ApplicationUser>>(),
                 Substitute.For<Microsoft.Extensions.Options.IOptions<IdentityOptions>>(),
                 Substitute.For<Microsoft.Extensions.Logging.ILogger<SignInManager<ApplicationUser>>>(),
-                Substitute.For<Microsoft.AspNetCore.Authentication.IAuthenticationSchemeProvider>())
+                Substitute.For<Microsoft.AspNetCore.Authentication.IAuthenticationSchemeProvider>(),
+                Substitute.For<IUserConfirmation<ApplicationUser>>())
         {
         }
 

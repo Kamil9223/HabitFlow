@@ -94,14 +94,13 @@ public static class AuthEndpoints
             .Produces(401)
             .RequireAuthorization();
 
-        group.MapPost("/logout", () =>
+        group.MapPost("/logout", async (
+            ICommandDispatcher dispatcher,
+            CancellationToken cancellationToken) =>
         {
-            // TODO: Get real UserId from authenticated user context
-            // TODO: Implement logout logic (invalidate token/session)
-            // For JWT: typically client-side token deletion
-            // For session-based: invalidate server session
+            var result = await dispatcher.Dispatch(new LogoutCommand(), cancellationToken);
 
-            return Results.NoContent();
+            return result.ToHttpResult(Results.NoContent);
         })
             .WithName("Logout")
             .WithSummary("End user session")
