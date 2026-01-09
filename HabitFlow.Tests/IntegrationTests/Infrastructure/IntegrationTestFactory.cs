@@ -13,12 +13,19 @@ public sealed class IntegrationTestFactory(string connectionString)
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment("Development");
+        builder.UseEnvironment("Testing");
         builder.ConfigureAppConfiguration((_, config) =>
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["ConnectionStrings:DefaultConnection"] = _connectionString
+                ["ConnectionStrings:DefaultConnection"] = _connectionString,
+                ["Email:Smtp:Host"] = "localhost",
+                ["Email:Smtp:Port"] = "2525",
+                ["Email:Smtp:Username"] = "test",
+                ["Email:Smtp:Password"] = "test",
+                ["Email:FromEmail"] = "test@habitflow.test",
+                ["Email:FromName"] = "HabitFlow Test",
+                ["Email:Smtp:EnableSsl"] = "false"
             });
         });
     }

@@ -1,3 +1,5 @@
+using DotNet.Testcontainers.Builders;
+using DotNet.Testcontainers.Configurations;
 using Microsoft.Extensions.DependencyInjection;
 using HabitFlow.Data;
 using Microsoft.EntityFrameworkCore;
@@ -29,7 +31,7 @@ internal static class TestDatabase
 
             _container = new MsSqlBuilder()
                 .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
-                .WithPassword("Strong_password123!")
+                .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("SQL Server is now ready for client connections"))
                 .Build();
 
             await _container.StartAsync();
