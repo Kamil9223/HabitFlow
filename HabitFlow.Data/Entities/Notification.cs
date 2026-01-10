@@ -12,7 +12,7 @@ public class Notification
     /// <summary>
     /// Notification recipient identifier.
     /// </summary>
-    public string UserId { get; set; } = null!;
+    public Guid UserId { get; set; }
 
     /// <summary>
     /// Associated habit identifier.

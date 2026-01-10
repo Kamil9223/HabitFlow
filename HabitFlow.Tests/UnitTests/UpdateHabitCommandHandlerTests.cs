@@ -1,31 +1,39 @@
+using HabitFlow.Core.Abstractions.Services;
 using HabitFlow.Core.Features.Habits;
+using HabitFlow.Core.Services;
 using HabitFlow.Data;
 using HabitFlow.Data.Entities;
 using HabitFlow.Data.Enums;
 using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 using Xunit;
 
 namespace HabitFlow.Tests.UnitTests;
 
 public class UpdateHabitCommandHandlerTests
 {
-    private HabitFlowDbContext CreateInMemoryContext()
+    private readonly HabitFlowDbContext _dbContext;
+    private readonly ILoggedUserContext _userContext;
+    
+    private readonly Guid _userId = Guid.NewGuid();
+    public UpdateHabitCommandHandlerTests()
     {
         var options = new DbContextOptionsBuilder<HabitFlowDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
-
-        return new HabitFlowDbContext(options);
+        
+        _dbContext = new HabitFlowDbContext(options);
+        _userContext = Substitute.For<ILoggedUserContext>();
+        _userContext.GetUser().Returns(x => new CurrentUser(_userId, "UTC", "user-123@test.pl"));
     }
 
     [Fact]
     public async Task Handle_ValidCommand_UpdatesHabitAndReturnsId()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
         var habit = new Habit
         {
-            UserId = "user-123",
+            UserId = _userContext.GetUser().UserId,
             Title = "Old Title",
             Description = "Old Description",
             Type = HabitType.Start,
@@ -36,13 +44,12 @@ public class UpdateHabitCommandHandlerTests
             DeadlineDate = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(1)),
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.Add(habit);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new UpdateHabitCommandHandler(context);
+        var handler = new UpdateHabitCommandHandler(_dbContext, _userContext);
         var command = new UpdateHabitCommand(
             Id: habit.Id,
-            UserId: "user-123",
             Title: "New Title",
             Description: "New Description",
             Type: HabitType.Stop,
@@ -60,7 +67,7 @@ public class UpdateHabitCommandHandlerTests
         Assert.True(result.IsSuccess);
         Assert.Equal(habit.Id, result.Value);
 
-        var updatedHabit = await context.Habits.FindAsync(habit.Id);
+        var updatedHabit = await _dbContext.Habits.FindAsync(habit.Id);
         Assert.NotNull(updatedHabit);
         Assert.Equal("New Title", updatedHabit.Title);
         Assert.Equal("New Description", updatedHabit.Description);
@@ -75,10 +82,9 @@ public class UpdateHabitCommandHandlerTests
     public async Task Handle_PartialUpdate_UpdatesOnlyProvidedFields()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
         var habit = new Habit
         {
-            UserId = "user-123",
+            UserId = _userContext.GetUser().UserId,
             Title = "Original Title",
             Description = "Original Description",
             Type = HabitType.Start,
@@ -88,13 +94,12 @@ public class UpdateHabitCommandHandlerTests
             TargetUnit = "pages",
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.Add(habit);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new UpdateHabitCommandHandler(context);
+        var handler = new UpdateHabitCommandHandler(_dbContext, _userContext);
         var command = new UpdateHabitCommand(
             Id: habit.Id,
-            UserId: "user-123",
             Title: "Updated Title",
             Description: null,
             Type: null,
@@ -111,7 +116,7 @@ public class UpdateHabitCommandHandlerTests
         // Assert
         Assert.True(result.IsSuccess);
 
-        var updatedHabit = await context.Habits.FindAsync(habit.Id);
+        var updatedHabit = await _dbContext.Habits.FindAsync(habit.Id);
         Assert.NotNull(updatedHabit);
         Assert.Equal("Updated Title", updatedHabit.Title);
         Assert.Equal("Original Description", updatedHabit.Description); // Unchanged
@@ -123,10 +128,9 @@ public class UpdateHabitCommandHandlerTests
     public async Task Handle_ClearDeadlineDate_SetsDeadlineToNull()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
         var habit = new Habit
         {
-            UserId = "user-123",
+            UserId = _userContext.GetUser().UserId,
             Title = "Title",
             Type = HabitType.Start,
             CompletionMode = CompletionMode.Binary,
@@ -135,13 +139,12 @@ public class UpdateHabitCommandHandlerTests
             DeadlineDate = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(1)),
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.Add(habit);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new UpdateHabitCommandHandler(context);
+        var handler = new UpdateHabitCommandHandler(_dbContext, _userContext);
         var command = new UpdateHabitCommand(
             Id: habit.Id,
-            UserId: "user-123",
             Title: null,
             Description: null,
             Type: null,
@@ -158,7 +161,7 @@ public class UpdateHabitCommandHandlerTests
         // Assert
         Assert.True(result.IsSuccess);
 
-        var updatedHabit = await context.Habits.FindAsync(habit.Id);
+        var updatedHabit = await _dbContext.Habits.FindAsync(habit.Id);
         Assert.NotNull(updatedHabit);
         Assert.Null(updatedHabit.DeadlineDate);
     }
@@ -167,11 +170,9 @@ public class UpdateHabitCommandHandlerTests
     public async Task Handle_NonExistentHabit_ReturnsNotFoundError()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var handler = new UpdateHabitCommandHandler(context);
+        var handler = new UpdateHabitCommandHandler(_dbContext, _userContext);
         var command = new UpdateHabitCommand(
             Id: 999,
-            UserId: "user-123",
             Title: "New Title",
             Description: null,
             Type: null,
@@ -194,10 +195,9 @@ public class UpdateHabitCommandHandlerTests
     public async Task Handle_HabitBelongsToOtherUser_ReturnsNotFoundError()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
         var habit = new Habit
         {
-            UserId = "user-456", // Different user
+            UserId = Guid.NewGuid(), // Different user
             Title = "Title",
             Type = HabitType.Start,
             CompletionMode = CompletionMode.Binary,
@@ -205,13 +205,12 @@ public class UpdateHabitCommandHandlerTests
             TargetValue = 10,
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.Add(habit);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new UpdateHabitCommandHandler(context);
+        var handler = new UpdateHabitCommandHandler(_dbContext, _userContext);
         var command = new UpdateHabitCommand(
             Id: habit.Id,
-            UserId: "user-123", // Different user trying to update
             Title: "Hacked Title",
             Description: null,
             Type: null,
@@ -230,7 +229,7 @@ public class UpdateHabitCommandHandlerTests
         Assert.Equal("Habit.NotFound", result.Error.Code);
 
         // Verify habit was not modified
-        var unchangedHabit = await context.Habits.FindAsync(habit.Id);
+        var unchangedHabit = await _dbContext.Habits.FindAsync(habit.Id);
         Assert.NotNull(unchangedHabit);
         Assert.Equal("Title", unchangedHabit.Title);
     }
@@ -239,10 +238,9 @@ public class UpdateHabitCommandHandlerTests
     public async Task Handle_EmptyTitle_ReturnsValidationError()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
         var habit = new Habit
         {
-            UserId = "user-123",
+            UserId = Guid.NewGuid(),
             Title = "Original Title",
             Type = HabitType.Start,
             CompletionMode = CompletionMode.Binary,
@@ -250,13 +248,12 @@ public class UpdateHabitCommandHandlerTests
             TargetValue = 10,
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.Add(habit);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new UpdateHabitCommandHandler(context);
+        var handler = new UpdateHabitCommandHandler(_dbContext, _userContext);
         var command = new UpdateHabitCommand(
             Id: habit.Id,
-            UserId: "user-123",
             Title: "",
             Description: null,
             Type: null,
@@ -279,10 +276,9 @@ public class UpdateHabitCommandHandlerTests
     public async Task Handle_TitleTooLong_ReturnsValidationError()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
         var habit = new Habit
         {
-            UserId = "user-123",
+            UserId = Guid.NewGuid(),
             Title = "Original Title",
             Type = HabitType.Start,
             CompletionMode = CompletionMode.Binary,
@@ -290,13 +286,12 @@ public class UpdateHabitCommandHandlerTests
             TargetValue = 10,
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.Add(habit);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new UpdateHabitCommandHandler(context);
+        var handler = new UpdateHabitCommandHandler(_dbContext, _userContext);
         var command = new UpdateHabitCommand(
             Id: habit.Id,
-            UserId: "user-123",
             Title: new string('A', 81),
             Description: null,
             Type: null,
@@ -321,10 +316,9 @@ public class UpdateHabitCommandHandlerTests
     public async Task Handle_InvalidTargetValue_ReturnsValidationError(short invalidValue)
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
         var habit = new Habit
         {
-            UserId = "user-123",
+            UserId = Guid.NewGuid(),
             Title = "Title",
             Type = HabitType.Start,
             CompletionMode = CompletionMode.Binary,
@@ -332,13 +326,12 @@ public class UpdateHabitCommandHandlerTests
             TargetValue = 10,
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.Add(habit);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new UpdateHabitCommandHandler(context);
+        var handler = new UpdateHabitCommandHandler(_dbContext, _userContext);
         var command = new UpdateHabitCommand(
             Id: habit.Id,
-            UserId: "user-123",
             Title: null,
             Description: null,
             Type: null,
@@ -360,11 +353,10 @@ public class UpdateHabitCommandHandlerTests
     [Fact]
     public async Task Handle_DeadlineDateInPast_ReturnsValidationError()
     {
-        // Arrange
-        await using var context = CreateInMemoryContext();
+        // Arrange ;
         var habit = new Habit
         {
-            UserId = "user-123",
+            UserId = Guid.NewGuid(),
             Title = "Title",
             Type = HabitType.Start,
             CompletionMode = CompletionMode.Binary,
@@ -372,13 +364,12 @@ public class UpdateHabitCommandHandlerTests
             TargetValue = 10,
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.Add(habit);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new UpdateHabitCommandHandler(context);
+        var handler = new UpdateHabitCommandHandler(_dbContext, _userContext);
         var command = new UpdateHabitCommand(
             Id: habit.Id,
-            UserId: "user-123",
             Title: null,
             Description: null,
             Type: null,
@@ -401,10 +392,9 @@ public class UpdateHabitCommandHandlerTests
     public async Task Handle_DeadlineDateAndClearDeadlineBothSet_ReturnsValidationError()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
         var habit = new Habit
         {
-            UserId = "user-123",
+            UserId = Guid.NewGuid(),
             Title = "Title",
             Type = HabitType.Start,
             CompletionMode = CompletionMode.Binary,
@@ -412,13 +402,12 @@ public class UpdateHabitCommandHandlerTests
             TargetValue = 10,
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.Add(habit);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new UpdateHabitCommandHandler(context);
+        var handler = new UpdateHabitCommandHandler(_dbContext, _userContext);
         var command = new UpdateHabitCommand(
             Id: habit.Id,
-            UserId: "user-123",
             Title: null,
             Description: null,
             Type: null,

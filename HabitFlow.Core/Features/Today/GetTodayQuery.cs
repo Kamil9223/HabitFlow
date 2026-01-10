@@ -1,7 +1,9 @@
 using HabitFlow.Core.Abstractions;
+using HabitFlow.Core.Abstractions.Services;
 using HabitFlow.Core.Common;
 using HabitFlow.Data;
 using HabitFlow.Data.Enums;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
 namespace HabitFlow.Core.Features.Today;
@@ -10,7 +12,6 @@ namespace HabitFlow.Core.Features.Today;
 /// Query to retrieve today's planned items for a user, optionally for a specific local date.
 /// </summary>
 public record GetTodayQuery(
-    string UserId,
     DateOnly? Date
 ) : IQuery<Result<TodayDto>>;
 
@@ -39,25 +40,24 @@ public record TodayItemDto(
 /// <summary>
 /// Handler for retrieving today's planned items with check-in status.
 /// </summary>
-public class GetTodayQueryHandler(HabitFlowDbContext context)
+public class GetTodayQueryHandler(
+    HabitFlowDbContext context,
+    ILoggedUserContext loggedUserContext)
     : IQueryHandler<GetTodayQuery, Result<TodayDto>>
 {
     public async Task<Result<TodayDto>> Handle(GetTodayQuery query, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(query.UserId))
-            return Result.Failure<TodayDto>(
-                Error.Validation("User.InvalidId", "User ID is required."));
-
-        var targetDateResult = await ResolveTargetDate(query, cancellationToken);
+        var targetDateResult = await ResolveTargetDate(query);
         if (targetDateResult.IsFailure)
             return Result.Failure<TodayDto>(targetDateResult.Errors);
 
         var targetDate = targetDateResult.Value;
         var dayMask = GetDayMask(targetDate);
+        var loggedUser = loggedUserContext.GetUser();
 
         var items = await context.Habits
             .AsNoTracking()
-            .Where(h => h.UserId == query.UserId)
+            .Where(h => h.UserId == loggedUser.UserId)
             .Where(h => (h.DaysOfWeekMask & dayMask) != 0)
             .Select(h => new TodayItemDto(
                 h.Id,
@@ -69,7 +69,7 @@ public class GetTodayQueryHandler(HabitFlowDbContext context)
                 true,
                 context.Checkins.Any(c =>
                     c.HabitId == h.Id &&
-                    c.UserId == query.UserId &&
+                    c.UserId == loggedUser.UserId &&
                     c.LocalDate == targetDate)
             ))
             .ToListAsync(cancellationToken);
@@ -77,36 +77,32 @@ public class GetTodayQueryHandler(HabitFlowDbContext context)
         return Result.Success(new TodayDto(targetDate, items));
     }
 
-    private async Task<Result<DateOnly>> ResolveTargetDate(GetTodayQuery query, CancellationToken cancellationToken)
+    private Task<Result<DateOnly>> ResolveTargetDate(GetTodayQuery query)
     {
         if (query.Date.HasValue)
-            return Result.Success(query.Date.Value);
+            return Task.FromResult(Result.Success(query.Date.Value));
 
-        var timeZoneId = await context.Users
-            .AsNoTracking()
-            .Where(u => u.Id == query.UserId)
-            .Select(u => u.TimeZoneId)
-            .FirstOrDefaultAsync(cancellationToken);
+        var timeZoneId = loggedUserContext.GetUser().TimeZoneId;
 
         if (string.IsNullOrWhiteSpace(timeZoneId))
-            return Result.Failure<DateOnly>(
-                Error.Validation("User.TimeZoneMissing", "User time zone is required."));
+            return Task.FromResult(Result.Failure<DateOnly>(
+                Error.Validation("User.TimeZoneMissing", "User time zone is required.")));
 
         try
         {
             var timeZoneInfo = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
             var localNow = TimeZoneInfo.ConvertTime(DateTime.UtcNow, timeZoneInfo);
-            return Result.Success(DateOnly.FromDateTime(localNow));
+            return Task.FromResult(Result.Success(DateOnly.FromDateTime(localNow)));
         }
         catch (TimeZoneNotFoundException)
         {
-            return Result.Failure<DateOnly>(
-                Error.Validation("User.InvalidTimeZone", "User time zone is invalid."));
+            return Task.FromResult(Result.Failure<DateOnly>(
+                Error.Validation("User.InvalidTimeZone", "User time zone is invalid.")));
         }
         catch (InvalidTimeZoneException)
         {
-            return Result.Failure<DateOnly>(
-                Error.Validation("User.InvalidTimeZone", "User time zone is invalid."));
+            return Task.FromResult(Result.Failure<DateOnly>(
+                Error.Validation("User.InvalidTimeZone", "User time zone is invalid.")));
         }
     }
 

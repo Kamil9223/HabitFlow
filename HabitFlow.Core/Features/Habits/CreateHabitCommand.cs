@@ -1,4 +1,5 @@
 using HabitFlow.Core.Abstractions;
+using HabitFlow.Core.Abstractions.Services;
 using HabitFlow.Core.Common;
 using HabitFlow.Data;
 using HabitFlow.Data.Entities;
@@ -8,7 +9,6 @@ using Microsoft.EntityFrameworkCore;
 namespace HabitFlow.Core.Features.Habits;
 
 public record CreateHabitCommand(
-    string UserId,
     string Title,
     string? Description,
     HabitType Type,
@@ -19,7 +19,9 @@ public record CreateHabitCommand(
     DateOnly? DeadlineDate
 ) : ICommand<Result<int>>;
 
-public class CreateHabitCommandHandler(HabitFlowDbContext context)
+public class CreateHabitCommandHandler(
+    HabitFlowDbContext context,
+    ILoggedUserContext loggedUserContext)
     : ICommandHandler<CreateHabitCommand, Result<int>>
 {
     private const int MaxHabitsPerUser = 20;
@@ -30,11 +32,13 @@ public class CreateHabitCommandHandler(HabitFlowDbContext context)
         var validationErrors = CreateHabitValidator.Validate(command);
         if (validationErrors.Count > 0)
             return Result.Failure<int>(validationErrors);
+        
+        var user = loggedUserContext.GetUser();
 
         // Check habit limit for user
         var habitCount = await context.Habits
             .AsNoTracking()
-            .CountAsync(h => h.UserId == command.UserId, cancellationToken);
+            .CountAsync(h => h.UserId == user.UserId, cancellationToken);
 
         if (habitCount >= MaxHabitsPerUser)
             return Result.Failure<int>(
@@ -44,7 +48,7 @@ public class CreateHabitCommandHandler(HabitFlowDbContext context)
         // Create habit entity
         var habit = new Habit
         {
-            UserId = command.UserId,
+            UserId = user.UserId,
             Title = command.Title,
             Description = command.Description,
             Type = command.Type,

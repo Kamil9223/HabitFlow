@@ -18,10 +18,7 @@ public static class TodayEndpoints
             IQueryDispatcher dispatcher,
             CancellationToken cancellationToken) =>
         {
-            // TODO: Get real UserId from authenticated user context
-            var userId = "temp-user-id";
-
-            var query = new GetTodayQuery(userId, date);
+            var query = new GetTodayQuery(date);
             var result = await dispatcher.Dispatch(query, cancellationToken);
 
             return result.ToHttpResult(dto => Results.Ok(new TodayResponse(
@@ -38,8 +35,8 @@ public static class TodayEndpoints
                 )).ToList()
             )));
         })
-            .WithName("GetToday")
-            .Produces<TodayResponse>(200)
-            .Produces(401);
+        .WithName("GetToday")
+        .Produces<TodayResponse>(200)
+        .Produces(401);
     }
 }

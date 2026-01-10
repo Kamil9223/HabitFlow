@@ -1,4 +1,5 @@
 using HabitFlow.Core.Abstractions;
+using HabitFlow.Core.Abstractions.Services;
 using HabitFlow.Core.Common;
 using HabitFlow.Data;
 using HabitFlow.Data.Entities;
@@ -9,7 +10,6 @@ namespace HabitFlow.Core.Features.Habits;
 
 public record UpdateHabitCommand(
     int Id,
-    string UserId,
     string? Title,
     string? Description,
     HabitType? Type,
@@ -21,7 +21,9 @@ public record UpdateHabitCommand(
     bool ClearDeadlineDate
 ) : ICommand<Result<int>>;
 
-public class UpdateHabitCommandHandler(HabitFlowDbContext context)
+public class UpdateHabitCommandHandler(
+    HabitFlowDbContext context,
+    ILoggedUserContext loggedUserContext)
     : ICommandHandler<UpdateHabitCommand, Result<int>>
 {
     public async Task<Result<int>> Handle(UpdateHabitCommand command, CancellationToken cancellationToken)
@@ -30,10 +32,12 @@ public class UpdateHabitCommandHandler(HabitFlowDbContext context)
         var validationErrors = UpdateHabitValidator.Validate(command);
         if (validationErrors.Count > 0)
             return Result.Failure<int>(validationErrors);
+        
+        var user = loggedUserContext.GetUser();
 
         // Find habit by ID and UserId (ownership check)
         var habit = await context.Habits
-            .FirstOrDefaultAsync(h => h.Id == command.Id && h.UserId == command.UserId, cancellationToken);
+            .FirstOrDefaultAsync(h => h.Id == command.Id && h.UserId == user.UserId, cancellationToken);
 
         if (habit is null)
             return Result.Failure<int>(Error.NotFound("Habit.NotFound", "Habit not found."));

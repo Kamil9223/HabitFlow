@@ -5,7 +5,7 @@ namespace HabitFlow.Data.Entities;
 /// <summary>
 /// Extension of ASP.NET Core Identity user with domain-specific fields.
 /// </summary>
-public class ApplicationUser : IdentityUser
+public class ApplicationUser : IdentityUser<Guid>
 {
     /// <summary>
     /// User's timezone (IANA format, e.g., "Europe/Warsaw").

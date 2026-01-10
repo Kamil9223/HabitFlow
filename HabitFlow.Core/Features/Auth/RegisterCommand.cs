@@ -1,4 +1,5 @@
 using HabitFlow.Core.Abstractions;
+using HabitFlow.Core.Abstractions.Services;
 using HabitFlow.Core.Common;
 using HabitFlow.Data.Entities;
 using Microsoft.AspNetCore.Identity;
@@ -12,7 +13,7 @@ public record RegisterCommand(
 ) : ICommand<Result<RegisterResult>>;
 
 public record RegisterResult(
-    string UserId,
+    Guid UserId,
     string Email,
     bool EmailConfirmed
 );

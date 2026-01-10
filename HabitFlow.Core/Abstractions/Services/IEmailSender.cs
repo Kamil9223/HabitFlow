@@ -1,4 +1,4 @@
-namespace HabitFlow.Core.Abstractions;
+namespace HabitFlow.Core.Abstractions.Services;
 
 /// <summary>
 /// Interface for sending emails.

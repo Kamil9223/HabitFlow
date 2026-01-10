@@ -12,7 +12,7 @@ public class Habit
     /// <summary>
     /// Identifier of the habit owner.
     /// </summary>
-    public string UserId { get; set; } = null!;
+    public Guid UserId { get; set; }
 
     /// <summary>
     /// Habit title (max 80 characters).

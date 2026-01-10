@@ -1,32 +1,40 @@
+using HabitFlow.Core.Abstractions.Services;
 using HabitFlow.Core.Features.Habits;
+using HabitFlow.Core.Services;
 using HabitFlow.Data;
 using HabitFlow.Data.Entities;
 using HabitFlow.Data.Enums;
 using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 using Xunit;
 
 namespace HabitFlow.Tests.UnitTests;
 
 public class GetHabitQueryHandlerTests
 {
-    private HabitFlowDbContext CreateInMemoryContext()
+    private readonly HabitFlowDbContext _dbContext;
+    private readonly ILoggedUserContext _userContext;
+    
+    private readonly Guid _userId = Guid.NewGuid();
+    
+    public GetHabitQueryHandlerTests()
     {
         var options = new DbContextOptionsBuilder<HabitFlowDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
-
-        return new HabitFlowDbContext(options);
+        
+        _dbContext = new HabitFlowDbContext(options);
+        _userContext = Substitute.For<ILoggedUserContext>();
+        _userContext.GetUser().Returns(x => new CurrentUser(_userId, "UTC", "user-123@test.pl"));
     }
 
     [Fact]
     public async Task Handle_ValidQueryForExistingHabit_ReturnsSuccessWithHabitDto()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var userId = "user-123";
         var habit = new Habit
         {
-            UserId = userId,
+            UserId = _userId,
             Title = "Read books",
             Description = "Read 10 pages daily",
             Type = HabitType.Start,
@@ -37,11 +45,11 @@ public class GetHabitQueryHandlerTests
             DeadlineDate = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(1)),
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.Add(habit);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new GetHabitQueryHandler(context);
-        var query = new GetHabitQuery(habit.Id, userId);
+        var handler = new GetHabitQueryHandler(_dbContext, _userContext);
+        var query = new GetHabitQuery(habit.Id);
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -64,9 +72,8 @@ public class GetHabitQueryHandlerTests
     public async Task Handle_HabitDoesNotExist_ReturnsNotFoundError()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var handler = new GetHabitQueryHandler(context);
-        var query = new GetHabitQuery(999, "user-123");
+        var handler = new GetHabitQueryHandler(_dbContext, _userContext);
+        var query = new GetHabitQuery(999);
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -80,10 +87,9 @@ public class GetHabitQueryHandlerTests
     public async Task Handle_HabitBelongsToDifferentUser_ReturnsNotFoundError()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
         var habit = new Habit
         {
-            UserId = "user-123",
+            UserId = Guid.NewGuid(),
             Title = "Read books",
             Type = HabitType.Start,
             CompletionMode = CompletionMode.Binary,
@@ -91,11 +97,11 @@ public class GetHabitQueryHandlerTests
             TargetValue = 10,
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.Add(habit);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new GetHabitQueryHandler(context);
-        var query = new GetHabitQuery(habit.Id, "different-user");
+        var handler = new GetHabitQueryHandler(_dbContext, _userContext);
+        var query = new GetHabitQuery(habit.Id);
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -112,9 +118,8 @@ public class GetHabitQueryHandlerTests
     public async Task Handle_InvalidHabitId_ReturnsValidationError(int invalidId)
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var handler = new GetHabitQueryHandler(context);
-        var query = new GetHabitQuery(invalidId, "user-123");
+        var handler = new GetHabitQueryHandler(_dbContext, _userContext);
+        var query = new GetHabitQuery(invalidId);
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -124,34 +129,13 @@ public class GetHabitQueryHandlerTests
         Assert.Equal("Habit.InvalidId", result.Error.Code);
     }
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    [InlineData(null)]
-    public async Task Handle_InvalidUserId_ReturnsValidationError(string? invalidUserId)
-    {
-        // Arrange
-        await using var context = CreateInMemoryContext();
-        var handler = new GetHabitQueryHandler(context);
-        var query = new GetHabitQuery(1, invalidUserId!);
-
-        // Act
-        var result = await handler.Handle(query, CancellationToken.None);
-
-        // Assert
-        Assert.True(result.IsFailure);
-        Assert.Equal("User.InvalidId", result.Error.Code);
-    }
-
     [Fact]
     public async Task Handle_HabitWithMinimalFields_ReturnsSuccessWithNullOptionalFields()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var userId = "user-123";
         var habit = new Habit
         {
-            UserId = userId,
+            UserId = _userId,
             Title = "Simple habit",
             Description = null,
             Type = HabitType.Start,
@@ -162,11 +146,11 @@ public class GetHabitQueryHandlerTests
             DeadlineDate = null,
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.Add(habit);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new GetHabitQueryHandler(context);
-        var query = new GetHabitQuery(habit.Id, userId);
+        var handler = new GetHabitQueryHandler(_dbContext, _userContext);
+        var query = new GetHabitQuery(habit.Id);
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);
@@ -183,13 +167,10 @@ public class GetHabitQueryHandlerTests
     [Fact]
     public async Task Handle_MultipleHabitsForUser_ReturnsCorrectHabit()
     {
-        // Arrange
-        await using var context = CreateInMemoryContext();
-        var userId = "user-123";
-
+        // Arrange ;
         var habit1 = new Habit
         {
-            UserId = userId,
+            UserId = _userId,
             Title = "Habit 1",
             Type = HabitType.Start,
             CompletionMode = CompletionMode.Binary,
@@ -199,7 +180,7 @@ public class GetHabitQueryHandlerTests
         };
         var habit2 = new Habit
         {
-            UserId = userId,
+            UserId = _userId,
             Title = "Habit 2",
             Type = HabitType.Stop,
             CompletionMode = CompletionMode.Quantitative,
@@ -208,11 +189,11 @@ public class GetHabitQueryHandlerTests
             CreatedAtUtc = DateTime.UtcNow
         };
 
-        context.Habits.AddRange(habit1, habit2);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.AddRange(habit1, habit2);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new GetHabitQueryHandler(context);
-        var query = new GetHabitQuery(habit2.Id, userId);
+        var handler = new GetHabitQueryHandler(_dbContext, _userContext);
+        var query = new GetHabitQuery(habit2.Id);
 
         // Act
         var result = await handler.Handle(query, CancellationToken.None);

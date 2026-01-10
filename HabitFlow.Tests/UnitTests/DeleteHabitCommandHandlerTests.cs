@@ -1,32 +1,40 @@
+using HabitFlow.Core.Abstractions.Services;
 using HabitFlow.Core.Features.Habits;
+using HabitFlow.Core.Services;
 using HabitFlow.Data;
 using HabitFlow.Data.Entities;
 using HabitFlow.Data.Enums;
 using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 using Xunit;
 
 namespace HabitFlow.Tests.UnitTests;
 
 public class DeleteHabitCommandHandlerTests
 {
-    private HabitFlowDbContext CreateInMemoryContext()
+    private readonly HabitFlowDbContext _dbContext;
+    private readonly ILoggedUserContext _userContext;
+    
+    private readonly Guid _userId = Guid.NewGuid();
+    
+    public DeleteHabitCommandHandlerTests()
     {
         var options = new DbContextOptionsBuilder<HabitFlowDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
-
-        return new HabitFlowDbContext(options);
+        
+        _dbContext = new HabitFlowDbContext(options);
+        _userContext = NSubstitute.Substitute.For<ILoggedUserContext>();
+        _userContext.GetUser().Returns(x => new CurrentUser(_userId, "UTC", "user-123@test.pl"));
     }
 
     [Fact]
     public async Task Handle_ValidHabitId_ReturnsSuccessAndDeletesHabit()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var userId = "user-123";
         var habit = new Habit
         {
-            UserId = userId,
+            UserId = _userId,
             Title = "Read books",
             Type = HabitType.Start,
             CompletionMode = CompletionMode.Binary,
@@ -34,18 +42,18 @@ public class DeleteHabitCommandHandlerTests
             TargetValue = 1,
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.Add(habit);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new DeleteHabitCommandHandler(context);
-        var command = new DeleteHabitCommand(habit.Id, userId);
+        var handler = new DeleteHabitCommandHandler(_dbContext, _userContext);
+        var command = new DeleteHabitCommand(habit.Id);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
 
         // Assert
         Assert.True(result.IsSuccess);
-        var deletedHabit = await context.Habits.FirstOrDefaultAsync(h => h.Id == habit.Id);
+        var deletedHabit = await _dbContext.Habits.FirstOrDefaultAsync(h => h.Id == habit.Id);
         Assert.Null(deletedHabit);
     }
 
@@ -53,9 +61,8 @@ public class DeleteHabitCommandHandlerTests
     public async Task Handle_NonExistentHabitId_ReturnsNotFoundError()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var handler = new DeleteHabitCommandHandler(context);
-        var command = new DeleteHabitCommand(999, "user-123");
+        var handler = new DeleteHabitCommandHandler(_dbContext, _userContext);
+        var command = new DeleteHabitCommand(999);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -69,9 +76,8 @@ public class DeleteHabitCommandHandlerTests
     public async Task Handle_HabitBelongsToAnotherUser_ReturnsNotFoundError()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var ownerUserId = "user-123";
-        var otherUserId = "user-456";
+        var ownerUserId = Guid.NewGuid();
+        var otherUserId = Guid.NewGuid();
         var habit = new Habit
         {
             UserId = ownerUserId,
@@ -82,11 +88,11 @@ public class DeleteHabitCommandHandlerTests
             TargetValue = 1,
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.Add(habit);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new DeleteHabitCommandHandler(context);
-        var command = new DeleteHabitCommand(habit.Id, otherUserId);
+        var handler = new DeleteHabitCommandHandler(_dbContext, _userContext);
+        var command = new DeleteHabitCommand(habit.Id);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -96,7 +102,7 @@ public class DeleteHabitCommandHandlerTests
         Assert.Equal("Habit.NotFound", result.Error.Code);
 
         // Verify habit still exists
-        var stillExists = await context.Habits.AnyAsync(h => h.Id == habit.Id);
+        var stillExists = await _dbContext.Habits.AnyAsync(h => h.Id == habit.Id);
         Assert.True(stillExists);
     }
 
@@ -104,11 +110,9 @@ public class DeleteHabitCommandHandlerTests
     public async Task Handle_HabitWithCheckins_DeletesHabitAndCascadesCheckins()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var userId = "user-123";
         var habit = new Habit
         {
-            UserId = userId,
+            UserId = _userId,
             Title = "Read books",
             Type = HabitType.Start,
             CompletionMode = CompletionMode.Binary,
@@ -116,14 +120,14 @@ public class DeleteHabitCommandHandlerTests
             TargetValue = 10,
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.Add(habit);
+        await _dbContext.SaveChangesAsync();
 
         // Add checkins for the habit
         var checkin1 = new Checkin
         {
             HabitId = habit.Id,
-            UserId = userId,
+            UserId = _userId,
             LocalDate = DateOnly.FromDateTime(DateTime.UtcNow),
             ActualValue = 5,
             TargetValueSnapshot = 10,
@@ -135,7 +139,7 @@ public class DeleteHabitCommandHandlerTests
         var checkin2 = new Checkin
         {
             HabitId = habit.Id,
-            UserId = userId,
+            UserId = _userId,
             LocalDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)),
             ActualValue = 8,
             TargetValueSnapshot = 10,
@@ -144,11 +148,11 @@ public class DeleteHabitCommandHandlerTests
             IsPlanned = true,
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Checkins.AddRange(checkin1, checkin2);
-        await context.SaveChangesAsync();
+        _dbContext.Checkins.AddRange(checkin1, checkin2);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new DeleteHabitCommandHandler(context);
-        var command = new DeleteHabitCommand(habit.Id, userId);
+        var handler = new DeleteHabitCommandHandler(_dbContext, _userContext);
+        var command = new DeleteHabitCommand(habit.Id);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -157,11 +161,11 @@ public class DeleteHabitCommandHandlerTests
         Assert.True(result.IsSuccess);
 
         // Verify habit is deleted
-        var deletedHabit = await context.Habits.FirstOrDefaultAsync(h => h.Id == habit.Id);
+        var deletedHabit = await _dbContext.Habits.FirstOrDefaultAsync(h => h.Id == habit.Id);
         Assert.Null(deletedHabit);
 
         // Verify checkins are cascaded (deleted)
-        var remainingCheckins = await context.Checkins.Where(c => c.HabitId == habit.Id).ToListAsync();
+        var remainingCheckins = await _dbContext.Checkins.Where(c => c.HabitId == habit.Id).ToListAsync();
         Assert.Empty(remainingCheckins);
     }
 
@@ -169,11 +173,9 @@ public class DeleteHabitCommandHandlerTests
     public async Task Handle_HabitWithNotifications_DeletesHabitAndCascadesNotifications()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var userId = "user-123";
         var habit = new Habit
         {
-            UserId = userId,
+            UserId = _userId,
             Title = "Read books",
             Type = HabitType.Start,
             CompletionMode = CompletionMode.Binary,
@@ -181,13 +183,13 @@ public class DeleteHabitCommandHandlerTests
             TargetValue = 1,
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.Add(habit);
+        await _dbContext.SaveChangesAsync();
 
         // Add notifications for the habit
         var notification = new Notification
         {
-            UserId = userId,
+            UserId = _userId,
             HabitId = habit.Id,
             LocalDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(-1)),
             Type = NotificationType.MissDue,
@@ -195,11 +197,11 @@ public class DeleteHabitCommandHandlerTests
             AiStatus = AiGenerationStatus.Success,
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Notifications.Add(notification);
-        await context.SaveChangesAsync();
+        _dbContext.Notifications.Add(notification);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new DeleteHabitCommandHandler(context);
-        var command = new DeleteHabitCommand(habit.Id, userId);
+        var handler = new DeleteHabitCommandHandler(_dbContext, _userContext);
+        var command = new DeleteHabitCommand(habit.Id);
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -208,11 +210,11 @@ public class DeleteHabitCommandHandlerTests
         Assert.True(result.IsSuccess);
 
         // Verify habit is deleted
-        var deletedHabit = await context.Habits.FirstOrDefaultAsync(h => h.Id == habit.Id);
+        var deletedHabit = await _dbContext.Habits.FirstOrDefaultAsync(h => h.Id == habit.Id);
         Assert.Null(deletedHabit);
 
         // Verify notifications are cascaded (deleted)
-        var remainingNotifications = await context.Notifications.Where(n => n.HabitId == habit.Id).ToListAsync();
+        var remainingNotifications = await _dbContext.Notifications.Where(n => n.HabitId == habit.Id).ToListAsync();
         Assert.Empty(remainingNotifications);
     }
 }

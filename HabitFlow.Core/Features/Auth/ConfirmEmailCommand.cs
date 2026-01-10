@@ -11,7 +11,7 @@ public record ConfirmEmailCommand(
 ) : ICommand<Result<ConfirmEmailResult>>;
 
 public record ConfirmEmailResult(
-    string UserId,
+    Guid UserId,
     string Email,
     bool EmailConfirmed
 );

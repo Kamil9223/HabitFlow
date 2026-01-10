@@ -59,7 +59,7 @@ public class LoginCommandHandlerTests
 
         var user = new ApplicationUser
         {
-            Id = Guid.NewGuid().ToString(),
+            Id = Guid.NewGuid(),
             Email = "test@example.com",
             EmailConfirmed = true,
             UserName = "test@example.com"
@@ -111,7 +111,7 @@ public class LoginCommandHandlerTests
 
         var user = new ApplicationUser
         {
-            Id = Guid.NewGuid().ToString(),
+            Id = Guid.NewGuid(),
             Email = "test@example.com",
             EmailConfirmed = false,
             UserName = "test@example.com"
@@ -144,7 +144,7 @@ public class LoginCommandHandlerTests
 
         var user = new ApplicationUser
         {
-            Id = Guid.NewGuid().ToString(),
+            Id = Guid.NewGuid(),
             Email = "test@example.com",
             EmailConfirmed = true,
             UserName = "test@example.com"
@@ -218,7 +218,7 @@ public class LoginCommandHandlerTests
 
         var user = new ApplicationUser
         {
-            Id = Guid.NewGuid().ToString(),
+            Id = Guid.NewGuid(),
             Email = "test@example.com",
             EmailConfirmed = true,
             UserName = "test@example.com"

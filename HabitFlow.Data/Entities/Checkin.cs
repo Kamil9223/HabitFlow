@@ -17,7 +17,7 @@ public class Checkin
     /// <summary>
     /// User identifier (denormalized for RLS and performance).
     /// </summary>
-    public string UserId { get; set; } = null!;
+    public Guid UserId { get; set; }
 
     /// <summary>
     /// Local check-in date (according to user's timezone).

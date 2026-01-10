@@ -4,6 +4,7 @@
 @using TodayItemVm = HabitFlow.Blazor.Components.Today.TodayChecklist.TodayItemVm
 @inject IHabitFlowApiClient ApiClient
 @inject IDialogService DialogService
+@inject NavigationManager Navigation
 @rendermode InteractiveServer
 
 <PageTitle>Dzisiaj - HabitFlow</PageTitle>
@@ -27,9 +28,29 @@
     }
     else if (_state.Items.Count == 0)
     {
-        <EmptyStateCard
-            Message="Brak zaplanowanych nawyków na dzisiaj"
-            ActionHref="/habits/new" />
+        <MudPaper Class="pa-8 mt-4" Elevation="0">
+            <MudStack Spacing="4" AlignItems="AlignItems.Center">
+                <MudIcon Icon="@Icons.Material.Outlined.EventNote" 
+                         Size="Size.Large" 
+                         Color="Color.Default" 
+                         Style="font-size: 80px; opacity: 0.3;" />
+                
+                <MudText Typo="Typo.h5" Align="Align.Center">
+                    Brak zaplanowanych nawyków na dzisiaj
+                </MudText>
+                
+                <MudText Typo="Typo.body1" Align="Align.Center" Color="Color.Secondary" Style="max-width: 500px;">
+                    Nie masz jeszcze żadnych nawyków. Zacznij od stworzenia swojego pierwszego nawyku i zacznij budować lepsze przyzwyczajenia!
+                </MudText>
+                
+                <MudButton Variant="Variant.Filled" 
+                           Color="Color.Primary" 
+                           Href="/habits/new" 
+                           StartIcon="@Icons.Material.Filled.Add">
+                    Dodaj swój pierwszy nawyk
+                </MudButton>
+            </MudStack>
+        </MudPaper>
     }
     else if (_state.Date.HasValue)
     {
@@ -73,9 +94,15 @@
         }
         catch (ApiException ex)
         {
+            if (ex.StatusCode == 401)
+            {
+                // Redirect to login if not authenticated
+                Navigation.NavigateTo("/auth/login?returnUrl=/today", forceLoad: true);
+                return;
+            }
+            
             _state.ErrorMessage = ex.StatusCode switch
             {
-                401 => "Musisz się zalogować, aby zobaczyć swoje nawyki",
                 403 => "Brak dostępu do tych danych",
                 _ => "Wystąpił błąd podczas ładowania danych. Spróbuj ponownie."
             };

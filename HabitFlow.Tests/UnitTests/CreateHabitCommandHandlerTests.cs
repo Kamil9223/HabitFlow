@@ -1,31 +1,39 @@
+using HabitFlow.Core.Abstractions.Services;
 using HabitFlow.Core.Features.Habits;
+using HabitFlow.Core.Services;
 using HabitFlow.Data;
 using HabitFlow.Data.Entities;
 using HabitFlow.Data.Enums;
 using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 using Xunit;
 
 namespace HabitFlow.Tests.UnitTests;
 
 public class CreateHabitCommandHandlerTests
 {
-    private HabitFlowDbContext CreateInMemoryContext()
+    private readonly HabitFlowDbContext _dbContext;
+    private readonly ILoggedUserContext _userContext;
+    
+    private readonly Guid _userId = Guid.NewGuid();
+    
+    public CreateHabitCommandHandlerTests()
     {
         var options = new DbContextOptionsBuilder<HabitFlowDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
-
-        return new HabitFlowDbContext(options);
+        
+        _dbContext = new HabitFlowDbContext(options);
+        _userContext = NSubstitute.Substitute.For<ILoggedUserContext>();
+        _userContext.GetUser().Returns(x => new CurrentUser(_userId, "UTC", "user-123@test.pl"));
     }
 
     [Fact]
     public async Task Handle_ValidCommand_ReturnsSuccessWithHabitId()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var handler = new CreateHabitCommandHandler(context);
+        var handler = new CreateHabitCommandHandler(_dbContext, _userContext);
         var command = new CreateHabitCommand(
-            UserId: "user-123",
             Title: "Read books",
             Description: "Read 10 pages daily",
             Type: HabitType.Start,
@@ -42,20 +50,18 @@ public class CreateHabitCommandHandlerTests
         Assert.True(result.IsSuccess);
         Assert.True(result.Value > 0);
 
-        var habit = await context.Habits.FirstOrDefaultAsync(h => h.Id == result.Value);
+        var habit = await _dbContext.Habits.FirstOrDefaultAsync(h => h.Id == result.Value);
         Assert.NotNull(habit);
         Assert.Equal("Read books", habit.Title);
-        Assert.Equal("user-123", habit.UserId);
+        Assert.Equal(_userId, habit.UserId);
     }
 
     [Fact]
     public async Task Handle_EmptyTitle_ReturnsValidationError()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var handler = new CreateHabitCommandHandler(context);
+        var handler = new CreateHabitCommandHandler(_dbContext, _userContext);
         var command = new CreateHabitCommand(
-            UserId: "user-123",
             Title: "",
             Description: null,
             Type: HabitType.Start,
@@ -77,10 +83,8 @@ public class CreateHabitCommandHandlerTests
     public async Task Handle_TitleTooLong_ReturnsValidationError()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var handler = new CreateHabitCommandHandler(context);
+        var handler = new CreateHabitCommandHandler(_dbContext, _userContext);
         var command = new CreateHabitCommand(
-            UserId: "user-123",
             Title: new string('A', 81),
             Description: null,
             Type: HabitType.Start,
@@ -102,10 +106,8 @@ public class CreateHabitCommandHandlerTests
     public async Task Handle_DescriptionTooLong_ReturnsValidationError()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var handler = new CreateHabitCommandHandler(context);
+        var handler = new CreateHabitCommandHandler(_dbContext, _userContext);
         var command = new CreateHabitCommand(
-            UserId: "user-123",
             Title: "Valid Title",
             Description: new string('A', 281),
             Type: HabitType.Start,
@@ -129,10 +131,8 @@ public class CreateHabitCommandHandlerTests
     public async Task Handle_InvalidDaysOfWeekMask_ReturnsValidationError(byte invalidMask)
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var handler = new CreateHabitCommandHandler(context);
+        var handler = new CreateHabitCommandHandler(_dbContext, _userContext);
         var command = new CreateHabitCommand(
-            UserId: "user-123",
             Title: "Valid Title",
             Description: null,
             Type: HabitType.Start,
@@ -156,10 +156,8 @@ public class CreateHabitCommandHandlerTests
     public async Task Handle_InvalidTargetValue_ReturnsValidationError(short invalidValue)
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var handler = new CreateHabitCommandHandler(context);
+        var handler = new CreateHabitCommandHandler(_dbContext, _userContext);
         var command = new CreateHabitCommand(
-            UserId: "user-123",
             Title: "Valid Title",
             Description: null,
             Type: HabitType.Start,
@@ -181,10 +179,8 @@ public class CreateHabitCommandHandlerTests
     public async Task Handle_TargetUnitTooLong_ReturnsValidationError()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var handler = new CreateHabitCommandHandler(context);
+        var handler = new CreateHabitCommandHandler(_dbContext, _userContext);
         var command = new CreateHabitCommand(
-            UserId: "user-123",
             Title: "Valid Title",
             Description: null,
             Type: HabitType.Start,
@@ -206,10 +202,8 @@ public class CreateHabitCommandHandlerTests
     public async Task Handle_DeadlineDateInPast_ReturnsValidationError()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var handler = new CreateHabitCommandHandler(context);
+        var handler = new CreateHabitCommandHandler(_dbContext, _userContext);
         var command = new CreateHabitCommand(
-            UserId: "user-123",
             Title: "Valid Title",
             Description: null,
             Type: HabitType.Start,
@@ -231,15 +225,12 @@ public class CreateHabitCommandHandlerTests
     public async Task Handle_UserHas20Habits_ReturnsConflictError()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var userId = "user-123";
-
         // Seed 20 habits for the user
         for (int i = 1; i <= 20; i++)
         {
-            context.Habits.Add(new Habit
+            _dbContext.Habits.Add(new Habit
             {
-                UserId = userId,
+                UserId = _userId,
                 Title = $"Habit {i}",
                 Type = HabitType.Start,
                 CompletionMode = CompletionMode.Binary,
@@ -248,11 +239,10 @@ public class CreateHabitCommandHandlerTests
                 CreatedAtUtc = DateTime.UtcNow
             });
         }
-        await context.SaveChangesAsync();
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new CreateHabitCommandHandler(context);
+        var handler = new CreateHabitCommandHandler(_dbContext, _userContext);
         var command = new CreateHabitCommand(
-            UserId: userId,
             Title: "Habit 21",
             Description: null,
             Type: HabitType.Start,
@@ -274,15 +264,12 @@ public class CreateHabitCommandHandlerTests
     public async Task Handle_UserHas19Habits_SuccessfullyCreates20th()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var userId = "user-123";
-
         // Seed 19 habits for the user
         for (int i = 1; i <= 19; i++)
         {
-            context.Habits.Add(new Habit
+            _dbContext.Habits.Add(new Habit
             {
-                UserId = userId,
+                UserId = _userId,
                 Title = $"Habit {i}",
                 Type = HabitType.Start,
                 CompletionMode = CompletionMode.Binary,
@@ -291,11 +278,10 @@ public class CreateHabitCommandHandlerTests
                 CreatedAtUtc = DateTime.UtcNow
             });
         }
-        await context.SaveChangesAsync();
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new CreateHabitCommandHandler(context);
+        var handler = new CreateHabitCommandHandler(_dbContext, _userContext);
         var command = new CreateHabitCommand(
-            UserId: userId,
             Title: "Habit 20",
             Description: null,
             Type: HabitType.Start,
@@ -310,6 +296,6 @@ public class CreateHabitCommandHandlerTests
 
         // Assert
         Assert.True(result.IsSuccess);
-        Assert.Equal(20, await context.Habits.CountAsync(h => h.UserId == userId));
+        Assert.Equal(20, await _dbContext.Habits.CountAsync(h => h.UserId == _userContext.GetUser().UserId));
     }
 }

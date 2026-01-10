@@ -12,7 +12,17 @@
 
     <main>
         <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+                
+<!-- User menu will be added later when authentication state is properly configured -->
+                <MudButton Href="/auth/login" 
+                           Variant="Variant.Text" 
+                           Color="Color.Inherit"
+                           StartIcon="@Icons.Material.Filled.Login">
+                    Zaloguj się
+                </MudButton>
+            </div>
         </div>
 
         <article class="content px-4">

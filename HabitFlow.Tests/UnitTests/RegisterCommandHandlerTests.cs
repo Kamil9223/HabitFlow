@@ -1,4 +1,5 @@
 using HabitFlow.Core.Abstractions;
+using HabitFlow.Core.Abstractions.Services;
 using HabitFlow.Core.Features.Auth;
 using HabitFlow.Data.Entities;
 using Microsoft.AspNetCore.Identity;
@@ -36,7 +37,7 @@ public class RegisterCommandHandlerTests
             .Returns(callInfo =>
             {
                 var user = callInfo.ArgAt<ApplicationUser>(0);
-                user.Id = Guid.NewGuid().ToString();
+                user.Id = Guid.NewGuid();
                 return Task.FromResult(IdentityResult.Success);
             });
         userManager.GenerateEmailConfirmationTokenAsync(Arg.Any<ApplicationUser>())
@@ -77,7 +78,7 @@ public class RegisterCommandHandlerTests
             .Returns(callInfo =>
             {
                 var user = callInfo.ArgAt<ApplicationUser>(0);
-                user.Id = Guid.NewGuid().ToString();
+                user.Id = Guid.NewGuid();
                 return Task.FromResult(IdentityResult.Success);
             });
         userManager.GenerateEmailConfirmationTokenAsync(Arg.Any<ApplicationUser>())
@@ -154,7 +155,7 @@ public class RegisterCommandHandlerTests
 
         var existingUser = new ApplicationUser
         {
-            Id = Guid.NewGuid().ToString(),
+            Id = Guid.NewGuid(),
             Email = "test@example.com",
             UserName = "test@example.com",
             TimeZoneId = "UTC",
@@ -227,7 +228,7 @@ public class RegisterCommandHandlerTests
             .Returns(callInfo =>
             {
                 capturedUser = callInfo.ArgAt<ApplicationUser>(0);
-                capturedUser.Id = Guid.NewGuid().ToString();
+                capturedUser.Id = Guid.NewGuid();
                 return Task.FromResult(IdentityResult.Success);
             });
 

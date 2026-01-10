@@ -18,8 +18,7 @@ public class HabitConfiguration : IEntityTypeConfiguration<Habit>
 
         // UserId
         builder.Property(h => h.UserId)
-            .IsRequired()
-            .HasMaxLength(450);
+            .IsRequired();
 
         // Title
         builder.Property(h => h.Title)

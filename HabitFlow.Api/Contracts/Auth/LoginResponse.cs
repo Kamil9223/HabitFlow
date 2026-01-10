@@ -1,7 +1,7 @@
 namespace HabitFlow.Api.Contracts.Auth;
 
 public record LoginResponse(
-    string UserId,
+    Guid UserId,
     string Email,
     bool EmailConfirmed
 );

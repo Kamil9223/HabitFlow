@@ -1,8 +1,12 @@
+using HabitFlow.Core.Abstractions.Services;
 using HabitFlow.Core.Features.Today;
+using HabitFlow.Core.Services;
 using HabitFlow.Data;
 using HabitFlow.Data.Entities;
 using HabitFlow.Data.Enums;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 using Xunit;
 
 namespace HabitFlow.Tests.UnitTests;
@@ -22,7 +26,7 @@ public class GetTodayQueryHandlerTests
     public async Task Handle_WithDate_ReturnsPlannedItemsAndCheckinStatus()
     {
         await using var context = CreateInMemoryContext();
-        var userId = "user-123";
+        var userId = Guid.NewGuid();
         var date = new DateOnly(2025, 12, 7); // Sunday
         var plannedMask = GetDayMask(date);
 
@@ -72,8 +76,11 @@ public class GetTodayQueryHandlerTests
         });
         await context.SaveChangesAsync();
 
-        var handler = new GetTodayQueryHandler(context);
-        var result = await handler.Handle(new GetTodayQuery(userId, date), CancellationToken.None);
+        var loggedUserContext = Substitute.For<ILoggedUserContext>();
+        loggedUserContext.GetUser().Returns(new CurrentUser(userId, "UTC", "test@example.com"));
+
+        var handler = new GetTodayQueryHandler(context, loggedUserContext);
+        var result = await handler.Handle(new GetTodayQuery(date), CancellationToken.None);
 
         Assert.True(result.IsSuccess);
         Assert.Single(result.Value.Items);
@@ -85,7 +92,7 @@ public class GetTodayQueryHandlerTests
     public async Task Handle_WithoutDate_UsesUserTimeZone()
     {
         await using var context = CreateInMemoryContext();
-        var userId = "user-123";
+        var userId = Guid.NewGuid();
 
         context.Users.Add(new ApplicationUser
         {
@@ -107,35 +114,22 @@ public class GetTodayQueryHandlerTests
         await context.SaveChangesAsync();
 
         var before = DateOnly.FromDateTime(DateTime.UtcNow);
-        var handler = new GetTodayQueryHandler(context);
-        var result = await handler.Handle(new GetTodayQuery(userId, null), CancellationToken.None);
+        var loggedUserContext = Substitute.For<ILoggedUserContext>();
+        loggedUserContext.GetUser().Returns(new CurrentUser(userId, "UTC", "test@example.com"));
+
+        var handler = new GetTodayQueryHandler(context, loggedUserContext);
+        var result = await handler.Handle(new GetTodayQuery(null), CancellationToken.None);
         var after = DateOnly.FromDateTime(DateTime.UtcNow);
 
         Assert.True(result.IsSuccess);
         Assert.True(result.Value.Date == before || result.Value.Date == after);
     }
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    [InlineData(null)]
-    public async Task Handle_InvalidUserId_ReturnsValidationError(string? invalidUserId)
-    {
-        await using var context = CreateInMemoryContext();
-        var handler = new GetTodayQueryHandler(context);
-
-        var result = await handler.Handle(new GetTodayQuery(invalidUserId!, new DateOnly(2025, 12, 7)),
-            CancellationToken.None);
-
-        Assert.True(result.IsFailure);
-        Assert.Equal("User.InvalidId", result.Error.Code);
-    }
-
     [Fact]
     public async Task Handle_MissingTimeZone_ReturnsValidationError()
     {
         await using var context = CreateInMemoryContext();
-        var userId = "user-123";
+        var userId = Guid.NewGuid();
 
         context.Users.Add(new ApplicationUser
         {
@@ -145,8 +139,11 @@ public class GetTodayQueryHandlerTests
         });
         await context.SaveChangesAsync();
 
-        var handler = new GetTodayQueryHandler(context);
-        var result = await handler.Handle(new GetTodayQuery(userId, null), CancellationToken.None);
+        var loggedUserContext = Substitute.For<ILoggedUserContext>();
+        loggedUserContext.GetUser().Returns(new CurrentUser(userId, "", "test@example.com"));
+
+        var handler = new GetTodayQueryHandler(context, loggedUserContext);
+        var result = await handler.Handle(new GetTodayQuery(null), CancellationToken.None);
 
         Assert.True(result.IsFailure);
         Assert.Equal("User.TimeZoneMissing", result.Error.Code);
@@ -156,7 +153,7 @@ public class GetTodayQueryHandlerTests
     public async Task Handle_InvalidTimeZone_ReturnsValidationError()
     {
         await using var context = CreateInMemoryContext();
-        var userId = "user-123";
+        var userId = Guid.NewGuid();
 
         context.Users.Add(new ApplicationUser
         {
@@ -166,8 +163,11 @@ public class GetTodayQueryHandlerTests
         });
         await context.SaveChangesAsync();
 
-        var handler = new GetTodayQueryHandler(context);
-        var result = await handler.Handle(new GetTodayQuery(userId, null), CancellationToken.None);
+        var loggedUserContext = Substitute.For<ILoggedUserContext>();
+        loggedUserContext.GetUser().Returns(new CurrentUser(userId, "Invalid/Zone", "test@example.com"));
+
+        var handler = new GetTodayQueryHandler(context, loggedUserContext);
+        var result = await handler.Handle(new GetTodayQuery(null), CancellationToken.None);
 
         Assert.True(result.IsFailure);
         Assert.Equal("User.InvalidTimeZone", result.Error.Code);

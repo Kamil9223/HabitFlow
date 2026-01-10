@@ -1,4 +1,5 @@
 using HabitFlow.Core.Abstractions;
+using HabitFlow.Core.Abstractions.Services;
 using HabitFlow.Core.Common;
 using HabitFlow.Data;
 using HabitFlow.Data.Enums;
@@ -20,7 +21,6 @@ public enum HabitSortField
 /// Query to retrieve a paginated list of habits for a specific user with optional filters and sorting.
 /// </summary>
 public record GetHabitsQuery(
-    string UserId,
     int Page = 1,
     int PageSize = 20,
     HabitType? Type = null,
@@ -44,7 +44,9 @@ public record PagedHabitsDto(
 /// Applies filters for type, completionMode, active status, and text search.
 /// Supports sorting by CreatedAtUtc, Title, and DeadlineDate.
 /// </summary>
-public class GetHabitsQueryHandler(HabitFlowDbContext context)
+public class GetHabitsQueryHandler(
+    HabitFlowDbContext context,
+    ILoggedUserContext loggedUserContext)
     : IQueryHandler<GetHabitsQuery, Result<PagedHabitsDto>>
 {
     private const int MinPageSize = 1;
@@ -53,19 +55,16 @@ public class GetHabitsQueryHandler(HabitFlowDbContext context)
 
     public async Task<Result<PagedHabitsDto>> Handle(GetHabitsQuery query, CancellationToken cancellationToken)
     {
-        // Validate user ID
-        if (string.IsNullOrWhiteSpace(query.UserId))
-            return Result.Failure<PagedHabitsDto>(
-                Error.Validation("User.InvalidId", "User ID is required."));
-
         // Validate page and pageSize
         var pageSize = Math.Clamp(query.PageSize, MinPageSize, MaxPageSize);
         var page = Math.Max(query.Page, MinPage);
+        
+        var user = loggedUserContext.GetUser();
 
         // Build base query with user filter
         var habitsQuery = context.Habits
             .AsNoTracking()
-            .Where(h => h.UserId == query.UserId);
+            .Where(h => h.UserId == user.UserId);
 
         // Apply optional filters
         if (query.Type.HasValue)

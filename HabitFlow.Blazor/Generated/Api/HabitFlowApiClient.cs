@@ -2539,7 +2539,7 @@ namespace HabitFlow.Client
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("userId")]
-        public string UserId { get; set; } = default!;
+        public System.Guid UserId { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("email")]
         public string Email { get; set; } = default!;
@@ -2581,7 +2581,7 @@ namespace HabitFlow.Client
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("userId")]
-        public string UserId { get; set; } = default!;
+        public System.Guid UserId { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("email")]
         public string Email { get; set; } = default!;

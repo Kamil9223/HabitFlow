@@ -1,32 +1,40 @@
-﻿using HabitFlow.Core.Features.Habits;
+﻿using HabitFlow.Core.Abstractions.Services;
+using HabitFlow.Core.Features.Habits;
+using HabitFlow.Core.Services;
 using HabitFlow.Data;
 using HabitFlow.Data.Entities;
 using HabitFlow.Data.Enums;
 using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 using Xunit;
 
 namespace HabitFlow.Tests.UnitTests;
 
 public class GetHabitCalendarQueryHandlerTests
 {
-    private HabitFlowDbContext CreateInMemoryContext()
+    private readonly HabitFlowDbContext _dbContext;
+    private readonly ILoggedUserContext _userContext;
+    
+    private readonly Guid _userId = Guid.NewGuid();
+    
+    public GetHabitCalendarQueryHandlerTests()
     {
         var options = new DbContextOptionsBuilder<HabitFlowDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
-
-        return new HabitFlowDbContext(options);
+        
+        _dbContext = new HabitFlowDbContext(options);
+        _userContext = NSubstitute.Substitute.For<ILoggedUserContext>();
+        _userContext.GetUser().Returns(x => new CurrentUser(_userId, "UTC", "user-123@test.pl"));
     }
 
     [Fact]
     public async Task Handle_ValidQueryWithCheckins_ReturnsSuccessWithCalendarData()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var userId = "user-123";
         var habit = new Habit
         {
-            UserId = userId,
+            UserId = _userId,
             Title = "Read books",
             Type = HabitType.Start,
             CompletionMode = CompletionMode.Quantitative,
@@ -35,13 +43,13 @@ public class GetHabitCalendarQueryHandlerTests
             TargetUnit = "pages",
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.Add(habit);
+        await _dbContext.SaveChangesAsync();
 
         var checkin = new Checkin
         {
             HabitId = habit.Id,
-            UserId = userId,
+            UserId = _userId,
             LocalDate = new DateOnly(2025, 12, 15),
             ActualValue = 7,
             TargetValueSnapshot = 10,
@@ -50,13 +58,12 @@ public class GetHabitCalendarQueryHandlerTests
             IsPlanned = true,
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Checkins.Add(checkin);
-        await context.SaveChangesAsync();
+        _dbContext.Checkins.Add(checkin);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new GetHabitCalendarQueryHandler(context);
+        var handler = new GetHabitCalendarQueryHandler(_dbContext, _userContext);
         var query = new GetHabitCalendarQuery(
             habit.Id,
-            userId,
             new DateOnly(2025, 12, 15),
             new DateOnly(2025, 12, 15));
 
@@ -83,11 +90,9 @@ public class GetHabitCalendarQueryHandlerTests
     public async Task Handle_DateRangeWithoutCheckins_ReturnsEmptyDays()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var userId = "user-123";
         var habit = new Habit
         {
-            UserId = userId,
+            UserId = _userId,
             Title = "Exercise",
             Type = HabitType.Start,
             CompletionMode = CompletionMode.Binary,
@@ -95,13 +100,12 @@ public class GetHabitCalendarQueryHandlerTests
             TargetValue = 1,
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.Add(habit);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new GetHabitCalendarQueryHandler(context);
+        var handler = new GetHabitCalendarQueryHandler(_dbContext, _userContext);
         var query = new GetHabitCalendarQuery(
             habit.Id,
-            userId,
             new DateOnly(2025, 12, 1),
             new DateOnly(2025, 12, 3));
 
@@ -128,11 +132,9 @@ public class GetHabitCalendarQueryHandlerTests
     public async Task Handle_HabitWithSelectiveDays_CorrectlyMarksPlannedDays()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var userId = "user-123";
         var habit = new Habit
         {
-            UserId = userId,
+            UserId = _userId,
             Title = "Weekday habit",
             Type = HabitType.Start,
             CompletionMode = CompletionMode.Binary,
@@ -140,15 +142,14 @@ public class GetHabitCalendarQueryHandlerTests
             TargetValue = 1,
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.Add(habit);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new GetHabitCalendarQueryHandler(context);
+        var handler = new GetHabitCalendarQueryHandler(_dbContext, _userContext);
         // Using a known date range: Jan 6-12, 2025
         // Jan 6, 2025 is Monday
         var query = new GetHabitCalendarQuery(
             habit.Id,
-            userId,
             new DateOnly(2025, 1, 5), // Sunday
             new DateOnly(2025, 1, 11)); // Saturday
 
@@ -186,11 +187,9 @@ public class GetHabitCalendarQueryHandlerTests
     public async Task Handle_BinaryCompletionMode_CalculatesCorrectScore()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var userId = "user-123";
         var habit = new Habit
         {
-            UserId = userId,
+            UserId = _userId,
             Title = "Binary habit",
             Type = HabitType.Start,
             CompletionMode = CompletionMode.Binary,
@@ -198,13 +197,13 @@ public class GetHabitCalendarQueryHandlerTests
             TargetValue = 1,
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.Add(habit);
+        await _dbContext.SaveChangesAsync();
 
         var checkin1 = new Checkin
         {
             HabitId = habit.Id,
-            UserId = userId,
+            UserId = _userId,
             LocalDate = new DateOnly(2025, 12, 1),
             ActualValue = 1,
             TargetValueSnapshot = 1,
@@ -216,7 +215,7 @@ public class GetHabitCalendarQueryHandlerTests
         var checkin2 = new Checkin
         {
             HabitId = habit.Id,
-            UserId = userId,
+            UserId = _userId,
             LocalDate = new DateOnly(2025, 12, 2),
             ActualValue = 0,
             TargetValueSnapshot = 1,
@@ -225,13 +224,12 @@ public class GetHabitCalendarQueryHandlerTests
             IsPlanned = true,
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Checkins.AddRange(checkin1, checkin2);
-        await context.SaveChangesAsync();
+        _dbContext.Checkins.AddRange(checkin1, checkin2);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new GetHabitCalendarQueryHandler(context);
+        var handler = new GetHabitCalendarQueryHandler(_dbContext, _userContext);
         var query = new GetHabitCalendarQuery(
             habit.Id,
-            userId,
             new DateOnly(2025, 12, 1),
             new DateOnly(2025, 12, 2));
 
@@ -249,11 +247,9 @@ public class GetHabitCalendarQueryHandlerTests
     public async Task Handle_StopHabit_CalculatesInvertedScore()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var userId = "user-123";
         var habit = new Habit
         {
-            UserId = userId,
+            UserId = _userId,
             Title = "Stop habit",
             Type = HabitType.Stop,
             CompletionMode = CompletionMode.Quantitative, // Quantitative
@@ -261,13 +257,13 @@ public class GetHabitCalendarQueryHandlerTests
             TargetValue = 3, // Max 3 violations
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.Add(habit);
+        await _dbContext.SaveChangesAsync();
 
         var checkin1 = new Checkin
         {
             HabitId = habit.Id,
-            UserId = userId,
+            UserId = _userId,
             LocalDate = new DateOnly(2025, 12, 1),
             ActualValue = 0, // Perfect (no violations)
             TargetValueSnapshot = 3,
@@ -279,7 +275,7 @@ public class GetHabitCalendarQueryHandlerTests
         var checkin2 = new Checkin
         {
             HabitId = habit.Id,
-            UserId = userId,
+            UserId = _userId,
             LocalDate = new DateOnly(2025, 12, 2),
             ActualValue = 3, // Max violations
             TargetValueSnapshot = 3,
@@ -291,7 +287,7 @@ public class GetHabitCalendarQueryHandlerTests
         var checkin3 = new Checkin
         {
             HabitId = habit.Id,
-            UserId = userId,
+            UserId = _userId,
             LocalDate = new DateOnly(2025, 12, 3),
             ActualValue = 1, // 1 violation out of 3
             TargetValueSnapshot = 3,
@@ -300,13 +296,12 @@ public class GetHabitCalendarQueryHandlerTests
             IsPlanned = true,
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Checkins.AddRange(checkin1, checkin2, checkin3);
-        await context.SaveChangesAsync();
+        _dbContext.Checkins.AddRange(checkin1, checkin2, checkin3);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new GetHabitCalendarQueryHandler(context);
+        var handler = new GetHabitCalendarQueryHandler(_dbContext, _userContext);
         var query = new GetHabitCalendarQuery(
             habit.Id,
-            userId,
             new DateOnly(2025, 12, 1),
             new DateOnly(2025, 12, 3));
 
@@ -325,11 +320,9 @@ public class GetHabitCalendarQueryHandlerTests
     public async Task Handle_HabitNotFound_ReturnsNotFoundError()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var handler = new GetHabitCalendarQueryHandler(context);
+        var handler = new GetHabitCalendarQueryHandler(_dbContext, _userContext);
         var query = new GetHabitCalendarQuery(
             999,
-            "user-123",
             new DateOnly(2025, 12, 1),
             new DateOnly(2025, 12, 31));
 
@@ -345,10 +338,8 @@ public class GetHabitCalendarQueryHandlerTests
     public async Task Handle_HabitBelongsToDifferentUser_ReturnsNotFoundError()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
         var habit = new Habit
         {
-            UserId = "user-123",
             Title = "Test habit",
             Type = HabitType.Start,
             CompletionMode = CompletionMode.Binary,
@@ -356,13 +347,12 @@ public class GetHabitCalendarQueryHandlerTests
             TargetValue = 1,
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.Add(habit);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new GetHabitCalendarQueryHandler(context);
+        var handler = new GetHabitCalendarQueryHandler(_dbContext, _userContext);
         var query = new GetHabitCalendarQuery(
             habit.Id,
-            "different-user",
             new DateOnly(2025, 12, 1),
             new DateOnly(2025, 12, 31));
 
@@ -381,11 +371,9 @@ public class GetHabitCalendarQueryHandlerTests
     public async Task Handle_InvalidHabitId_ReturnsValidationError(int invalidId)
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var handler = new GetHabitCalendarQueryHandler(context);
+        var handler = new GetHabitCalendarQueryHandler(_dbContext, _userContext);
         var query = new GetHabitCalendarQuery(
             invalidId,
-            "user-123",
             new DateOnly(2025, 12, 1),
             new DateOnly(2025, 12, 31));
 
@@ -397,38 +385,13 @@ public class GetHabitCalendarQueryHandlerTests
         Assert.Equal("Habit.InvalidId", result.Error.Code);
     }
 
-    [Theory]
-    [InlineData("")]
-    [InlineData("   ")]
-    [InlineData(null)]
-    public async Task Handle_InvalidUserId_ReturnsValidationError(string? invalidUserId)
-    {
-        // Arrange
-        await using var context = CreateInMemoryContext();
-        var handler = new GetHabitCalendarQueryHandler(context);
-        var query = new GetHabitCalendarQuery(
-            1,
-            invalidUserId!,
-            new DateOnly(2025, 12, 1),
-            new DateOnly(2025, 12, 31));
-
-        // Act
-        var result = await handler.Handle(query, CancellationToken.None);
-
-        // Assert
-        Assert.True(result.IsFailure);
-        Assert.Equal("User.InvalidId", result.Error.Code);
-    }
-
     [Fact]
     public async Task Handle_FromDateAfterToDate_ReturnsValidationError()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var handler = new GetHabitCalendarQueryHandler(context);
+        var handler = new GetHabitCalendarQueryHandler(_dbContext, _userContext);
         var query = new GetHabitCalendarQuery(
             1,
-            "user-123",
             new DateOnly(2025, 12, 31),
             new DateOnly(2025, 12, 1));
 
@@ -443,12 +406,10 @@ public class GetHabitCalendarQueryHandlerTests
     [Fact]
     public async Task Handle_DateRangeExceeds90Days_ReturnsValidationError()
     {
-        // Arrange
-        await using var context = CreateInMemoryContext();
-        var handler = new GetHabitCalendarQueryHandler(context);
+        // Arrange ;
+        var handler = new GetHabitCalendarQueryHandler(_dbContext, _userContext);
         var query = new GetHabitCalendarQuery(
             1,
-            "user-123",
             new DateOnly(2025, 1, 1),
             new DateOnly(2025, 4, 5)); // 95 days
 
@@ -465,11 +426,9 @@ public class GetHabitCalendarQueryHandlerTests
     public async Task Handle_Exactly90DaysRange_ReturnsSuccess()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var userId = "user-123";
         var habit = new Habit
         {
-            UserId = userId,
+            UserId = _userId,
             Title = "Test habit",
             Type = HabitType.Start,
             CompletionMode = CompletionMode.Binary,
@@ -477,13 +436,12 @@ public class GetHabitCalendarQueryHandlerTests
             TargetValue = 1,
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.Add(habit);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new GetHabitCalendarQueryHandler(context);
+        var handler = new GetHabitCalendarQueryHandler(_dbContext, _userContext);
         var query = new GetHabitCalendarQuery(
             habit.Id,
-            userId,
             new DateOnly(2025, 1, 1),
             new DateOnly(2025, 3, 31)); // Exactly 90 days
 
@@ -499,11 +457,9 @@ public class GetHabitCalendarQueryHandlerTests
     public async Task Handle_MixedCheckinsAndEmptyDays_ReturnsCorrectCalendar()
     {
         // Arrange
-        await using var context = CreateInMemoryContext();
-        var userId = "user-123";
         var habit = new Habit
         {
-            UserId = userId,
+            UserId = _userId,
             Title = "Mixed habit",
             Type = HabitType.Start,
             CompletionMode = CompletionMode.Quantitative,
@@ -511,14 +467,14 @@ public class GetHabitCalendarQueryHandlerTests
             TargetValue = 10,
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Habits.Add(habit);
-        await context.SaveChangesAsync();
+        _dbContext.Habits.Add(habit);
+        await _dbContext.SaveChangesAsync();
 
         // Add check-ins for days 1 and 3, but not day 2
         var checkin1 = new Checkin
         {
             HabitId = habit.Id,
-            UserId = userId,
+            UserId = _userId,
             LocalDate = new DateOnly(2025, 12, 1),
             ActualValue = 8,
             TargetValueSnapshot = 10,
@@ -530,7 +486,7 @@ public class GetHabitCalendarQueryHandlerTests
         var checkin3 = new Checkin
         {
             HabitId = habit.Id,
-            UserId = userId,
+            UserId = _userId,
             LocalDate = new DateOnly(2025, 12, 3),
             ActualValue = 5,
             TargetValueSnapshot = 10,
@@ -539,13 +495,12 @@ public class GetHabitCalendarQueryHandlerTests
             IsPlanned = true,
             CreatedAtUtc = DateTime.UtcNow
         };
-        context.Checkins.AddRange(checkin1, checkin3);
-        await context.SaveChangesAsync();
+        _dbContext.Checkins.AddRange(checkin1, checkin3);
+        await _dbContext.SaveChangesAsync();
 
-        var handler = new GetHabitCalendarQueryHandler(context);
+        var handler = new GetHabitCalendarQueryHandler(_dbContext, _userContext);
         var query = new GetHabitCalendarQuery(
             habit.Id,
-            userId,
             new DateOnly(2025, 12, 1),
             new DateOnly(2025, 12, 3));
 

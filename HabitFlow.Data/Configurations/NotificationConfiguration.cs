@@ -12,8 +12,7 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
 
         // UserId
         builder.Property(n => n.UserId)
-            .IsRequired()
-            .HasMaxLength(450);
+            .IsRequired();
 
         // HabitId
         builder.Property(n => n.HabitId)

@@ -1,5 +1,6 @@
 using System.Reflection;
 using HabitFlow.Core.Abstractions;
+using HabitFlow.Core.Abstractions.Services;
 using HabitFlow.Core.Infrastructure;
 using HabitFlow.Core.Services;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,6 +45,7 @@ public static class DependencyInjection
 
         // Register application services
         services.AddScoped<IEmailSender, EmailSender>();
+        services.AddScoped<ILoggedUserContext, LoggedUserContext>();
 
         return services;
     }

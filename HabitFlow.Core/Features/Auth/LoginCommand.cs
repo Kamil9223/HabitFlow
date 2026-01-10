@@ -11,7 +11,7 @@ public record LoginCommand(
 ) : ICommand<Result<LoginResult>>;
 
 public record LoginResult(
-    string UserId,
+    Guid UserId,
     string Email,
     bool EmailConfirmed
 );

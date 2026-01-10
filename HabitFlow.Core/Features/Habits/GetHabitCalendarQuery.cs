@@ -1,4 +1,5 @@
 ﻿using HabitFlow.Core.Abstractions;
+using HabitFlow.Core.Abstractions.Services;
 using HabitFlow.Core.Common;
 using HabitFlow.Data;
 using HabitFlow.Data.Enums;
@@ -12,7 +13,6 @@ namespace HabitFlow.Core.Features.Habits;
 /// </summary>
 public record GetHabitCalendarQuery(
     int HabitId,
-    string UserId,
     DateOnly From,
     DateOnly To
 ) : IQuery<Result<HabitCalendarDto>>;
@@ -44,7 +44,9 @@ public record CalendarDayDto(
 /// Handler for retrieving habit calendar data.
 /// Combines habit schedule information with check-in data to produce daily statuses.
 /// </summary>
-public class GetHabitCalendarQueryHandler(HabitFlowDbContext context)
+public class GetHabitCalendarQueryHandler(
+    HabitFlowDbContext context,
+    ILoggedUserContext loggedUserContext)
     : IQueryHandler<GetHabitCalendarQuery, Result<HabitCalendarDto>>
 {
     private const int MaxRangeDays = 90;
@@ -58,10 +60,6 @@ public class GetHabitCalendarQueryHandler(HabitFlowDbContext context)
             return Result.Failure<HabitCalendarDto>(
                 Error.Validation("Habit.InvalidId", "Habit ID must be greater than zero."));
 
-        if (string.IsNullOrWhiteSpace(query.UserId))
-            return Result.Failure<HabitCalendarDto>(
-                Error.Validation("User.InvalidId", "User ID is required."));
-
         if (query.From > query.To)
             return Result.Failure<HabitCalendarDto>(
                 Error.Validation("DateRange.Invalid", "From date must be before or equal to To date."));
@@ -71,11 +69,13 @@ public class GetHabitCalendarQueryHandler(HabitFlowDbContext context)
             return Result.Failure<HabitCalendarDto>(
                 Error.Validation("DateRange.TooLarge",
                     $"Date range cannot exceed {MaxRangeDays} days. Requested: {rangeDays} days."));
+        
+        var user = loggedUserContext.GetUser();
 
         // Verify habit exists and belongs to user
         var habit = await context.Habits
             .AsNoTracking()
-            .Where(h => h.Id == query.HabitId && h.UserId == query.UserId)
+            .Where(h => h.Id == query.HabitId && h.UserId == user.UserId)
             .Select(h => new
             {
                 h.Id,

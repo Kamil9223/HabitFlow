@@ -19,8 +19,8 @@ public sealed class IntegrationTestFactory(string connectionString)
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["ConnectionStrings:DefaultConnection"] = _connectionString,
-                ["Email:Smtp:Host"] = "localhost",
-                ["Email:Smtp:Port"] = "2525",
+                ["Email:Smtp:Host"] = TestDatabase.SmtpHost,
+                ["Email:Smtp:Port"] = TestDatabase.SmtpPort.ToString(),
                 ["Email:Smtp:Username"] = "test",
                 ["Email:Smtp:Password"] = "test",
                 ["Email:FromEmail"] = "test@habitflow.test",

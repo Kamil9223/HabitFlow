@@ -5,7 +5,7 @@
 @using Microsoft.AspNetCore.WebUtilities
 @inject IHabitFlowApiClient ApiClient
 @inject NavigationManager Navigation
-@rendermode InteractiveServer
+@rendermode @(new InteractiveServerRenderMode(prerender: false))
 
 <PageTitle>Potwierdzenie email - HabitFlow</PageTitle>
 
@@ -61,9 +61,15 @@
 @code {
     private ConfirmEmailState _state = new();
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         _state.IsLoading = true;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
 
         var uri = Navigation.ToAbsoluteUri(Navigation.Uri);
         var query = QueryHelpers.ParseQuery(uri.Query);
@@ -75,6 +81,7 @@
         {
             _state.IsLoading = false;
             _state.Message = "Brak wymaganych parametrow w linku potwierdzenia.";
+            await InvokeAsync(StateHasChanged);
             return;
         }
 
@@ -117,6 +124,7 @@
         finally
         {
             _state.IsLoading = false;
+            await InvokeAsync(StateHasChanged);
         }
     }
 

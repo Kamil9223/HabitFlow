@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using HabitFlow.Api.Endpoints;
 using HabitFlow.Core;
+using HabitFlow.Core.Infrastructure;
 using HabitFlow.Data;
 using HabitFlow.Data.Entities;
 using Microsoft.AspNetCore.Identity;
@@ -13,7 +14,7 @@ builder.Services.AddDbContext<HabitFlowDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // Add Identity
-builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+builder.Services.AddIdentity<ApplicationUser, IdentityRole<Guid>>(options =>
 {
     // Password requirements
     options.Password.RequireDigit = true;
@@ -30,7 +31,8 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     options.SignIn.RequireConfirmedEmail = false; // Can be enabled later with email confirmation
 })
 .AddEntityFrameworkStores<HabitFlowDbContext>()
-.AddDefaultTokenProviders();
+.AddDefaultTokenProviders()
+.AddClaimsPrincipalFactory<CustomUserClaimsPrincipalFactory>();
 
 builder.Services.ConfigureApplicationCookie(options =>
 {
@@ -48,6 +50,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 // Add Core services (Command handlers, dispatchers, EmailSender)
 builder.Services.AddCore();
+builder.Services.AddHttpContextAccessor();
 
 // Configure JSON serialization (camelCase)
 builder.Services.ConfigureHttpJsonOptions(options =>

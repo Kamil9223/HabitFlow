@@ -987,7 +987,8 @@
         "additionalProperties": false,
         "properties": {
           "userId": {
-            "type": "string"
+            "type": "string",
+            "format": "guid"
           },
           "email": {
             "type": "string"
@@ -1030,7 +1031,8 @@
         "additionalProperties": false,
         "properties": {
           "userId": {
-            "type": "string"
+            "type": "string",
+            "format": "guid"
           },
           "email": {
             "type": "string"

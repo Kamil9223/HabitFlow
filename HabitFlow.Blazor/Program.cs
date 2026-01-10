@@ -11,13 +11,37 @@ builder.Services.AddRazorComponents()
 // Add MudBlazor services
 builder.Services.AddMudServices();
 
-// Configure HttpClient for API
+// Add HttpContextAccessor for cookie propagation
+builder.Services.AddHttpContextAccessor();
+
+// Configure HttpClient for API with cookie propagation
 var apiBaseUrl = builder.Configuration["Api:BaseUrl"]
     ?? throw new InvalidOperationException("Api:BaseUrl configuration is missing");
 
 builder.Services.AddHttpClient<IHabitFlowApiClient, HabitFlowApiClient>(client =>
 {
     client.BaseAddress = new Uri(apiBaseUrl);
+})
+.ConfigurePrimaryHttpMessageHandler(sp =>
+{
+    var httpContextAccessor = sp.GetService<IHttpContextAccessor>();
+    var handler = new HttpClientHandler
+    {
+        UseCookies = true,
+        CookieContainer = new System.Net.CookieContainer()
+    };
+
+    // Propagate cookies from HTTP context to API calls
+    if (httpContextAccessor?.HttpContext?.Request.Cookies != null)
+    {
+        var baseUri = new Uri(apiBaseUrl);
+        foreach (var cookie in httpContextAccessor.HttpContext.Request.Cookies)
+        {
+            handler.CookieContainer.Add(baseUri, new System.Net.Cookie(cookie.Key, cookie.Value));
+        }
+    }
+
+    return handler;
 });
 
 var app = builder.Build();

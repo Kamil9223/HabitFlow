@@ -62,4 +62,168 @@ public class AuthEndpointsTests(IntegrationTestFixture fixture) : IClassFixture<
         // Assert
         Assert.Equal(HttpStatusCode.NoContent, logoutResponse.StatusCode);
     }
+
+    [Fact]
+    public async Task ForgotPassword_WithValidEmail_ReturnsNoContent()
+    {
+        // Arrange: Create and confirm a user
+        using var scope = fixture.Factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        var testEmail = $"forgot-password-test-{Guid.NewGuid()}@test.com";
+        var testPassword = "Test123!";
+
+        var user = new ApplicationUser
+        {
+            UserName = testEmail,
+            Email = testEmail,
+            EmailConfirmed = true,
+            TimeZoneId = "Europe/Warsaw",
+            CreatedAtUtc = DateTime.UtcNow
+        };
+
+        var createResult = await userManager.CreateAsync(user, testPassword);
+        Assert.True(createResult.Succeeded);
+
+        // Act: Request password reset
+        using var client = fixture.CreateClient();
+        var forgotPasswordRequest = new ForgotPasswordRequest(testEmail);
+        var response = await client.PostAsJsonAsync("/api/v1/auth/forgot-password", forgotPasswordRequest);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ForgotPassword_WithNonExistentEmail_ReturnsNoContent()
+    {
+        // Arrange
+        using var client = fixture.CreateClient();
+        var nonExistentEmail = $"nonexistent-{Guid.NewGuid()}@test.com";
+        var forgotPasswordRequest = new ForgotPasswordRequest(nonExistentEmail);
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/v1/auth/forgot-password", forgotPasswordRequest);
+
+        // Assert: Should return NoContent to prevent user enumeration
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ForgotPassword_WithInvalidEmail_ReturnsBadRequest()
+    {
+        // Arrange
+        using var client = fixture.CreateClient();
+        var invalidEmailRequest = new ForgotPasswordRequest("not-an-email");
+
+        // Act
+        var response = await client.PostAsJsonAsync("/api/v1/auth/forgot-password", invalidEmailRequest);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ResetPassword_WithValidToken_ReturnsNoContent()
+    {
+        // Arrange: Create a user and generate reset token
+        using var scope = fixture.Factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        var testEmail = $"reset-password-test-{Guid.NewGuid()}@test.com";
+        var testPassword = "Test123!";
+        var newPassword = "NewTest456!";
+
+        var user = new ApplicationUser
+        {
+            UserName = testEmail,
+            Email = testEmail,
+            EmailConfirmed = true,
+            TimeZoneId = "Europe/Warsaw",
+            CreatedAtUtc = DateTime.UtcNow
+        };
+
+        var createResult = await userManager.CreateAsync(user, testPassword);
+        Assert.True(createResult.Succeeded);
+
+        // Generate reset token
+        var resetToken = await userManager.GeneratePasswordResetTokenAsync(user);
+
+        // Act: Reset password
+        using var client = fixture.CreateClient();
+        var resetPasswordRequest = new ResetPasswordRequest(testEmail, resetToken, newPassword);
+        var response = await client.PostAsJsonAsync("/api/v1/auth/reset-password", resetPasswordRequest);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+        // Verify: Can login with new password
+        var loginRequest = new LoginRequest(testEmail, newPassword);
+        var loginResponse = await client.PostAsJsonAsync("/api/v1/auth/login", loginRequest);
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task ResetPassword_WithInvalidToken_ReturnsBadRequest()
+    {
+        // Arrange: Create a user
+        using var scope = fixture.Factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        var testEmail = $"reset-invalid-token-{Guid.NewGuid()}@test.com";
+        var testPassword = "Test123!";
+
+        var user = new ApplicationUser
+        {
+            UserName = testEmail,
+            Email = testEmail,
+            EmailConfirmed = true,
+            TimeZoneId = "Europe/Warsaw",
+            CreatedAtUtc = DateTime.UtcNow
+        };
+
+        var createResult = await userManager.CreateAsync(user, testPassword);
+        Assert.True(createResult.Succeeded);
+
+        // Act: Try to reset password with invalid token
+        using var client = fixture.CreateClient();
+        var resetPasswordRequest = new ResetPasswordRequest(testEmail, "invalid-token", "NewTest456!");
+        var response = await client.PostAsJsonAsync("/api/v1/auth/reset-password", resetPasswordRequest);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ResetPassword_WithWeakPassword_ReturnsBadRequest()
+    {
+        // Arrange: Create a user and generate reset token
+        using var scope = fixture.Factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        var testEmail = $"reset-weak-password-{Guid.NewGuid()}@test.com";
+        var testPassword = "Test123!";
+
+        var user = new ApplicationUser
+        {
+            UserName = testEmail,
+            Email = testEmail,
+            EmailConfirmed = true,
+            TimeZoneId = "Europe/Warsaw",
+            CreatedAtUtc = DateTime.UtcNow
+        };
+
+        var createResult = await userManager.CreateAsync(user, testPassword);
+        Assert.True(createResult.Succeeded);
+
+        var resetToken = await userManager.GeneratePasswordResetTokenAsync(user);
+
+        // Act: Try to reset password with weak password
+        using var client = fixture.CreateClient();
+        var resetPasswordRequest = new ResetPasswordRequest(testEmail, resetToken, "weak");
+        var response = await client.PostAsJsonAsync("/api/v1/auth/reset-password", resetPasswordRequest);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
 }

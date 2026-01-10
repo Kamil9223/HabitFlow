@@ -1,4 +1,5 @@
 using HabitFlow.Core.Abstractions;
+using HabitFlow.Core.Abstractions.Services;
 using HabitFlow.Core.Common;
 using HabitFlow.Data;
 using HabitFlow.Data.Enums;
@@ -10,8 +11,7 @@ namespace HabitFlow.Core.Features.Habits;
 /// Query to retrieve a habit by its ID for a specific user.
 /// </summary>
 public record GetHabitQuery(
-    int HabitId,
-    string UserId
+    int HabitId
 ) : IQuery<Result<HabitDto>>;
 
 /// <summary>
@@ -34,7 +34,9 @@ public record HabitDto(
 /// Handler for retrieving a single habit by ID.
 /// Ensures that the habit belongs to the requesting user.
 /// </summary>
-public class GetHabitQueryHandler(HabitFlowDbContext context)
+public class GetHabitQueryHandler(
+    HabitFlowDbContext context,
+    ILoggedUserContext loggedUserContext)
     : IQueryHandler<GetHabitQuery, Result<HabitDto>>
 {
     public async Task<Result<HabitDto>> Handle(GetHabitQuery query, CancellationToken cancellationToken)
@@ -43,15 +45,13 @@ public class GetHabitQueryHandler(HabitFlowDbContext context)
         if (query.HabitId <= 0)
             return Result.Failure<HabitDto>(
                 Error.Validation("Habit.InvalidId", "Habit ID must be greater than zero."));
-
-        if (string.IsNullOrWhiteSpace(query.UserId))
-            return Result.Failure<HabitDto>(
-                Error.Validation("User.InvalidId", "User ID is required."));
+        
+        var user = loggedUserContext.GetUser();
 
         // Query habit with ownership verification
         var habitDto = await context.Habits
             .AsNoTracking()
-            .Where(h => h.Id == query.HabitId && h.UserId == query.UserId)
+            .Where(h => h.Id == query.HabitId && h.UserId == user.UserId)
             .Select(h => new HabitDto(
                 h.Id,
                 h.Title,

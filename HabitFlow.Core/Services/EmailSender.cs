@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Net.Mail;
+using HabitFlow.Core.Abstractions.Services;
 
 namespace HabitFlow.Core.Services;
 

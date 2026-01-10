@@ -17,8 +17,7 @@ public class CheckinConfiguration : IEntityTypeConfiguration<Checkin>
 
         // UserId
         builder.Property(c => c.UserId)
-            .IsRequired()
-            .HasMaxLength(450);
+            .IsRequired();
 
         // LocalDate
         builder.Property(c => c.LocalDate)
