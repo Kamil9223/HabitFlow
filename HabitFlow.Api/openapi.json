@@ -179,29 +179,6 @@
         }
       }
     },
-    "/api/v1/auth/me": {
-      "get": {
-        "tags": [
-          "Auth"
-        ],
-        "operationId": "GetMe",
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/MeResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": ""
-          }
-        }
-      }
-    },
     "/api/v1/auth/logout": {
       "post": {
         "tags": [
@@ -244,6 +221,9 @@
             "description": ""
           },
           "401": {
+            "description": ""
+          },
+          "404": {
             "description": ""
           }
         }
@@ -295,6 +275,12 @@
             "description": ""
           },
           "400": {
+            "description": ""
+          },
+          "401": {
+            "description": ""
+          },
+          "404": {
             "description": ""
           },
           "422": {
@@ -1078,28 +1064,6 @@
           }
         }
       },
-      "MeResponse": {
-        "type": "object",
-        "additionalProperties": false,
-        "properties": {
-          "userId": {
-            "type": "string"
-          },
-          "email": {
-            "type": "string"
-          },
-          "emailConfirmed": {
-            "type": "boolean"
-          },
-          "timeZoneId": {
-            "type": "string"
-          },
-          "createdAtUtc": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
       "DeleteAccountRequest": {
         "type": "object",
         "additionalProperties": false,
@@ -1114,7 +1078,8 @@
         "additionalProperties": false,
         "properties": {
           "userId": {
-            "type": "string"
+            "type": "string",
+            "format": "guid"
           },
           "email": {
             "type": "string"
@@ -1128,6 +1093,10 @@
           "createdAtUtc": {
             "type": "string",
             "format": "date-time"
+          },
+          "habitsCount": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },

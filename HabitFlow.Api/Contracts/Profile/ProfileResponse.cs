@@ -1,9 +1,10 @@
 ﻿namespace HabitFlow.Api.Contracts.Profile;
 
 public record ProfileResponse(
-    string UserId,
+    Guid UserId,
     string Email,
     bool EmailConfirmed,
     string TimeZoneId,
-    DateTimeOffset CreatedAtUtc
+    DateTimeOffset CreatedAtUtc,
+    int HabitsCount
 );

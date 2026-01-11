@@ -1,0 +1,67 @@
+@using HabitFlow.Client
+@inject IHabitFlowApiClient ApiClient
+@inject ISnackbar Snackbar
+
+<MudText Typo="Typo.h6" Class="mb-3">Strefa niebezpieczna</MudText>
+
+<MudStack Spacing="3">
+    <MudAlert Severity="Severity.Warning">
+        Usunięcie konta jest <strong>nieodwracalne</strong>.
+        Wszystkie Twoje dane, w tym nawyki, check-iny i powiadomienia zostaną trwale usunięte.
+    </MudAlert>
+
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Error"
+               OnClick="OpenDeleteDialog"
+               StartIcon="@Icons.Material.Filled.Delete">
+        Usuń konto
+    </MudButton>
+</MudStack>
+
+<ConfirmDeleteAccountDialog @ref="_deleteDialog"
+                            OnConfirmed="@(async () => await HandleDeleteConfirmedAsync())" />
+
+@code {
+    private ConfirmDeleteAccountDialog? _deleteDialog;
+
+    /// <summary>
+    /// Callback wywoływany po pomyślnym usunięciu konta.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnAccountDeleted { get; set; }
+
+    /// <summary>
+    /// Otwiera dialog potwierdzenia usunięcia konta.
+    /// </summary>
+    private void OpenDeleteDialog()
+    {
+        _deleteDialog?.Show();
+    }
+
+    /// <summary>
+    /// Obsługuje potwierdzenie usunięcia konta przez użytkownika.
+    /// </summary>
+    private async Task HandleDeleteConfirmedAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var request = new DeleteAccountRequest { Confirmation = "DELETE" };
+            await ApiClient.DeleteAccountAsync(request, cancellationToken);
+
+            await OnAccountDeleted.InvokeAsync();
+        }
+        catch (ApiException ex) when (ex.StatusCode == 400)
+        {
+            // To nie powinno się wydarzyć, bo dialog wymusza "DELETE"
+            Snackbar.Add("Nieprawidłowe potwierdzenie.", Severity.Error);
+        }
+        catch (ApiException)
+        {
+            Snackbar.Add("Nie udało się usunąć konta. Spróbuj ponownie później.", Severity.Error);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Wystąpił błąd podczas usuwania konta.", Severity.Error);
+        }
+    }
+}

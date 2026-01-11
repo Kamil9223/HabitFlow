@@ -1,0 +1,41 @@
+@using HabitFlow.Blazor.Models.Profile
+
+<MudText Typo="Typo.h6" Class="mb-3">Informacje o koncie</MudText>
+
+<MudStack Spacing="2">
+    <MudField Label="Email" Variant="Variant.Text">
+        @Profile.Email
+    </MudField>
+
+    <MudField Label="Status weryfikacji" Variant="Variant.Text">
+        @if (Profile.EmailConfirmed)
+        {
+            <MudChip T="string" Color="Color.Success" Size="Size.Small">Zweryfikowany</MudChip>
+        }
+        else
+        {
+            <MudChip T="string" Color="Color.Warning" Size="Size.Small">Niezweryfikowany</MudChip>
+        }
+    </MudField>
+
+    <MudField Label="Data utworzenia" Variant="Variant.Text">
+        @Profile.CreatedAtUtc.ToString("dd.MM.yyyy HH:mm")
+    </MudField>
+
+    <MudField Label="Aktualna strefa czasowa" Variant="Variant.Text">
+        @Profile.TimeZoneId
+    </MudField>
+
+    <MudField Label="Liczba nawyków" Variant="Variant.Text">
+        @Profile.HabitsCount
+    </MudField>
+</MudStack>
+
+@code {
+    /// <summary>
+    /// Dane profilu użytkownika do wyświetlenia.
+    /// </summary>
+    [Parameter]
+    [EditorRequired]
+    public ProfileViewModel Profile { get; set; } = null!;
+}

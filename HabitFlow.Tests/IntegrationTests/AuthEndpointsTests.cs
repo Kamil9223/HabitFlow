@@ -226,4 +226,156 @@ public class AuthEndpointsTests(IntegrationTestFixture fixture) : IClassFixture<
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
+
+    [Fact]
+    public async Task DeleteAccount_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        using var client = fixture.CreateClient();
+
+        var request = new DeleteAccountRequest("DELETE");
+        var response = await client.PostAsJsonAsync("/api/v1/auth/delete-account", request);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task DeleteAccount_WithValidConfirmation_DeletesAccountAndData()
+    {
+        // Arrange: Create and login a user
+        using var scope = fixture.Factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        var testEmail = $"delete-account-test-{Guid.NewGuid()}@test.com";
+        var testPassword = "Test123!";
+
+        var user = new ApplicationUser
+        {
+            UserName = testEmail,
+            Email = testEmail,
+            EmailConfirmed = true,
+            TimeZoneId = "Europe/Warsaw",
+            CreatedAtUtc = DateTime.UtcNow
+        };
+
+        var createResult = await userManager.CreateAsync(user, testPassword);
+        Assert.True(createResult.Succeeded);
+
+        // Login
+        using var client = fixture.CreateClient();
+        var loginRequest = new LoginRequest(testEmail, testPassword);
+        var loginResponse = await client.PostAsJsonAsync("/api/v1/auth/login", loginRequest);
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+
+        // Extract cookies from login response
+        var cookies = loginResponse.Headers.GetValues("Set-Cookie");
+        foreach (var cookie in cookies)
+        {
+            client.DefaultRequestHeaders.Add("Cookie", cookie.Split(';')[0]);
+        }
+
+        // Act: Delete account
+        var deleteRequest = new DeleteAccountRequest("DELETE");
+        var deleteResponse = await client.PostAsJsonAsync("/api/v1/auth/delete-account", deleteRequest);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NoContent, deleteResponse.StatusCode);
+
+        // Verify: User no longer exists
+        using var verifyScope = fixture.Factory.Services.CreateScope();
+        var verifyUserManager = verifyScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var deletedUser = await verifyUserManager.FindByEmailAsync(testEmail);
+        Assert.Null(deletedUser);
+    }
+
+    [Fact]
+    public async Task DeleteAccount_WithInvalidConfirmation_ReturnsBadRequest()
+    {
+        // Arrange: Create and login a user
+        using var scope = fixture.Factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        var testEmail = $"delete-invalid-confirm-{Guid.NewGuid()}@test.com";
+        var testPassword = "Test123!";
+
+        var user = new ApplicationUser
+        {
+            UserName = testEmail,
+            Email = testEmail,
+            EmailConfirmed = true,
+            TimeZoneId = "Europe/Warsaw",
+            CreatedAtUtc = DateTime.UtcNow
+        };
+
+        var createResult = await userManager.CreateAsync(user, testPassword);
+        Assert.True(createResult.Succeeded);
+
+        // Login
+        using var client = fixture.CreateClient();
+        var loginRequest = new LoginRequest(testEmail, testPassword);
+        var loginResponse = await client.PostAsJsonAsync("/api/v1/auth/login", loginRequest);
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+
+        // Extract cookies from login response
+        var cookies = loginResponse.Headers.GetValues("Set-Cookie");
+        foreach (var cookie in cookies)
+        {
+            client.DefaultRequestHeaders.Add("Cookie", cookie.Split(';')[0]);
+        }
+
+        // Act: Try to delete account with wrong confirmation
+        var deleteRequest = new DeleteAccountRequest("WRONG");
+        var deleteResponse = await client.PostAsJsonAsync("/api/v1/auth/delete-account", deleteRequest);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, deleteResponse.StatusCode);
+
+        // Verify: User still exists
+        using var verifyScope = fixture.Factory.Services.CreateScope();
+        var verifyUserManager = verifyScope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+        var stillExistingUser = await verifyUserManager.FindByEmailAsync(testEmail);
+        Assert.NotNull(stillExistingUser);
+    }
+
+    [Fact]
+    public async Task DeleteAccount_WithEmptyConfirmation_ReturnsBadRequest()
+    {
+        // Arrange: Create and login a user
+        using var scope = fixture.Factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        var testEmail = $"delete-empty-confirm-{Guid.NewGuid()}@test.com";
+        var testPassword = "Test123!";
+
+        var user = new ApplicationUser
+        {
+            UserName = testEmail,
+            Email = testEmail,
+            EmailConfirmed = true,
+            TimeZoneId = "Europe/Warsaw",
+            CreatedAtUtc = DateTime.UtcNow
+        };
+
+        var createResult = await userManager.CreateAsync(user, testPassword);
+        Assert.True(createResult.Succeeded);
+
+        // Login
+        using var client = fixture.CreateClient();
+        var loginRequest = new LoginRequest(testEmail, testPassword);
+        var loginResponse = await client.PostAsJsonAsync("/api/v1/auth/login", loginRequest);
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+
+        // Extract cookies from login response
+        var cookies = loginResponse.Headers.GetValues("Set-Cookie");
+        foreach (var cookie in cookies)
+        {
+            client.DefaultRequestHeaders.Add("Cookie", cookie.Split(';')[0]);
+        }
+
+        // Act: Try to delete account with empty confirmation
+        var deleteRequest = new DeleteAccountRequest("");
+        var deleteResponse = await client.PostAsJsonAsync("/api/v1/auth/delete-account", deleteRequest);
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, deleteResponse.StatusCode);
+    }
 }

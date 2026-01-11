@@ -1,0 +1,119 @@
+@page "/profile"
+@using HabitFlow.Blazor.Models.Profile
+@using HabitFlow.Client
+@inject IHabitFlowApiClient ApiClient
+@inject NavigationManager NavigationManager
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<PageTitle>Profil - HabitFlow</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Medium" Class="pa-4">
+    <MudText Typo="Typo.h4" Class="mb-4">Profil użytkownika</MudText>
+
+    @if (_isLoading)
+    {
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    }
+    else if (_profile != null)
+    {
+        <!-- Sekcja podsumowania profilu -->
+        <MudPaper Class="pa-4 mb-4" Elevation="2">
+            <ProfileSummary Profile="_profile" />
+        </MudPaper>
+
+        <!-- Sekcja edycji strefy czasowej -->
+        <MudPaper Class="pa-4 mb-4" Elevation="2">
+            <TimeZoneEditor CurrentTimeZoneId="_profile.TimeZoneId"
+                           OnTimeZoneChanged="HandleTimeZoneChangedAsync" />
+        </MudPaper>
+
+        <!-- Sekcja usuwania konta -->
+        <MudPaper Class="pa-4" Elevation="2">
+            <DeleteAccountSection OnAccountDeleted="HandleAccountDeletedAsync" />
+        </MudPaper>
+    }
+    else if (_errorMessage != null)
+    {
+        <MudAlert Severity="Severity.Error">@_errorMessage</MudAlert>
+    }
+</MudContainer>
+
+@code {
+    private ProfileViewModel? _profile;
+    private bool _isLoading = true;
+    private string? _errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadProfileAsync();
+    }
+
+    /// <summary>
+    /// Pobiera dane profilu użytkownika z API.
+    /// </summary>
+    private async Task LoadProfileAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _isLoading = true;
+            _errorMessage = null;
+
+            var response = await ApiClient.GetProfileAsync(cancellationToken);
+
+            if (response != null)
+            {
+                _profile = new ProfileViewModel
+                {
+                    UserId = response.UserId,
+                    Email = response.Email ?? string.Empty,
+                    EmailConfirmed = response.EmailConfirmed,
+                    TimeZoneId = response.TimeZoneId ?? string.Empty,
+                    CreatedAtUtc = response.CreatedAtUtc,
+                    HabitsCount = response.HabitsCount
+                };
+            }
+            else
+            {
+                _errorMessage = "Nie udało się załadować danych profilu.";
+            }
+        }
+        catch (ApiException ex) when (ex.StatusCode == 401)
+        {
+            _errorMessage = "Sesja wygasła. Proszę zalogować się ponownie.";
+            NavigationManager.NavigateTo("/auth/login");
+        }
+        catch (ApiException)
+        {
+            _errorMessage = "Błąd połączenia. Sprawdź połączenie z internetem i spróbuj ponownie.";
+        }
+        catch (Exception)
+        {
+            _errorMessage = "Nie udało się załadować danych profilu.";
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    /// <summary>
+    /// Obsługuje zdarzenie zmiany strefy czasowej.
+    /// Odświeża dane profilu z API.
+    /// </summary>
+    private async Task HandleTimeZoneChangedAsync()
+    {
+        await LoadProfileAsync();
+    }
+
+    /// <summary>
+    /// Obsługuje zdarzenie usunięcia konta.
+    /// Przekierowuje użytkownika do strony wylogowania.
+    /// </summary>
+    private Task HandleAccountDeletedAsync()
+    {
+        // Przekierowanie do endpointu wylogowania
+        NavigationManager.NavigateTo("/auth/logout", forceLoad: true);
+        return Task.CompletedTask;
+    }
+}

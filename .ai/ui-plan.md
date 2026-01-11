@@ -119,7 +119,7 @@ Widok: Blokada niepotwierdzonego e-maila
 - Kluczowe komponenty widoku: EmailConfirmationGate, AlertBanner.
 - UX, dostepnosc i wzgledy bezpieczenstwa: czytelny komunikat, brak ujawniania tokenow.
 - Powiazane wymagania: US-001, US-002.
-- API: GET /api/v1/auth/me.
+- API: GET /api/v1/profile.
 
 Widok: Not Found / Error
 - Sciezka widoku: /404 oraz globalny ErrorBoundary

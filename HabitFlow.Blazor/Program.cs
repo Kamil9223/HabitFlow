@@ -1,5 +1,7 @@
 using HabitFlow.Blazor.Components;
+using HabitFlow.Blazor.Services;
 using HabitFlow.Client;
+using Microsoft.AspNetCore.Components.Authorization;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +12,10 @@ builder.Services.AddRazorComponents()
 
 // Add MudBlazor services
 builder.Services.AddMudServices();
+
+// Add authentication state provider
+builder.Services.AddScoped<AuthenticationStateProvider, ApiAuthenticationStateProvider>();
+builder.Services.AddCascadingAuthenticationState();
 
 // Add HttpContextAccessor for cookie propagation
 builder.Services.AddHttpContextAccessor();

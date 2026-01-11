@@ -1,0 +1,123 @@
+@using HabitFlow.Blazor.Models.Profile
+@using HabitFlow.Client
+@inject IHabitFlowApiClient ApiClient
+
+<MudText Typo="Typo.h6" Class="mb-3">Strefa czasowa</MudText>
+
+<MudForm @ref="_form">
+    <MudStack Spacing="3">
+        <MudSelect @bind-Value="_selectedTimeZoneId"
+                   Label="Wybierz strefę czasową"
+                   Variant="Variant.Outlined"
+                   Required="true"
+                   RequiredError="Strefa czasowa jest wymagana">
+            @foreach (var tz in _availableTimeZones)
+            {
+                <MudSelectItem Value="@tz.Id">@tz.DisplayName</MudSelectItem>
+            }
+        </MudSelect>
+
+        <MudAlert Severity="Severity.Info" Dense="true">
+            Zmiana strefy czasowej zacznie obowiązywać od następnej doby lokalnej.
+        </MudAlert>
+
+        @if (_successMessage != null)
+        {
+            <MudAlert Severity="Severity.Success" Dense="true">@_successMessage</MudAlert>
+        }
+
+        @if (_errorMessage != null)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true">@_errorMessage</MudAlert>
+        }
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   OnClick="@(async () => await SaveTimeZoneAsync())"
+                   Disabled="@(_isSaving || _selectedTimeZoneId == CurrentTimeZoneId)">
+            @if (_isSaving)
+            {
+                <MudProgressCircular Class="mr-2" Size="Size.Small" Indeterminate="true" />
+                <MudText>Zapisywanie...</MudText>
+            }
+            else
+            {
+                <MudText>Zapisz zmiany</MudText>
+            }
+        </MudButton>
+    </MudStack>
+</MudForm>
+
+@code {
+    private MudForm? _form;
+    private string _selectedTimeZoneId = string.Empty;
+    private List<TimeZoneViewModel> _availableTimeZones = new();
+    private bool _isSaving = false;
+    private string? _successMessage;
+    private string? _errorMessage;
+
+    /// <summary>
+    /// Aktualna strefa czasowa użytkownika.
+    /// </summary>
+    [Parameter]
+    [EditorRequired]
+    public string CurrentTimeZoneId { get; set; } = null!;
+
+    /// <summary>
+    /// Callback wywoływany po pomyślnej zmianie strefy czasowej.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnTimeZoneChanged { get; set; }
+
+    protected override void OnInitialized()
+    {
+        // Inicjalizuj wybraną strefę czasową wartością z props
+        _selectedTimeZoneId = CurrentTimeZoneId;
+
+        // Załaduj listę dostępnych stref czasowych
+        _availableTimeZones = TimeZoneInfo.GetSystemTimeZones()
+            .Select(tz => new TimeZoneViewModel
+            {
+                Id = tz.Id,
+                DisplayName = $"(UTC{tz.BaseUtcOffset:hh\\:mm}) {tz.DisplayName}"
+            })
+            .OrderBy(tz => tz.DisplayName)
+            .ToList();
+    }
+
+    private async Task SaveTimeZoneAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _isSaving = true;
+            _successMessage = null;
+            _errorMessage = null;
+
+            var request = new UpdateTimeZoneRequest { TimeZoneId = _selectedTimeZoneId };
+            await ApiClient.UpdateTimeZoneAsync(request, cancellationToken);
+
+            _successMessage = "Strefa czasowa została zaktualizowana. Zmiana zacznie obowiązywać od następnej doby.";
+            await OnTimeZoneChanged.InvokeAsync();
+        }
+        catch (ApiException ex) when (ex.StatusCode == 422)
+        {
+            _errorMessage = "Wybrana strefa czasowa nie jest obsługiwana.";
+        }
+        catch (ApiException ex) when (ex.StatusCode == 400)
+        {
+            _errorMessage = "Dane formularza są nieprawidłowe.";
+        }
+        catch (ApiException)
+        {
+            _errorMessage = "Nie udało się zaktualizować strefy czasowej.";
+        }
+        catch (Exception)
+        {
+            _errorMessage = "Wystąpił nieoczekiwany błąd. Spróbuj ponownie później.";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+}

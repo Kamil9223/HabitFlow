@@ -2,9 +2,6 @@ using HabitFlow.Api.Contracts.Auth;
 using HabitFlow.Api.Helpers;
 using HabitFlow.Core.Abstractions;
 using HabitFlow.Core.Features.Auth;
-using HabitFlow.Data.Entities;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 
 namespace HabitFlow.Api.Endpoints;
 
@@ -108,13 +105,6 @@ public static class AuthEndpoints
         .Produces(204)
         .Produces(400);
 
-        group.MapGet("/me", () =>
-            Results.StatusCode(501))
-            .WithName("GetMe")
-            .Produces<MeResponse>(200)
-            .Produces(401)
-            .RequireAuthorization();
-
         group.MapPost("/logout", async (
             ICommandDispatcher dispatcher,
             CancellationToken cancellationToken) =>
@@ -130,23 +120,16 @@ public static class AuthEndpoints
         .Produces(401)
         .RequireAuthorization();
 
-        group.MapPost("/delete-account", ([FromBody] DeleteAccountRequest request) =>
+        group.MapPost("/delete-account", async (
+            DeleteAccountRequest request,
+            ICommandDispatcher dispatcher,
+            CancellationToken cancellationToken) =>
         {
-            if (request.Confirmation != "DELETE")
-            {
-                return Results.Problem(
-                    title: "Invalid confirmation",
-                    detail: "Please provide 'DELETE' in the confirmation field to permanently delete your account.",
-                    statusCode: 400
-                );
-            }
+            var command = new DeleteAccountCommand(request.Confirmation);
 
-            // TODO: Implement DeleteAccountCommand
-            // var command = new DeleteAccountCommand(userId);
-            // var result = await dispatcher.Dispatch(command, cancellationToken);
-            // return result.ToHttpResult(Results.NoContent);
+            var result = await dispatcher.Dispatch(command, cancellationToken);
 
-            return Results.NoContent();
+            return result.ToHttpResult(Results.NoContent);
         })
         .WithName("DeleteAccount")
         .WithSummary("Permanently delete user account")
@@ -156,6 +139,7 @@ public static class AuthEndpoints
         .Produces(204)
         .Produces(400)
         .Produces(401)
+        .Produces(404)
         .RequireAuthorization();
     }
 }

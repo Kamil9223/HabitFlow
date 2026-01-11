@@ -1,0 +1,72 @@
+<MudDialog @bind-IsVisible="_isVisible">
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Warning" Class="mr-2" Color="Color.Error" />
+            Potwierdzenie usunięcia konta
+        </MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudText>
+                Ta operacja jest <strong>nieodwracalna</strong>. Aby potwierdzić, wpisz
+                dokładnie <MudChip T="string" Size="Size.Small" Color="Color.Error">DELETE</MudChip> w polu poniżej.
+            </MudText>
+
+            <MudTextField @bind-Value="_confirmationText"
+                          Label="Wpisz DELETE"
+                          Variant="Variant.Outlined"
+                          Immediate="true"
+                          HelperText="Wielkość liter ma znaczenie" />
+        </MudStack>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel">Anuluj</MudButton>
+        <MudButton Color="Color.Error"
+                   Variant="Variant.Filled"
+                   OnClick="Confirm"
+                   Disabled="@(_confirmationText != "DELETE")">
+            Usuń konto
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private bool _isVisible = false;
+    private string _confirmationText = string.Empty;
+
+    /// <summary>
+    /// Callback wywoływany po potwierdzeniu usunięcia konta.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnConfirmed { get; set; }
+
+    /// <summary>
+    /// Otwiera dialog i czyści pole tekstowe.
+    /// </summary>
+    public void Show()
+    {
+        _confirmationText = string.Empty;
+        _isVisible = true;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Zamyka dialog bez wykonywania akcji.
+    /// </summary>
+    private void Cancel()
+    {
+        _isVisible = false;
+        _confirmationText = string.Empty;
+    }
+
+    /// <summary>
+    /// Zamyka dialog i wywołuje callback potwierdzenia.
+    /// </summary>
+    private async Task Confirm()
+    {
+        _isVisible = false;
+        await OnConfirmed.InvokeAsync();
+    }
+}

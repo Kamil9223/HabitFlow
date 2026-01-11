@@ -83,19 +83,7 @@ Conventions:
 - Response 204 No Content
 - Errors: 400 (invalid token/policies)
 
-6) GET /api/v1/auth/me
-- Description: Return current user essentials for the app shell.
-- Response 200:
-{
-  "userId": "string",
-  "email": "user@example.com",
-  "emailConfirmed": true,
-  "timeZoneId": "Europe/Warsaw",
-  "createdAtUtc": "2025-12-07T15:50:00Z"
-}
-- Errors: 401
-
-7) POST /api/v1/auth/logout
+6) POST /api/v1/auth/logout
 - Description: Invalidate current session/cookie and end user session.
 - Response 204 No Content
 - Errors: 401
@@ -103,14 +91,15 @@ Conventions:
 ### 2.2 Profile
 
 1) GET /api/v1/profile
-- Description: Return full profile details the app needs.
+- Description: Return full profile details including user information and habits count.
 - Response 200:
 {
   "userId": "string",
   "email": "user@example.com",
   "emailConfirmed": true,
   "timeZoneId": "Europe/Warsaw",
-  "createdAtUtc": "2025-12-07T15:50:00Z"
+  "createdAtUtc": "2025-12-07T15:50:00Z",
+  "habitsCount": 5
 }
 - Errors: 401
 
