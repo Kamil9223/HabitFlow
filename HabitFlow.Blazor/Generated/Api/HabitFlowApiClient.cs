@@ -825,6 +825,12 @@ namespace HabitFlow.Client
                             throw new ApiException("A server side error occurred.", status_, responseText_, headers_, null);
                         }
                         else
+                        if (status_ == 404)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("A server side error occurred.", status_, responseText_, headers_, null);
+                        }
+                        else
                         {
                             var responseData_ = response_.Content == null ? null : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
                             throw new ApiException("The HTTP status code of the response was not expected (" + status_ + ").", status_, responseData_, headers_, null);
@@ -985,6 +991,18 @@ namespace HabitFlow.Client
                         }
                         else
                         if (status_ == 400)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("A server side error occurred.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 401)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
+                            throw new ApiException("A server side error occurred.", status_, responseText_, headers_, null);
+                        }
+                        else
+                        if (status_ == 404)
                         {
                             string responseText_ = ( response_.Content == null ) ? string.Empty : await response_.Content.ReadAsStringAsync().ConfigureAwait(false);
                             throw new ApiException("A server side error occurred.", status_, responseText_, headers_, null);
@@ -2856,9 +2874,6 @@ namespace HabitFlow.Client
         [System.Text.Json.Serialization.JsonPropertyName("habitId")]
         public int HabitId { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("userId")]
-        public string UserId { get; set; } = default!;
-
         [System.Text.Json.Serialization.JsonPropertyName("localDate")]
         [System.Text.Json.Serialization.JsonConverter(typeof(DateFormatConverter))]
         public System.DateTimeOffset LocalDate { get; set; } = default!;
@@ -2870,10 +2885,12 @@ namespace HabitFlow.Client
         public int TargetValueSnapshot { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("completionModeSnapshot")]
-        public int CompletionModeSnapshot { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
+        public CompletionMode CompletionModeSnapshot { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("habitTypeSnapshot")]
-        public int HabitTypeSnapshot { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
+        public HabitType HabitTypeSnapshot { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("isPlanned")]
         public bool IsPlanned { get; set; } = default!;

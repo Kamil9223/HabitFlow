@@ -1,14 +1,15 @@
-﻿namespace HabitFlow.Api.Contracts.Checkins;
+﻿using HabitFlow.Data.Enums;
+
+namespace HabitFlow.Api.Contracts.Checkins;
 
 public record CheckinResponse(
     long Id,
     int HabitId,
-    string UserId,
     DateOnly LocalDate,
     int ActualValue,
     int TargetValueSnapshot,
-    int CompletionModeSnapshot,
-    int HabitTypeSnapshot,
+    CompletionMode CompletionModeSnapshot,
+    HabitType HabitTypeSnapshot,
     bool IsPlanned,
     DateTimeOffset CreatedAtUtc
 );

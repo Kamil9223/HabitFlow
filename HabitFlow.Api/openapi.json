@@ -1433,9 +1433,6 @@
             "type": "integer",
             "format": "int32"
           },
-          "userId": {
-            "type": "string"
-          },
           "localDate": {
             "type": "string",
             "format": "date"
@@ -1449,12 +1446,10 @@
             "format": "int32"
           },
           "completionModeSnapshot": {
-            "type": "integer",
-            "format": "int32"
+            "$ref": "#/components/schemas/CompletionMode"
           },
           "habitTypeSnapshot": {
-            "type": "integer",
-            "format": "int32"
+            "$ref": "#/components/schemas/HabitType"
           },
           "isPlanned": {
             "type": "boolean"

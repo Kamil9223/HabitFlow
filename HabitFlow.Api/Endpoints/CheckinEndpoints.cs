@@ -1,4 +1,7 @@
 ﻿using HabitFlow.Api.Contracts.Checkins;
+using HabitFlow.Api.Helpers;
+using HabitFlow.Core.Abstractions;
+using HabitFlow.Core.Features.Checkins;
 
 namespace HabitFlow.Api.Endpoints;
 
@@ -10,27 +13,40 @@ public static class CheckinEndpoints
             .WithTags("Checkins")
             .RequireAuthorization();
 
-        group.MapPost("/habits/{habitId:int}/checkins", (int habitId, CreateCheckinRequest request) =>
+        group.MapPost("/habits/{habitId:int}/checkins", async (
+            int habitId,
+            CreateCheckinRequest request,
+            ICommandDispatcher dispatcher,
+            CancellationToken cancellationToken) =>
         {
-            // TODO: Get habit to check CompletionMode
-            // For Binary mode (completionMode=1):
-            //   - UI sends actualValue as 0 or 1 (checkbox → bool → int conversion)
-            //   - Validation can be added when habit data is available in the endpoint
-            // For Quantitative mode (completionMode=2):
-            //   - actualValue is user input (0 to TargetValueSnapshot)
-            //   - Values above TargetValueSnapshot should be clamped
-            //   - Negative values should return 400
+            var command = new CreateCheckinCommand(
+                habitId,
+                request.LocalDate,
+                request.ActualValue);
 
-            return Results.StatusCode(501);
+            var result = await dispatcher.Dispatch(command, cancellationToken);
+
+            return result.ToHttpResult(checkin => Results.Created(
+                $"/api/v1/habits/{habitId}/checkins/{checkin.Id}",
+                new CheckinResponse(
+                    checkin.Id,
+                    checkin.HabitId,
+                    checkin.LocalDate,
+                    checkin.ActualValue,
+                    checkin.TargetValueSnapshot,
+                    checkin.CompletionModeSnapshot,
+                    checkin.HabitTypeSnapshot,
+                    checkin.IsPlanned,
+                    checkin.CreatedAtUtc)));
         })
-            .WithName("CreateCheckin")
-            .Produces<CheckinResponse>(201)
-            .Produces(400)
-            .Produces(401)
-            .Produces(403)
-            .Produces(404)
-            .Produces(409)
-            .Produces(422);
+        .WithName("CreateCheckin")
+        .Produces<CheckinResponse>(201)
+        .Produces(400)
+        .Produces(401)
+        .Produces(403)
+        .Produces(404)
+        .Produces(409)
+        .Produces(422);
 
         group.MapGet("/habits/{habitId:int}/checkins", (int habitId, DateOnly from, DateOnly to) =>
             Results.StatusCode(501))
