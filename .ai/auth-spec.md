@@ -84,7 +84,7 @@ Komponenty formularzy (jeden publiczny komponent na plik, MudBlazor):
   - Haslo: min 8 znakow.
   - ConfirmPassword: zgodnosc.
 - Walidacja serwera (ProblemDetails -> mapowanie na pola):
-  - 400/422: bledy walidacji (np. haslo zbyt krotkie, zly format e-mail).
+  - 400: bledy walidacji (np. haslo zbyt krotkie, zly format e-mail).
   - 409: konflikt (email zajety, token juz uzyty).
   - 401/403: bledne dane lub niepotwierdzony email.
 - Komunikaty bez ujawniania szczegolow:
@@ -138,7 +138,7 @@ Komponenty formularzy (jeden publiczny komponent na plik, MudBlazor):
   - Wynik:
     - 201 RegisterResponse (np. userId, email)
     - 409 gdy email zajety
-    - 422 walidacja
+    - 400 walidacja
 - POST /api/v1/auth/confirm-email
   - Wejscie: ConfirmEmailRequest (userId, token)
   - Wynik: 204 po sukcesie
@@ -193,7 +193,7 @@ Konwencje mapowania:
 ### 2.6 Obsluga bledow i Result/ProblemDetails
 - Handlery zwracaja Result/Result<T> z kodem bledu i komunikatem.
 - Globalny mapper ProblemDetails:
-  - 400/422: walidacja
+  - 400: walidacja
   - 401: unauthorized
   - 403: forbidden (email niepotwierdzony)
   - 404: not found

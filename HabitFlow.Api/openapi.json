@@ -1442,8 +1442,7 @@
             "format": "int32"
           },
           "targetValueSnapshot": {
-            "type": "integer",
-            "format": "int32"
+            "type": "integer"
           },
           "completionModeSnapshot": {
             "$ref": "#/components/schemas/CompletionMode"

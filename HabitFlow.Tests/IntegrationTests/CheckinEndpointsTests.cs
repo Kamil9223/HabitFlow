@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using HabitFlow.Api.Contracts.Auth;
 using HabitFlow.Api.Contracts.Checkins;
 using HabitFlow.Data.Entities;
@@ -11,13 +13,23 @@ using Xunit;
 
 namespace HabitFlow.Tests.IntegrationTests;
 
-public class CheckinEndpointsTests(IntegrationTestFixture fixture) : IClassFixture<IntegrationTestFixture>
+public class CheckinEndpointsTests : IClassFixture<IntegrationTestFixture>
 {
+    private readonly IntegrationTestFixture _fixture;
+    private readonly JsonSerializerOptions _options;
+
+    public CheckinEndpointsTests(IntegrationTestFixture fixture)
+    {
+        _fixture = fixture;
+        _options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        _options.Converters.Add(new JsonStringEnumConverter());
+    }
+    
     [Fact]
     public async Task CreateCheckin_WithoutAuthentication_ReturnsUnauthorized()
     {
         // Arrange
-        using var client = fixture.CreateClient();
+        using var client = _fixture.CreateClient();
         var request = new CreateCheckinRequest(DateOnly.FromDateTime(DateTime.UtcNow), 5);
 
         // Act
@@ -45,7 +57,7 @@ public class CheckinEndpointsTests(IntegrationTestFixture fixture) : IClassFixtu
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.NotNull(response.Headers.Location);
 
-        var checkin = await response.Content.ReadFromJsonAsync<CheckinResponse>();
+        var checkin = await response.Content.ReadFromJsonAsync<CheckinResponse>(_options);
         Assert.NotNull(checkin);
         Assert.True(checkin.Id > 0);
         Assert.Equal(habitId, checkin.HabitId);
@@ -109,7 +121,7 @@ public class CheckinEndpointsTests(IntegrationTestFixture fixture) : IClassFixtu
     }
 
     [Fact]
-    public async Task CreateCheckin_NotPlannedDay_Returns422()
+    public async Task CreateCheckin_NotPlannedDay_Returns409()
     {
         // Arrange: Create habit with specific days (e.g., Monday only = bit 1)
         var (client, userId) = await CreateAuthenticatedClientAsync();
@@ -131,7 +143,7 @@ public class CheckinEndpointsTests(IntegrationTestFixture fixture) : IClassFixtu
         var response = await client.PostAsJsonAsync($"/api/v1/habits/{habitId}/checkins", request);
 
         // Assert
-        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
     [Fact]
@@ -203,7 +215,7 @@ public class CheckinEndpointsTests(IntegrationTestFixture fixture) : IClassFixtu
         // Assert
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
-        var checkin = await response.Content.ReadFromJsonAsync<CheckinResponse>();
+        var checkin = await response.Content.ReadFromJsonAsync<CheckinResponse>(_options);
         Assert.NotNull(checkin);
         Assert.Equal(10, checkin.ActualValue); // Clamped to target
         Assert.Equal(10, checkin.TargetValueSnapshot);
@@ -227,7 +239,7 @@ public class CheckinEndpointsTests(IntegrationTestFixture fixture) : IClassFixtu
         // Assert
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
-        var checkin = await response.Content.ReadFromJsonAsync<CheckinResponse>();
+        var checkin = await response.Content.ReadFromJsonAsync<CheckinResponse>(_options);
         Assert.NotNull(checkin);
         Assert.Equal(1, checkin.ActualValue);
         Assert.Equal(CompletionMode.Binary, checkin.CompletionModeSnapshot);
@@ -251,7 +263,7 @@ public class CheckinEndpointsTests(IntegrationTestFixture fixture) : IClassFixtu
         // Assert
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
 
-        var checkin = await response.Content.ReadFromJsonAsync<CheckinResponse>();
+        var checkin = await response.Content.ReadFromJsonAsync<CheckinResponse>(_options);
         Assert.NotNull(checkin);
         Assert.Equal(HabitType.Stop, checkin.HabitTypeSnapshot);
     }
@@ -281,7 +293,7 @@ public class CheckinEndpointsTests(IntegrationTestFixture fixture) : IClassFixtu
 
     private async Task<(HttpClient client, Guid userId)> CreateAuthenticatedClientAsync()
     {
-        using var scope = fixture.Factory.Services.CreateScope();
+        using var scope = _fixture.Factory.Services.CreateScope();
         var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
         var testEmail = $"checkin-test-{Guid.NewGuid()}@test.com";
@@ -299,7 +311,7 @@ public class CheckinEndpointsTests(IntegrationTestFixture fixture) : IClassFixtu
         var createResult = await userManager.CreateAsync(user, testPassword);
         Assert.True(createResult.Succeeded);
 
-        var client = fixture.CreateClient();
+        var client = _fixture.CreateClient();
 
         var loginRequest = new LoginRequest(testEmail, testPassword);
         var loginResponse = await client.PostAsJsonAsync("/api/v1/auth/login", loginRequest);
@@ -321,7 +333,7 @@ public class CheckinEndpointsTests(IntegrationTestFixture fixture) : IClassFixtu
         CompletionMode? completionMode = null,
         short? targetValue = null)
     {
-        using var scope = fixture.Factory.Services.CreateScope();
+        using var scope = _fixture.Factory.Services.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<HabitFlow.Data.HabitFlowDbContext>();
 
         var habit = new Habit

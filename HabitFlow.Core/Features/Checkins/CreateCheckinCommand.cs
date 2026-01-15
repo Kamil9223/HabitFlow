@@ -30,7 +30,7 @@ public record CreateCheckinResult(
     CompletionMode CompletionModeSnapshot,
     HabitType HabitTypeSnapshot,
     bool IsPlanned,
-    DateTime CreatedAtUtc
+    DateTimeOffset CreatedAtUtc
 );
 
 public class CreateCheckinCommandHandler(
@@ -108,7 +108,7 @@ public class CreateCheckinCommandHandler(
                 "Checkin for Habit {HabitId} on {LocalDate} is not allowed (not a planned day)",
                 command.HabitId, command.LocalDate);
             return Result.Failure<CreateCheckinResult>(
-                Error.Validation("Checkin.NotPlanned", "Checkin is not allowed for this day (not in planned days)"));
+                Error.Conflict("Checkin.NotPlanned", "Checkin is not allowed for this day (not in planned days)"));
         }
 
         // 5. Create snapshots

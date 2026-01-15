@@ -7,7 +7,7 @@ public record CheckinResponse(
     int HabitId,
     DateOnly LocalDate,
     int ActualValue,
-    int TargetValueSnapshot,
+    short TargetValueSnapshot,
     CompletionMode CompletionModeSnapshot,
     HabitType HabitTypeSnapshot,
     bool IsPlanned,

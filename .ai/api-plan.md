@@ -17,7 +17,7 @@ Conventions:
 - Pagination: ?page=1&pageSize=20 (page ≥1, pageSize 1..100). Responses include totalCount and items[].
 - Sorting: ?sort=createdAtUtc:desc (field:direction). Default sorts noted per endpoint.
 - Filtering: simple eq/in parameters where applicable.
-- Errors: RFC7807 ProblemDetails. Common statuses: 400, 401, 403, 404, 409, 422, 429, 500.
+- Errors: RFC7807 ProblemDetails. Common statuses: 400, 401, 403, 404, 409, 429, 500.
 - Security: All non-auth endpoints require authenticated cookie and enforce per-user isolation; DB session context is set per request to support RLS.
 
 ### 2.1 Auth
@@ -36,7 +36,7 @@ Conventions:
   "emailConfirmed": false
 }
 - Success: 201 Created
-- Errors: 400 (validation), 409 (email already used), 422 (invalid timeZoneId)
+- Errors: 400 (validation), 409 (email already used, invalid timeZoneId)
 
 2) POST /api/v1/auth/confirm-email
 - Description: Confirm email from link.
@@ -110,7 +110,7 @@ Conventions:
   "timeZoneId": "America/New_York"
 }
 - Response 204 No Content
-- Errors: 400 (missing/invalid), 422 (unsupported time zone)
+- Errors: 400 (missing/invalid, unsupported time zone)
 
 3) DELETE /api/v1/profile
 - Description: Permanently delete user account and all associated data (hard delete with cascade).
@@ -301,8 +301,7 @@ Rules:
   - 401
   - 403 (not owner)
   - 404 (habit not found)
-  - 409 (duplicate checkin for date)
-  - 422 (not allowed: after deadline, not planned day, >7 days back)
+  - 409 (duplicate checkin for date, not allowed: after deadline, not planned day, >7 days back)
 
 2) GET /api/v1/habits/{habitId}/checkins
 - Description: List checkins for a date range (for charts, history).
@@ -439,9 +438,9 @@ Notes:
 
 ### 4.3 Checkin Rules
 - Uniqueness: One checkin per (habitId, localDate); duplicate returns 409.
-- Planning: Checkin allowed only if the day is planned by daysOfWeekMask (isPlanned=true), else 422.
-- Deadline: If deadlineDate exists, localDate must be ≤ deadlineDate; otherwise 422.
-- Backfill window: localDate must be within [today-7, today] in user’s time zone; otherwise 422.
+- Planning: Checkin allowed only if the day is planned by daysOfWeekMask (isPlanned=true), else 409 statusCode.
+- Deadline: If deadlineDate exists, localDate must be ≤ deadlineDate; otherwise 409 statusCode.
+- Backfill window: localDate must be within [today-7, today] in user’s time zone; otherwise 409 statusCode.
 - Range validation:
   - For completionMode=1 (Binary): actualValue is automatically converted from boolean (done/not done) to 0 or 1 in UI.
   - For completionMode=2 (Quantitative): 0 ≤ actualValue ≤ TargetValueSnapshot. Negative values return 400. Values above TargetValueSnapshot are clamped before save.
@@ -478,8 +477,7 @@ Notes:
 - 401 Unauthorized: Bearer token missing/invalid.
 - 403 Forbidden: Attempted action is not allowed for the authenticated user.
 - 404 Not Found: Resource does not exist or not accessible.
-- 409 Conflict: Duplicate checkin, habit limit reached, or unique constraint violation.
-- 422 Unprocessable Entity: Business rule violation (not planned day, after deadline, >7 days back).
+- 409 Conflict: Duplicate checkin, habit limit reached, or unique constraint violation, Business rule violation (not planned day, after deadline, >7 days back).
 - 429 Too Many Requests: Rate limit exceeded.
 
 ## 5. Data Models (DTOs)

@@ -39,8 +39,11 @@ internal static class TestDatabase
 
             // Start SQL Server container
             _container = new MsSqlBuilder()
-                .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
-                .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("SQL Server is now ready for client connections"))
+                //.WithImage("mcr.microsoft.com/mssql/server:2022-latest")
+                //.WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("SQL Server is now ready for client connections"))
+                .WithPortBinding(15001)
+                .WithLabel("reuse-id", "habitflow_MSSQL")
+                .WithReuse(true)
                 .Build();
 
             // Start MailHog SMTP container for email testing
@@ -49,6 +52,8 @@ internal static class TestDatabase
                 .WithPortBinding(1025, true) // SMTP port
                 .WithPortBinding(8025, true) // HTTP API port
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(1025))
+                .WithLabel("reuse-id", "habitflow_MailHog")
+                .WithReuse(true)
                 .Build();
 
             // Start both containers
