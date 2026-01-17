@@ -289,6 +289,189 @@ public class CheckinEndpointsTests : IClassFixture<IntegrationTestFixture>
         }
     }
 
+    [Fact]
+    public async Task GetCheckinsByDate_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        // Arrange
+        using var client = _fixture.CreateClient();
+        var date = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        // Act
+        var response = await client.GetAsync($"/api/v1/checkins?date={date:yyyy-MM-dd}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetCheckinsByDate_ValidRequest_Returns200WithCheckins()
+    {
+        // Arrange
+        var (client, userId) = await CreateAuthenticatedClientAsync();
+        var habitId1 = await CreateHabitAsync(userId);
+        var habitId2 = await CreateHabitAsync(userId);
+        var targetDate = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        // Create checkins for target date
+        var request1 = new CreateCheckinRequest(targetDate, 7);
+        var response1 = await client.PostAsJsonAsync($"/api/v1/habits/{habitId1}/checkins", request1);
+        Assert.Equal(HttpStatusCode.Created, response1.StatusCode);
+
+        var request2 = new CreateCheckinRequest(targetDate, 5);
+        var response2 = await client.PostAsJsonAsync($"/api/v1/habits/{habitId2}/checkins", request2);
+        Assert.Equal(HttpStatusCode.Created, response2.StatusCode);
+
+        // Act
+        var response = await client.GetAsync($"/api/v1/checkins?date={targetDate:yyyy-MM-dd}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var result = await response.Content.ReadFromJsonAsync<CheckinsByDateResponse>(_options);
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Items.Count);
+        Assert.All(result.Items, item => Assert.Equal(targetDate, item.LocalDate));
+    }
+
+    [Fact]
+    public async Task GetCheckinsByDate_NoCheckins_ReturnsEmptyList()
+    {
+        // Arrange
+        var (client, userId) = await CreateAuthenticatedClientAsync();
+        await CreateHabitAsync(userId); // Create habit but no checkins
+        var targetDate = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        // Act
+        var response = await client.GetAsync($"/api/v1/checkins?date={targetDate:yyyy-MM-dd}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var result = await response.Content.ReadFromJsonAsync<CheckinsByDateResponse>(_options);
+        Assert.NotNull(result);
+        Assert.Empty(result.Items);
+    }
+
+    [Fact]
+    public async Task GetCheckinsByDate_OnlyReturnsCurrentUserCheckins()
+    {
+        // Arrange: Create two users with habits and checkins
+        var (client1, userId1) = await CreateAuthenticatedClientAsync();
+        var habitId1 = await CreateHabitAsync(userId1);
+        var targetDate = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        var (client2, userId2) = await CreateAuthenticatedClientAsync();
+        var habitId2 = await CreateHabitAsync(userId2);
+
+        // Create checkins for both users on same date
+        var request1 = new CreateCheckinRequest(targetDate, 7);
+        var response1 = await client1.PostAsJsonAsync($"/api/v1/habits/{habitId1}/checkins", request1);
+        Assert.Equal(HttpStatusCode.Created, response1.StatusCode);
+
+        var request2 = new CreateCheckinRequest(targetDate, 5);
+        var response2 = await client2.PostAsJsonAsync($"/api/v1/habits/{habitId2}/checkins", request2);
+        Assert.Equal(HttpStatusCode.Created, response2.StatusCode);
+
+        // Act: Get checkins for user1
+        var response = await client1.GetAsync($"/api/v1/checkins?date={targetDate:yyyy-MM-dd}");
+
+        // Assert: Should only return user1's checkin
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var result = await response.Content.ReadFromJsonAsync<CheckinsByDateResponse>(_options);
+        Assert.NotNull(result);
+        Assert.Single(result.Items);
+        Assert.Equal(habitId1, result.Items[0].HabitId);
+    }
+
+    [Fact]
+    public async Task GetCheckinsByDate_InvalidDateFormat_Returns400()
+    {
+        // Arrange
+        var (client, _) = await CreateAuthenticatedClientAsync();
+
+        // Act
+        var response = await client.GetAsync("/api/v1/checkins?date=invalid-date");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetCheckinsByDate_MissingDateParameter_Returns400()
+    {
+        // Arrange
+        var (client, _) = await CreateAuthenticatedClientAsync();
+
+        // Act
+        var response = await client.GetAsync("/api/v1/checkins");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetCheckinsByDate_OnlyReturnsCheckinsForSpecifiedDate()
+    {
+        // Arrange
+        var (client, userId) = await CreateAuthenticatedClientAsync();
+        var habitId = await CreateHabitAsync(userId);
+        var targetDate = DateOnly.FromDateTime(DateTime.UtcNow);
+        var yesterday = targetDate.AddDays(-1);
+
+        // Create checkins for two different dates
+        var requestToday = new CreateCheckinRequest(targetDate, 7);
+        var responseToday = await client.PostAsJsonAsync($"/api/v1/habits/{habitId}/checkins", requestToday);
+        Assert.Equal(HttpStatusCode.Created, responseToday.StatusCode);
+
+        var requestYesterday = new CreateCheckinRequest(yesterday, 5);
+        var responseYesterday = await client.PostAsJsonAsync($"/api/v1/habits/{habitId}/checkins", requestYesterday);
+        Assert.Equal(HttpStatusCode.Created, responseYesterday.StatusCode);
+
+        // Act: Get checkins for target date only
+        var response = await client.GetAsync($"/api/v1/checkins?date={targetDate:yyyy-MM-dd}");
+
+        // Assert: Should only return today's checkin
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var result = await response.Content.ReadFromJsonAsync<CheckinsByDateResponse>(_options);
+        Assert.NotNull(result);
+        Assert.Single(result.Items);
+        Assert.Equal(targetDate, result.Items[0].LocalDate);
+        Assert.Equal(7, result.Items[0].ActualValue);
+    }
+
+    [Fact]
+    public async Task GetCheckinsByDate_ReturnsAllRequiredFields()
+    {
+        // Arrange
+        var (client, userId) = await CreateAuthenticatedClientAsync();
+        var habitId = await CreateHabitAsync(userId);
+        var targetDate = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        var request = new CreateCheckinRequest(targetDate, 7);
+        var createResponse = await client.PostAsJsonAsync($"/api/v1/habits/{habitId}/checkins", request);
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+
+        var createdCheckin = await createResponse.Content.ReadFromJsonAsync<CheckinResponse>(_options);
+        Assert.NotNull(createdCheckin);
+
+        // Act
+        var response = await client.GetAsync($"/api/v1/checkins?date={targetDate:yyyy-MM-dd}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var result = await response.Content.ReadFromJsonAsync<CheckinsByDateResponse>(_options);
+        Assert.NotNull(result);
+        var item = Assert.Single(result.Items);
+        Assert.Equal(createdCheckin.Id, item.Id);
+        Assert.Equal(habitId, item.HabitId);
+        Assert.Equal(targetDate, item.LocalDate);
+        Assert.Equal(7, item.ActualValue);
+        Assert.True(item.IsPlanned);
+    }
+
     // Helper methods
 
     private async Task<(HttpClient client, Guid userId)> CreateAuthenticatedClientAsync()

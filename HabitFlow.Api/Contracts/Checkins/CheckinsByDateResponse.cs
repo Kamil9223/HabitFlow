@@ -1,7 +1,6 @@
 ﻿namespace HabitFlow.Api.Contracts.Checkins;
 
 public record CheckinsByDateResponse(
-    DateOnly Date,
     IReadOnlyList<CheckinsByDateItem> Items
 );
 

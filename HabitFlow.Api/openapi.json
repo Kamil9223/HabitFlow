@@ -1534,10 +1534,6 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {
-          "date": {
-            "type": "string",
-            "format": "date"
-          },
           "items": {
             "type": "array",
             "items": {

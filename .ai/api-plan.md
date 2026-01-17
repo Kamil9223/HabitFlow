@@ -327,10 +327,9 @@ Rules:
 
 3) GET /api/v1/checkins
 - Description: Optional convenience list for a specific localDate across all habits (today view backfill).
-- Query: date=YYYY-MM-DD (required)
+- Query: date=YYYY-MM-DD (required, DateOnly type)
 - Response 200:
 {
-  "date": "2025-12-07",
   "items": [
     {
       "id": 9876,

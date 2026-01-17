@@ -56,11 +56,28 @@ public static class CheckinEndpoints
             .Produces(401)
             .Produces(404);
 
-        group.MapGet("/checkins", (DateOnly date) =>
-            Results.StatusCode(501))
-            .WithName("GetCheckinsByDate")
-            .Produces<CheckinsByDateResponse>(200)
-            .Produces(400)
-            .Produces(401);
+        group.MapGet("/checkins", async (
+            DateOnly date,
+            IQueryDispatcher dispatcher,
+            CancellationToken cancellationToken) =>
+        {
+            var query = new GetCheckinsByDateQuery(date);
+            var result = await dispatcher.Dispatch(query, cancellationToken);
+
+            return result.ToHttpResult(items => Results.Ok(
+                new CheckinsByDateResponse(
+                    items.Select(i => new CheckinsByDateItem(
+                        i.Id,
+                        i.HabitId,
+                        i.LocalDate,
+                        i.ActualValue,
+                        i.IsPlanned
+                    )).ToList()
+                )));
+        })
+        .WithName("GetCheckinsByDate")
+        .Produces<CheckinsByDateResponse>(200)
+        .Produces(400)
+        .Produces(401);
     }
 }
