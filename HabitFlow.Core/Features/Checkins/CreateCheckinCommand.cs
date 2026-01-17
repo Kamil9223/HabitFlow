@@ -137,7 +137,7 @@ public class CreateCheckinCommandHandler(
             IsPlanned = isPlanned,
             CreatedAtUtc = DateTime.UtcNow
         };
-        
+
         context.Checkins.Add(checkin);
         await context.SaveChangesAsync(cancellationToken);
 

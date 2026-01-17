@@ -55,7 +55,6 @@ public class RegisterCommandHandlerTests
 
         // Assert
         Assert.True(result.IsSuccess);
-        Assert.NotNull(result.Value.UserId);
         Assert.Equal("test@example.com", result.Value.Email);
         Assert.False(result.Value.EmailConfirmed);
 

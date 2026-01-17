@@ -32,7 +32,7 @@ public class CreateHabitCommandHandler(
         var validationErrors = CreateHabitValidator.Validate(command);
         if (validationErrors.Count > 0)
             return Result.Failure<int>(validationErrors);
-        
+
         var user = loggedUserContext.GetUser();
 
         // Check habit limit for user

@@ -24,7 +24,7 @@ public class CheckinEndpointsTests : IClassFixture<IntegrationTestFixture>
         _options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
         _options.Converters.Add(new JsonStringEnumConverter());
     }
-    
+
     [Fact]
     public async Task CreateCheckin_WithoutAuthentication_ReturnsUnauthorized()
     {
@@ -470,6 +470,339 @@ public class CheckinEndpointsTests : IClassFixture<IntegrationTestFixture>
         Assert.Equal(targetDate, item.LocalDate);
         Assert.Equal(7, item.ActualValue);
         Assert.True(item.IsPlanned);
+    }
+
+    // Tests for GET /api/v1/habits/{habitId}/checkins
+
+    [Fact]
+    public async Task GetCheckinsForHabit_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        // Arrange
+        using var client = _fixture.CreateClient();
+
+        // Act
+        var response = await client.GetAsync("/api/v1/habits/1/checkins?from=2025-11-01&to=2025-11-30");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetCheckinsForHabit_ValidRequest_Returns200WithCheckins()
+    {
+        // Arrange
+        var (client, userId) = await CreateAuthenticatedClientAsync();
+        var habitId = await CreateHabitAsync(userId);
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var from = today.AddDays(-7);
+        var to = today;
+
+        // Create checkins within range (within backfill window)
+        var date1 = today.AddDays(-5);
+        var date2 = today.AddDays(-3);
+        var date3 = today.AddDays(-1);
+
+        await client.PostAsJsonAsync($"/api/v1/habits/{habitId}/checkins", new CreateCheckinRequest(date1, 5));
+        await client.PostAsJsonAsync($"/api/v1/habits/{habitId}/checkins", new CreateCheckinRequest(date2, 7));
+        await client.PostAsJsonAsync($"/api/v1/habits/{habitId}/checkins", new CreateCheckinRequest(date3, 8));
+
+        // Act
+        var response = await client.GetAsync($"/api/v1/habits/{habitId}/checkins?from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var result = await response.Content.ReadFromJsonAsync<CheckinListResponse>(_options);
+        Assert.NotNull(result);
+        Assert.Equal(habitId, result.HabitId);
+        Assert.Equal(from.ToString("yyyy-MM-dd"), result.From);
+        Assert.Equal(to.ToString("yyyy-MM-dd"), result.To);
+        Assert.Equal(3, result.Items.Count);
+    }
+
+    [Fact]
+    public async Task GetCheckinsForHabit_EmptyDateRange_ReturnsEmptyList()
+    {
+        // Arrange
+        var (client, userId) = await CreateAuthenticatedClientAsync();
+        var habitId = await CreateHabitAsync(userId);
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var from = today.AddDays(-7);
+        var to = today.AddDays(-5);
+
+        // Create checkin outside of requested range
+        var dateOutside = today.AddDays(-2);
+        await client.PostAsJsonAsync($"/api/v1/habits/{habitId}/checkins", new CreateCheckinRequest(dateOutside, 5));
+
+        // Act
+        var response = await client.GetAsync($"/api/v1/habits/{habitId}/checkins?from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var result = await response.Content.ReadFromJsonAsync<CheckinListResponse>(_options);
+        Assert.NotNull(result);
+        Assert.Empty(result.Items);
+    }
+
+    [Fact]
+    public async Task GetCheckinsForHabit_HabitNotFound_Returns404()
+    {
+        // Arrange
+        var (client, _) = await CreateAuthenticatedClientAsync();
+        var nonExistentHabitId = 999999;
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var from = today.AddDays(-7);
+        var to = today;
+
+        // Act
+        var response = await client.GetAsync($"/api/v1/habits/{nonExistentHabitId}/checkins?from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetCheckinsForHabit_NotOwner_Returns404()
+    {
+        // Arrange: Create two users and habit for first user
+        var (client1, userId1) = await CreateAuthenticatedClientAsync();
+        var habitId = await CreateHabitAsync(userId1);
+
+        // Create some checkins
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var date = today.AddDays(-3);
+        await client1.PostAsJsonAsync($"/api/v1/habits/{habitId}/checkins", new CreateCheckinRequest(date, 5));
+
+        // Create second user and authenticate
+        var (client2, _) = await CreateAuthenticatedClientAsync();
+        var from = today.AddDays(-7);
+        var to = today;
+
+        // Act: Second user tries to get checkins for first user's habit
+        var response = await client2.GetAsync($"/api/v1/habits/{habitId}/checkins?from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}");
+
+        // Assert: Should return 404 to avoid resource enumeration
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetCheckinsForHabit_FromAfterTo_Returns400()
+    {
+        // Arrange
+        var (client, userId) = await CreateAuthenticatedClientAsync();
+        var habitId = await CreateHabitAsync(userId);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var from = today;
+        var to = today.AddDays(-7);
+
+        // Act
+        var response = await client.GetAsync($"/api/v1/habits/{habitId}/checkins?from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetCheckinsForHabit_DateRangeExceeds365Days_Returns400()
+    {
+        // Arrange
+        var (client, userId) = await CreateAuthenticatedClientAsync();
+        var habitId = await CreateHabitAsync(userId);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var from = today.AddDays(-366);
+        var to = today; // 367 days
+
+        // Act
+        var response = await client.GetAsync($"/api/v1/habits/{habitId}/checkins?from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetCheckinsForHabit_SortsByLocalDateAscending()
+    {
+        // Arrange
+        var (client, userId) = await CreateAuthenticatedClientAsync();
+        var habitId = await CreateHabitAsync(userId);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var from = today.AddDays(-7);
+        var to = today;
+
+        // Create checkins in non-sorted order
+        var date1 = today.AddDays(-1);
+        var date2 = today.AddDays(-6);
+        var date3 = today.AddDays(-3);
+
+        await client.PostAsJsonAsync($"/api/v1/habits/{habitId}/checkins", new CreateCheckinRequest(date1, 5));
+        await client.PostAsJsonAsync($"/api/v1/habits/{habitId}/checkins", new CreateCheckinRequest(date2, 6));
+        await client.PostAsJsonAsync($"/api/v1/habits/{habitId}/checkins", new CreateCheckinRequest(date3, 7));
+
+        // Act
+        var response = await client.GetAsync($"/api/v1/habits/{habitId}/checkins?from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var result = await response.Content.ReadFromJsonAsync<CheckinListResponse>(_options);
+        Assert.NotNull(result);
+        Assert.Equal(3, result.Items.Count);
+        Assert.Equal(date2.ToString("yyyy-MM-dd"), result.Items[0].LocalDate);
+        Assert.Equal(date3.ToString("yyyy-MM-dd"), result.Items[1].LocalDate);
+        Assert.Equal(date1.ToString("yyyy-MM-dd"), result.Items[2].LocalDate);
+    }
+
+    [Fact]
+    public async Task GetCheckinsForHabit_ReturnsAllRequiredFieldsWithSnapshots()
+    {
+        // Arrange
+        var (client, userId) = await CreateAuthenticatedClientAsync();
+        var habitId = await CreateHabitAsync(
+            userId: userId,
+            completionMode: CompletionMode.Quantitative,
+            habitType: HabitType.Start,
+            targetValue: 10);
+
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var from = today.AddDays(-7);
+        var to = today;
+        var targetDate = today.AddDays(-3);
+
+        var createResponse = await client.PostAsJsonAsync(
+            $"/api/v1/habits/{habitId}/checkins",
+            new CreateCheckinRequest(targetDate, 7));
+
+        Assert.Equal(HttpStatusCode.Created, createResponse.StatusCode);
+
+        var createdCheckin = await createResponse.Content.ReadFromJsonAsync<CheckinResponse>(_options);
+        Assert.NotNull(createdCheckin);
+
+        // Act
+        var response = await client.GetAsync($"/api/v1/habits/{habitId}/checkins?from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var result = await response.Content.ReadFromJsonAsync<CheckinListResponse>(_options);
+        Assert.NotNull(result);
+        var item = Assert.Single(result.Items);
+        Assert.Equal(createdCheckin.Id, item.Id);
+        Assert.Equal(targetDate.ToString("yyyy-MM-dd"), item.LocalDate);
+        Assert.Equal(7, item.ActualValue);
+        Assert.Equal(10, item.TargetValueSnapshot);
+        Assert.Equal((byte)CompletionMode.Quantitative, item.CompletionModeSnapshot);
+        Assert.Equal((byte)HabitType.Start, item.HabitTypeSnapshot);
+        Assert.True(item.IsPlanned);
+    }
+
+    [Fact]
+    public async Task GetCheckinsForHabit_OnlyReturnsCheckinsWithinDateRange()
+    {
+        // Arrange
+        var (client, userId) = await CreateAuthenticatedClientAsync();
+        var habitId = await CreateHabitAsync(userId);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var from = today.AddDays(-5);
+        var to = today.AddDays(-2);
+
+        // Create checkins: before, within, and after range
+        var dateBefore = today.AddDays(-7);
+        var dateWithin1 = today.AddDays(-4);
+        var dateWithin2 = today.AddDays(-3);
+        var dateAfter = today;
+
+        await client.PostAsJsonAsync($"/api/v1/habits/{habitId}/checkins", new CreateCheckinRequest(dateBefore, 1));
+        await client.PostAsJsonAsync($"/api/v1/habits/{habitId}/checkins", new CreateCheckinRequest(dateWithin1, 2));
+        await client.PostAsJsonAsync($"/api/v1/habits/{habitId}/checkins", new CreateCheckinRequest(dateWithin2, 3));
+        await client.PostAsJsonAsync($"/api/v1/habits/{habitId}/checkins", new CreateCheckinRequest(dateAfter, 4));
+
+        // Act
+        var response = await client.GetAsync($"/api/v1/habits/{habitId}/checkins?from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var result = await response.Content.ReadFromJsonAsync<CheckinListResponse>(_options);
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Items.Count);
+        Assert.Equal(dateWithin1.ToString("yyyy-MM-dd"), result.Items[0].LocalDate);
+        Assert.Equal(dateWithin2.ToString("yyyy-MM-dd"), result.Items[1].LocalDate);
+    }
+
+    [Fact]
+    public async Task GetCheckinsForHabit_IncludesBoundaryDates()
+    {
+        // Arrange
+        var (client, userId) = await CreateAuthenticatedClientAsync();
+        var habitId = await CreateHabitAsync(userId);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var from = today.AddDays(-5);
+        var to = today.AddDays(-2);
+
+        // Create checkins on boundary dates
+        await client.PostAsJsonAsync($"/api/v1/habits/{habitId}/checkins", new CreateCheckinRequest(from, 5));
+        await client.PostAsJsonAsync($"/api/v1/habits/{habitId}/checkins", new CreateCheckinRequest(to, 7));
+
+        // Act
+        var response = await client.GetAsync($"/api/v1/habits/{habitId}/checkins?from={from:yyyy-MM-dd}&to={to:yyyy-MM-dd}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var result = await response.Content.ReadFromJsonAsync<CheckinListResponse>(_options);
+        Assert.NotNull(result);
+        Assert.Equal(2, result.Items.Count);
+        Assert.Contains(result.Items, item => item.LocalDate == from.ToString("yyyy-MM-dd"));
+        Assert.Contains(result.Items, item => item.LocalDate == to.ToString("yyyy-MM-dd"));
+    }
+
+    [Fact]
+    public async Task GetCheckinsForHabit_InvalidDateFormat_Returns400()
+    {
+        // Arrange
+        var (client, userId) = await CreateAuthenticatedClientAsync();
+        var habitId = await CreateHabitAsync(userId);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        // Act
+        var response = await client.GetAsync($"/api/v1/habits/{habitId}/checkins?from=invalid-date&to={today:yyyy-MM-dd}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetCheckinsForHabit_MissingFromParameter_Returns400()
+    {
+        // Arrange
+        var (client, userId) = await CreateAuthenticatedClientAsync();
+        var habitId = await CreateHabitAsync(userId);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        // Act
+        var response = await client.GetAsync($"/api/v1/habits/{habitId}/checkins?to={today:yyyy-MM-dd}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetCheckinsForHabit_MissingToParameter_Returns400()
+    {
+        // Arrange
+        var (client, userId) = await CreateAuthenticatedClientAsync();
+        var habitId = await CreateHabitAsync(userId);
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        // Act
+        var response = await client.GetAsync($"/api/v1/habits/{habitId}/checkins?from={today.AddDays(-7):yyyy-MM-dd}");
+
+        // Assert
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
     // Helper methods

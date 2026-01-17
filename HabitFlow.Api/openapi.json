@@ -1482,22 +1482,20 @@
             "format": "int32"
           },
           "from": {
-            "type": "string",
-            "format": "date"
+            "type": "string"
           },
           "to": {
-            "type": "string",
-            "format": "date"
+            "type": "string"
           },
           "items": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/CheckinListItem"
+              "$ref": "#/components/schemas/CheckinItemDto"
             }
           }
         }
       },
-      "CheckinListItem": {
+      "CheckinItemDto": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
@@ -1506,24 +1504,22 @@
             "format": "int64"
           },
           "localDate": {
-            "type": "string",
-            "format": "date"
+            "type": "string"
           },
           "actualValue": {
             "type": "integer",
             "format": "int32"
           },
           "targetValueSnapshot": {
-            "type": "integer",
-            "format": "int32"
+            "type": "integer"
           },
           "completionModeSnapshot": {
             "type": "integer",
-            "format": "int32"
+            "format": "byte"
           },
           "habitTypeSnapshot": {
             "type": "integer",
-            "format": "int32"
+            "format": "byte"
           },
           "isPlanned": {
             "type": "boolean"

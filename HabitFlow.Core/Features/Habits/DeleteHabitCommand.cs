@@ -18,7 +18,7 @@ public class DeleteHabitCommandHandler(
     public async Task<Result> Handle(DeleteHabitCommand command, CancellationToken cancellationToken)
     {
         var user = loggedUserContext.GetUser();
-        
+
         // Find habit by ID and UserId (ownership check)
         var habit = await context.Habits
             .FirstOrDefaultAsync(h => h.Id == command.Id && h.UserId == user.UserId, cancellationToken);

@@ -69,7 +69,7 @@ public class GetHabitCalendarQueryHandler(
             return Result.Failure<HabitCalendarDto>(
                 Error.Validation("DateRange.TooLarge",
                     $"Date range cannot exceed {MaxRangeDays} days. Requested: {rangeDays} days."));
-        
+
         var user = loggedUserContext.GetUser();
 
         // Verify habit exists and belongs to user
@@ -180,7 +180,7 @@ public class GetHabitCalendarQueryHandler(
             return 0.0;
 
         double score;
-        
+
         if (completionModeSnapshot == CompletionMode.Binary)
         {
             score = actualValue > 0 ? 1.0 : 0.0;
@@ -189,7 +189,7 @@ public class GetHabitCalendarQueryHandler(
         {
             var ratio = (double)actualValue / targetValueSnapshot;
             var ratioClamped = Math.Clamp(ratio, 0.0, 1.0);
-            
+
             if (habitTypeSnapshot == HabitType.Stop)
             {
                 // For Stop habits, lower actual value is better

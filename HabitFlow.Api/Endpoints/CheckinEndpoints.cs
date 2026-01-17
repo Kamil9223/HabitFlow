@@ -48,13 +48,37 @@ public static class CheckinEndpoints
         .Produces(409)
         .Produces(422);
 
-        group.MapGet("/habits/{habitId:int}/checkins", (int habitId, DateOnly from, DateOnly to) =>
-            Results.StatusCode(501))
-            .WithName("GetCheckins")
-            .Produces<CheckinListResponse>(200)
-            .Produces(400)
-            .Produces(401)
-            .Produces(404);
+        group.MapGet("/habits/{habitId:int}/checkins", async (
+            int habitId,
+            DateOnly from,
+            DateOnly to,
+            IQueryDispatcher dispatcher,
+            CancellationToken cancellationToken) =>
+        {
+            var query = new GetCheckinsQuery(habitId, from, to);
+            var result = await dispatcher.Dispatch(query, cancellationToken);
+
+            return result.ToHttpResult(data => Results.Ok(
+                new CheckinListResponse(
+                    data.HabitId,
+                    data.From.ToString("yyyy-MM-dd"),
+                    data.To.ToString("yyyy-MM-dd"),
+                    data.Items.Select(item => new Contracts.Checkins.CheckinItemDto(
+                        item.Id,
+                        item.LocalDate.ToString("yyyy-MM-dd"),
+                        item.ActualValue,
+                        item.TargetValueSnapshot,
+                        item.CompletionModeSnapshot,
+                        item.HabitTypeSnapshot,
+                        item.IsPlanned
+                    )).ToList()
+                )));
+        })
+        .WithName("GetCheckins")
+        .Produces<CheckinListResponse>(200)
+        .Produces(400)
+        .Produces(401)
+        .Produces(404);
 
         group.MapGet("/checkins", async (
             DateOnly date,

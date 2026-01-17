@@ -45,7 +45,7 @@ public class GetHabitQueryHandler(
         if (query.HabitId <= 0)
             return Result.Failure<HabitDto>(
                 Error.Validation("Habit.InvalidId", "Habit ID must be greater than zero."));
-        
+
         var user = loggedUserContext.GetUser();
 
         // Query habit with ownership verification

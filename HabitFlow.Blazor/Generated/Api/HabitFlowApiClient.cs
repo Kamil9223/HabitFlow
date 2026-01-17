@@ -2921,28 +2921,25 @@ namespace HabitFlow.Client
         public int HabitId { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("from")]
-        [System.Text.Json.Serialization.JsonConverter(typeof(DateFormatConverter))]
-        public System.DateTimeOffset From { get; set; } = default!;
+        public string From { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("to")]
-        [System.Text.Json.Serialization.JsonConverter(typeof(DateFormatConverter))]
-        public System.DateTimeOffset To { get; set; } = default!;
+        public string To { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("items")]
-        public System.Collections.Generic.ICollection<CheckinListItem> Items { get; set; } = default!;
+        public System.Collections.Generic.ICollection<CheckinItemDto> Items { get; set; } = default!;
 
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.2.0.0 (NJsonSchema v11.1.0.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class CheckinListItem
+    public partial class CheckinItemDto
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("id")]
         public long Id { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("localDate")]
-        [System.Text.Json.Serialization.JsonConverter(typeof(DateFormatConverter))]
-        public System.DateTimeOffset LocalDate { get; set; } = default!;
+        public string LocalDate { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("actualValue")]
         public int ActualValue { get; set; } = default!;
@@ -2951,10 +2948,10 @@ namespace HabitFlow.Client
         public int TargetValueSnapshot { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("completionModeSnapshot")]
-        public int CompletionModeSnapshot { get; set; } = default!;
+        public byte CompletionModeSnapshot { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("habitTypeSnapshot")]
-        public int HabitTypeSnapshot { get; set; } = default!;
+        public byte HabitTypeSnapshot { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("isPlanned")]
         public bool IsPlanned { get; set; } = default!;
@@ -2964,10 +2961,6 @@ namespace HabitFlow.Client
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.2.0.0 (NJsonSchema v11.1.0.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class CheckinsByDateResponse
     {
-
-        [System.Text.Json.Serialization.JsonPropertyName("date")]
-        [System.Text.Json.Serialization.JsonConverter(typeof(DateFormatConverter))]
-        public System.DateTimeOffset Date { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("items")]
         public System.Collections.Generic.ICollection<CheckinsByDateItem> Items { get; set; } = default!;

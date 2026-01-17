@@ -32,7 +32,7 @@ public class UpdateHabitCommandHandler(
         var validationErrors = UpdateHabitValidator.Validate(command);
         if (validationErrors.Count > 0)
             return Result.Failure<int>(validationErrors);
-        
+
         var user = loggedUserContext.GetUser();
 
         // Find habit by ID and UserId (ownership check)

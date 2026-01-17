@@ -2,17 +2,17 @@
 
 public record CheckinListResponse(
     int HabitId,
-    DateOnly From,
-    DateOnly To,
-    IReadOnlyList<CheckinListItem> Items
+    string From,
+    string To,
+    List<CheckinItemDto> Items
 );
 
-public record CheckinListItem(
+public record CheckinItemDto(
     long Id,
-    DateOnly LocalDate,
+    string LocalDate,
     int ActualValue,
-    int TargetValueSnapshot,
-    int CompletionModeSnapshot,
-    int HabitTypeSnapshot,
+    short TargetValueSnapshot,
+    byte CompletionModeSnapshot,
+    byte HabitTypeSnapshot,
     bool IsPlanned
 );

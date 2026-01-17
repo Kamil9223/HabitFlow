@@ -14,14 +14,14 @@ public class UpdateHabitCommandHandlerTests
 {
     private readonly HabitFlowDbContext _dbContext;
     private readonly ILoggedUserContext _userContext;
-    
+
     private readonly Guid _userId = Guid.NewGuid();
     public UpdateHabitCommandHandlerTests()
     {
         var options = new DbContextOptionsBuilder<HabitFlowDbContext>()
             .UseInMemoryDatabase(Guid.NewGuid().ToString())
             .Options;
-        
+
         _dbContext = new HabitFlowDbContext(options);
         _userContext = Substitute.For<ILoggedUserContext>();
         _userContext.GetUser().Returns(x => new CurrentUser(_userId, "UTC", "user-123@test.pl"));

@@ -58,7 +58,7 @@ public class GetHabitsQueryHandler(
         // Validate page and pageSize
         var pageSize = Math.Clamp(query.PageSize, MinPageSize, MaxPageSize);
         var page = Math.Max(query.Page, MinPage);
-        
+
         var user = loggedUserContext.GetUser();
 
         // Build base query with user filter
