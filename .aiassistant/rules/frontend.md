@@ -60,7 +60,22 @@ patterns: HabitFlow.Blazor/**
 
 ## Testy
 
-- bUnit (render, walidacja, interakcje) i E2E (Playwright) dla ścieżki z PRD: „Rejestracja → nawyk → check‑in → kalendarz/wykres → notyfikacja (miss)"
+### Testy komponentów (ComponentTests/)
+- **bUnit** dla komponentów Blazor (render, walidacja formularzy, interakcje)
+- Kluczowe komponenty do przetestowania:
+  - Formularze: `EditForm` + `DataAnnotationsValidator`, komunikaty błędów, submit
+  - Listy: renderowanie, paginacja, empty states
+  - Kalendarz: kolorowanie dni, readonly
+  - Wykresy: renderowanie (może wymagać mock JS interop), przełącznik 7/30 dni
+  - Shared: `ErrorBoundary`, `Notifications.razor`
+- **Cel pokrycia**: ≥70% dla kluczowych komponentów UI
+
+### Testy E2E (E2ETests/)
+- **Playwright** dla ścieżki krytycznej z PRD
+- **Ścieżka krytyczna**: Rejestracja → nawyk → check-in → kalendarz/wykres → notyfikacja (miss)
+- Dodatkowe scenariusze: nawyk "stop", uzupełnianie historii, edycja/usuwanie, zmiana strefy czasowej
+
+**Szczegółowy plan testów**: `.ai/test-plan.md`
 
 ## Dostępność i i18n
 

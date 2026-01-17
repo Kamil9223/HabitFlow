@@ -111,18 +111,35 @@
 
 ## Wytyczne testowania
   - Projekt testowy: `HabitFlow.Tests`
-  - Do testów używaj XUnit.
-  - Testy jednostkowe:
-    - Testy jednostkowe powinny znajdować się w podfolderze UnitTests.
-    - Do mocków jeśli potrzebne używaj bibliotekę NSubstitute.
-  - Testy integracyjne:
-    - Testy integracyjne powinny znajdować się w podfolderze IntegrationTests.
-    - Testy integracyjne polegają na testowaniu flow logiki całych endpointów 0 bez mocków.
-    - Należy korzystać z TestContainers aby zasetupować bazę danych, oraz generowanego klienta http, dzięki któremu będzie można w testach odpytywać endpointy.
-    - Baza danych powinna być jedna dla wszystkich uruchamianych testów.
-    - Testy uruchamiaj równolegle.
-  - Nazwy plików `*Tests.cs`; jedna klasa na jednostkę testowaną.
-  - Uruchamiaj `dotnet test` (dodaj do rozwiązania po utworzeniu).
+  - Framework: XUnit; mocking: NSubstitute
+  - **Szczegółowy plan testów**: `.ai/test-plan.md`
+
+  - **Testy jednostkowe** (UnitTests/):
+    - Walidatory: happy path + przypadki błędów
+    - Command handlers: pomyślne wykonanie + błędy biznesowe/walidacyjne
+    - Query handlers: poprawne dane + przypadki brzegowe
+    - Logika biznesowa: algorytmy success_rate, daily_score
+    - Infrastructure: dispatchers, result mappers, context services
+    - Cel pokrycia: ≥80% dla warstwy Core
+
+  - **Testy integracyjne** (IntegrationTests/):
+    - Testowanie flow całych endpointów bez mocków
+    - TestContainers dla SQL Server (jedna baza, izolacja przez unikalne dane)
+    - NSwag generowany klient HTTP do odpytywania endpointów
+    - Uruchamianie równoległe
+    - Pokrycie: 100% endpointów API (happy path + error cases)
+
+  - **Testy komponentów UI** (ComponentTests/):
+    - bUnit dla komponentów Blazor
+    - Walidacja formularzy, renderowanie, interakcje
+    - Cel pokrycia: ≥70% kluczowych komponentów
+
+  - **Testy E2E** (E2ETests/):
+    - Playwright dla ścieżki krytycznej z PRD
+    - Ścieżka: Rejestracja → nawyk → check-in → kalendarz/wykres → notyfikacja (miss)
+
+  - Nazwy plików `*Tests.cs`; jedna klasa na jednostkę testowaną
+  - Uruchamiaj `dotnet test`
 
 ## Wytyczne commitów i pull requestów
 - Commity: zwięzłe, w trybie rozkazującym. Preferowane Conventional Commits:

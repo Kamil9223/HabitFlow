@@ -24,7 +24,13 @@ Stos technologiczny i decyzje dla MVP.
 
 5. CI/CD i jakość
 - CI/CD: GitHub Actions (build, testy, migracje)
-- Testy: unit dla logiki success_rate i naruszeń, E2E dla ścieżki krytycznej
+- Framework testowy: XUnit z NSubstitute do mockowania
+- Testy jednostkowe: walidatory, command/query handlery, logika biznesowa (≥80% pokrycia dla Core)
+- Testy integracyjne: TestContainers (SQL Server) + NSwag generowany klient HTTP dla endpointów API
+- Testy komponentów: bUnit dla komponentów Blazor
+- Testy E2E: Playwright dla ścieżki krytycznej (rejestracja → nawyk → check-in → kalendarz/wykres → notyfikacja)
+- Pokrycie kodu: Coverlet do raportowania
+- Szczegółowy plan testów: `.ai/test-plan.md`
 
 6. Decyzja produktowo-techniczna
 - Zostajemy przy Blazor Server app i SQL Server w MVP.

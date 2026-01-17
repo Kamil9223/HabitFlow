@@ -46,18 +46,30 @@ ckend Rules - HabitFlow.Api
 ## Wytyczne testowania
 
 - Projekt testowy: `HabitFlow.Tests`
-- Do testów używaj XUnit.
-- Testy jednostkowe:
-    - Testy jednostkowe powinny znajdować się w podfolderze UnitTests.
-    - Do mocków jeśli potrzebne używaj bibliotekę NSubstitute.
-- Testy integracyjne:
-    - Testy integracyjne powinny znajdować się w podfolderze IntegrationTests.
-    - Testy integracyjne polegają na testowaniu flow logiki całych endpointów 0 bez mocków.
-    - Należy korzystać z TestContainers aby zasetupować bazę danych, oraz generowanego klienta http, dzięki któremu będzie można w testach odpytywać endpointy.
-    - Baza danych powinna być jedna dla wszystkich uruchamianych testów.
-    - Testy uruchamiaj równolegle.
-- Nazwy plików `*Tests.cs`; jedna klasa na jednostkę testowaną.
-- Uruchamiaj `dotnet test` (dodaj do rozwiązania po utworzeniu).
+- Framework: XUnit; mocking: NSubstitute
+- **Szczegółowy plan testów**: `.ai/test-plan.md`
+
+### Testy jednostkowe (UnitTests/)
+- **Walidatory**: happy path + przypadki błędów dla wszystkich walidatorów
+- **Command handlers**: pomyślne wykonanie + błędy biznesowe/walidacyjne + autoryzacja
+- **Query handlers**: poprawne dane + przypadki brzegowe + filtrowanie/paginacja
+- **Logika biznesowa**: algorytmy success_rate, daily_score dla różnych trybów (Binary/Quantitative, Start/Stop)
+- **Infrastructure**: dispatchers, result mappers (Result<T> → IResult), context services
+- **Cel pokrycia**: ≥80% dla warstwy Core (logika biznesowa)
+
+### Testy integracyjne (IntegrationTests/)
+- Testowanie flow całych endpointów bez mocków
+- **TestContainers** dla SQL Server (jedna baza dla wszystkich testów)
+- **Izolacja**: przez unikalne dane użytkowników, nie transakcje
+- **NSwag** generowany klient HTTP do odpytywania endpointów
+- Uruchamianie **równoległe** (XUnit collections)
+- **Pokrycie**: 100% endpointów API (happy path + error cases: 400/401/403/404/409/500)
+- **Infrastruktura testowa**: `IntegrationTestFactory` (WebApplicationFactory) + `IntegrationTestFixture` (shared container)
+
+### Konwencje
+- Nazwy plików `*Tests.cs`; jedna klasa na jednostkę testowaną
+- Uruchamiaj `dotnet test`
+- Test naming: `MethodName_Scenario_ExpectedBehavior` lub Given-When-Then
 
 ## Specyfikacja produktu
 

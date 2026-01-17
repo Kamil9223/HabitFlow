@@ -49,8 +49,13 @@ The MVP focuses on simplicity and clarity, helping beginners easily adopt habit 
 
 ### CI/CD & Quality
 - **GitHub Actions** for continuous integration and deployment (build, tests, migrations)
-- **Unit tests** for success rate calculations and business logic
-- **End-to-end tests** for critical user paths (registration → habit creation → check-in → calendar/chart → notification)
+- **Testing framework**: XUnit with NSubstitute for mocking
+- **Unit tests** for validators, command/query handlers, and business logic (success_rate calculations)
+- **Integration tests** with TestContainers (SQL Server) for API endpoints testing
+- **Component tests** with bUnit for Blazor UI components
+- **End-to-end tests** with Playwright for critical user paths (registration → habit creation → check-in → calendar/chart → notification)
+- **Code coverage**: Target ≥80% for Core layer (business logic)
+- **Test plan**: Detailed strategy available in `.ai/test-plan.md`
 
 ## Getting Started Locally
 
@@ -173,6 +178,11 @@ The MVP focuses on simplicity and clarity, helping beginners easily adopt habit 
 - **Run tests:**
   ```bash
   dotnet test
+  ```
+
+- **Run tests with coverage:**
+  ```bash
+  dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
   ```
 
 - **Apply database migrations:**

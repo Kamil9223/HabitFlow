@@ -43,18 +43,22 @@ apply: always
 ## Wytyczne testowania
 
 - Projekt testowy: `HabitFlow.Tests`
-- Do testow uzywaj XUnit.
-- Testy jednostkowe:
-  - Testy jednostkowe powinny znajdowac sie w podfolderze UnitTests.
-  - Do mockow jesli potrzebne uzywaj biblioteke NSubstitute.
-- Testy integracyjne:
-  - Testy integracyjne powinny znajdowac sie w podfolderze IntegrationTests.
-  - Testy integracyjne polegaja na testowaniu flow logiki calych endpointow bez mockow.
-  - Nalezy korzystac z TestContainers aby zasetupowac baze danych, oraz generowanego klienta http, dzieki ktoremu bedzie mozna w testach odpytywac endpointy.
-  - Baza danych powinna byc jedna dla wszystkich uruchamianych testow.
-  - Testy uruchamiaj rownolegle.
-- Nazwy plikow `*Tests.cs`; jedna klasa na jednostke testowana.
-- Uruchamiaj `dotnet test` (dodaj do rozwiazania po utworzeniu).
+- Framework: XUnit; mocking: NSubstitute
+- **Szczegolowy plan testow**: `.ai/test-plan.md`
+
+### Struktura testow
+- **UnitTests/**: walidatory, handlery, logika biznesowa (≥80% pokrycia dla Core)
+- **IntegrationTests/**: endpointy API z TestContainers + NSwag klient (100% pokrycia endpointow)
+- **ComponentTests/**: komponenty Blazor z bUnit (≥70% kluczowych komponentow)
+- **E2ETests/**: Playwright dla sciezki krytycznej
+
+### Kluczowe zasady
+- Testy jednostkowe: happy path + przypadki bledow
+- Testy integracyjne: bez mockow, TestContainers (SQL Server), jedna baza, izolacja przez dane
+- Testy komponentow: renderowanie, walidacja, interakcje
+- Testy E2E: sciezka krytyczna z PRD (rejestracja → nawyk → check-in → kalendarz → notyfikacja)
+- Nazwy plikow `*Tests.cs`; jedna klasa na jednostke testowana
+- Uruchamiaj `dotnet test`
 
 ## Specyfikacja produktu
 
