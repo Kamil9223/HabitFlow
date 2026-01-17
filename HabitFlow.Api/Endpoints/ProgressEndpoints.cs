@@ -1,4 +1,7 @@
 ﻿using HabitFlow.Api.Contracts.Progress;
+using HabitFlow.Api.Helpers;
+using HabitFlow.Core.Abstractions;
+using HabitFlow.Core.Features.Progress;
 
 namespace HabitFlow.Api.Endpoints;
 
@@ -10,8 +13,29 @@ public static class ProgressEndpoints
             .WithTags("Progress")
             .RequireAuthorization();
 
-        group.MapGet("/rolling", (int habitId, int windowDays, DateOnly? until) =>
-            Results.StatusCode(501))
+        group.MapGet("/rolling", async (
+            int habitId,
+            int windowDays,
+            DateOnly? until,
+            IQueryDispatcher dispatcher,
+            CancellationToken cancellationToken) =>
+        {
+            var query = new GetProgressRollingQuery(habitId, windowDays, until);
+            var result = await dispatcher.Dispatch(query, cancellationToken);
+
+            return result.ToHttpResult(data => Results.Ok(
+                new ProgressRollingResponse(
+                    data.HabitId,
+                    data.WindowDays,
+                    data.Until,
+                    data.Points.Select(p => new ProgressRollingPoint(
+                        p.Date,
+                        p.PlannedDays,
+                        p.SumDailyScore,
+                        p.SuccessRate
+                    )).ToList()
+                )));
+        })
             .WithName("GetProgressRolling")
             .Produces<ProgressRollingResponse>(200)
             .Produces(400)
