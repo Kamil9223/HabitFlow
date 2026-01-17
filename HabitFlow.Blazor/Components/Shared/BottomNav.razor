@@ -1,0 +1,60 @@
+﻿@* Bottom navigation dla mobile *@
+@rendermode InteractiveServer
+@inject NavigationManager Navigation
+
+<div class="bottom-nav">
+    <AuthorizeView>
+        <Authorized>
+            <nav class="bottom-nav-container">
+                <a href="/today" class="bottom-nav-item @(IsActive("today") ? "active" : "")">
+                    <MudIcon Icon="@Icons.Material.Filled.CalendarToday" Size="Size.Medium" />
+                    <span class="bottom-nav-label">Dziś</span>
+                </a>
+
+                <a href="/habits" class="bottom-nav-item @(IsActive("habits") ? "active" : "")">
+                    <MudIcon Icon="@Icons.Material.Filled.ListAlt" Size="Size.Medium" />
+                    <span class="bottom-nav-label">Nawyki</span>
+                </a>
+
+                <a href="/notifications" class="bottom-nav-item @(IsActive("notifications") ? "active" : "")">
+                    <div class="bottom-nav-icon-wrapper">
+                        <MudIcon Icon="@Icons.Material.Filled.Notifications" Size="Size.Medium" />
+                        @if (_unreadCount > 0)
+                        {
+                            <span class="bottom-nav-badge">@_unreadCount</span>
+                        }
+                    </div>
+                    <span class="bottom-nav-label">Powiadomienia</span>
+                </a>
+
+                <a href="/profile" class="bottom-nav-item @(IsActive("profile") ? "active" : "")">
+                    <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Medium" />
+                    <span class="bottom-nav-label">Profil</span>
+                </a>
+            </nav>
+        </Authorized>
+    </AuthorizeView>
+</div>
+
+@code {
+    private int _unreadCount = 0;
+
+    private bool IsActive(string page)
+    {
+        var currentPath = new Uri(Navigation.Uri).AbsolutePath.TrimStart('/').ToLowerInvariant();
+        return currentPath == page || (string.IsNullOrEmpty(currentPath) && page == "today");
+    }
+
+    // TODO: Implementacja pobierania liczby nieprzeczytanych powiadomień
+    // protected override async Task OnInitializedAsync()
+    // {
+    //     try
+    //     {
+    //         // await LoadUnreadCountAsync();
+    //     }
+    //     catch
+    //     {
+    //         _unreadCount = 0;
+    //     }
+    // }
+}

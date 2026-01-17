@@ -74,9 +74,44 @@
 - Dostęp do danych:
   - Opcja MVP: bezpośredni dostęp do warstwy Application/Dispatcher z `HabitFlow.Blazor` (bez HTTP), aby uniknąć dublowania kontraktów.
   - Alternatywa: typowany `HttpClient` do Minimal API i wymiana Command/Query DTO; mapowanie `ProblemDetails` na komunikaty UI.
-- Struktura `HabitFlow.Blazor/`:
-  - `Components/` (np. `Habits/`, `Today/`, `Calendar/`, `Charts/`, `Shared/`), małe komponenty, jeden publiczny komponent na plik.
-  - `Pages/` (strony routowane łączące komponenty domenowe), `Services/` (np. `TimeZoneService`, `NotificationService`, adapter API/Dispatcher), `wwwroot/` (style, JS).
+
+### Struktura folderów Blazor (Components/)
+
+**Konwencja: Feature-based organization**
+
+Komponenty są organizowane według feature'ów (funkcjonalności) w strukturze:
+
+```
+Components/
+├── Layout/              - Komponenty layoutu (MainLayout, NavMenu, AuthLayout)
+├── Pages/               - Strony i ich dedykowane komponenty
+│   ├── Auth/           - Strony autoryzacji (Login, Register, ConfirmEmail, etc.)
+│   ├── Profile/        - Strony i komponenty profilu (Profile, ProfileSummary, TimeZoneEditor, etc.)
+│   ├── Today/          - Strona Today i jej komponenty (TodayChecklist, CheckinDialog, etc.)
+│   ├── Habits/         - Strona Habits i komponenty (HabitList, HabitFormDialog, etc.)
+│   ├── Notifications/  - Strona Notifications i komponenty (NotificationsList, etc.)
+│   ├── Home.razor      - Strona główna/landing
+│   └── Error.razor     - Strona błędu
+├── Shared/             - Komponenty współdzielone między ≥2 features (BottomNav, NotificationsBell, etc.)
+└── [App.razor, Routes.razor, _Imports.razor]
+```
+
+**Zasady organizacji:**
+1. **Feature cohesion**: Komponenty które się zmieniają razem, są przechowywane razem
+2. **Jeden folder per feature**: Strona + jej dedykowane komponenty w jednym folderze `Pages/[Feature]/`
+3. **Shared dla reużywalności**: Komponenty używane w ≥2 features należą do `Shared/`
+4. **Namespace w _Imports.razor**: Dodaj `@using HabitFlow.Blazor.Components.Pages.[Feature]` dla nowych features
+
+**Przykład dodawania nowego feature "Dashboard":**
+- Utwórz `Pages/Dashboard/`
+- Dodaj `Dashboard.razor` (strona główna z `@page "/dashboard"`)
+- Dodaj komponenty: `DashboardChart.razor`, `DashboardSummary.razor`
+- Zaktualizuj `_Imports.razor`: `@using HabitFlow.Blazor.Components.Pages.Dashboard`
+
+### Pozostałe elementy struktury
+
+- `Services/` (np. `TimeZoneService`, `NotificationService`, adapter API/Dispatcher)
+- `wwwroot/` (style, JS)
 - Komponenty MVP (sugestie):
   - `Today/TodayChecklist.razor` (lista kroków na dziś, szybki check‑in, optymistyczny update, blokada podwójnego wysłania).
   - `Habits/HabitList.razor` + `Habits/HabitItem.razor` (lista/wiersz nawyku), `Habits/HabitForm.razor` (`EditForm` + `DataAnnotationsValidator`).

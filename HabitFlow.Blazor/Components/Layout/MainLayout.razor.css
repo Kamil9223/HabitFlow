@@ -36,13 +36,23 @@ main {
         text-overflow: ellipsis;
     }
 
-@media (max-width: 640.98px) {
+@media (max-width: 768px) {
+    /* Ukryj sidebar na mobile */
+    .sidebar {
+        display: none;
+    }
+
     .top-row {
         justify-content: space-between;
     }
 
     .top-row ::deep a, .top-row ::deep .btn-link {
         margin-left: 0;
+    }
+
+    /* Dodaj padding na dole dla bottom-nav */
+    main {
+        padding-bottom: 80px;
     }
 }
 

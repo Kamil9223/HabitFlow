@@ -1,0 +1,35 @@
+﻿@* Komponent dzwonka powiadomień z licznikiem nowych w top bar *@
+@rendermode InteractiveServer
+
+<MudIconButton Icon="@Icons.Material.Filled.Notifications"
+               Color="Color.Inherit"
+               Href="/notifications"
+               Title="Powiadomienia"
+               aria-label="Powiadomienia">
+    @if (_unreadCount > 0)
+    {
+        <MudBadge Content="@_unreadCount" 
+                  Color="Color.Error" 
+                  Overlap="true" 
+                  Class="mx-2">
+        </MudBadge>
+    }
+</MudIconButton>
+
+@code {
+    private int _unreadCount = 0;
+
+    // TODO: Implementacja pobierania liczby nieprzeczytanych powiadomień z API
+    // GET /api/v1/notifications?unreadOnly=true&limit=1 (count)
+    // protected override async Task OnInitializedAsync()
+    // {
+    //     try
+    //     {
+    //         // await LoadUnreadCountAsync();
+    //     }
+    //     catch
+    //     {
+    //         _unreadCount = 0;
+    //     }
+    // }
+}
