@@ -42,12 +42,16 @@
                     Nie masz jeszcze żadnych nawyków. Zacznij od stworzenia swojego pierwszego nawyku i zacznij budować lepsze przyzwyczajenia!
                 </MudText>
                 
+                @* TODO: Replace with HabitFormDialog when implemented in Sprint 1 (see frontend-progress.md) *@
                 <MudButton Variant="Variant.Filled" 
                            Color="Color.Primary" 
-                           Href="/habits/new" 
+                           Disabled="true"
                            StartIcon="@Icons.Material.Filled.Add">
                     Dodaj swój pierwszy nawyk
                 </MudButton>
+                <MudText Typo="Typo.caption" Color="Color.Secondary">
+                    (Funkcja będzie dostępna po implementacji HabitFormDialog)
+                </MudText>
             </MudStack>
         </MudPaper>
     }
@@ -175,7 +179,7 @@
         {
             var request = new CreateCheckinRequest
             {
-                LocalDate = new DateTimeOffset(_state.Date!.Value.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero),
+                LocalDate = new DateTimeOffset(result.SelectedDate.ToDateTime(TimeOnly.MinValue), TimeSpan.Zero),
                 ActualValue = result.ActualValue
             };
 

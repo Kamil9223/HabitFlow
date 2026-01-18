@@ -1,4 +1,4 @@
-﻿@using HabitFlow.Client
+@using HabitFlow.Client
 @using MudBlazor
 @* Modal do wprowadzenia wartości check-in i potwierdzenia zapisu *@
 
@@ -6,15 +6,24 @@
     <DialogContent>
         <MudStack Spacing="3">
             <MudText Typo="Typo.h6">@Item.Title</MudText>
-            
+
             <MudText Typo="Typo.body2" Color="Color.Secondary">
                 @GetCheckinPrompt()
             </MudText>
 
+            <MudDatePicker @bind-Date="_selectedDate"
+                           Label="Data check-in"
+                           Variant="Variant.Outlined"
+                           MaxDate="_maxDate"
+                           MinDate="_minDate"
+                           HelperText="Możesz zaznaczyć check-in do 7 dni wstecz"
+                           Error="@_hasDateValidationError"
+                           ErrorText="@_dateValidationErrorMessage" />
+
             @if (IsBinaryType())
             {
-                <MudCheckBox @bind-Value="_isCompleted" 
-                             Label="Zrobione" 
+                <MudCheckBox @bind-Value="_isCompleted"
+                             Label="Zrobione"
                              Color="Color.Primary" />
             }
             else
@@ -37,9 +46,9 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel" Variant="Variant.Text">Anuluj</MudButton>
-        <MudButton OnClick="Submit" 
-                   Variant="Variant.Filled" 
-                   Color="Color.Primary" 
+        <MudButton OnClick="Submit"
+                   Variant="Variant.Filled"
+                   Color="Color.Primary"
                    Disabled="_isSubmitting">
             @(_isSubmitting ? "Zapisywanie..." : "Zapisz")
         </MudButton>
@@ -55,7 +64,7 @@
 
     [Parameter, EditorRequired]
     public EventCallback<CheckinResult> OnSubmit { get; set; }
-    
+
     [Parameter, EditorRequired]
     public EventCallback OnCancel { get; set; }
 
@@ -64,10 +73,22 @@
     private bool _isSubmitting;
     private bool _hasValidationError;
     private string? _validationErrorMessage;
+    private bool _hasDateValidationError;
+    private string? _dateValidationErrorMessage;
     private string? _errorMessage;
+    private DateTime? _selectedDate;
+    private DateTime _maxDate;
+    private DateTime _minDate;
 
     protected override void OnInitialized()
     {
+        // Set default date to LocalDate (today)
+        _selectedDate = LocalDate.ToDateTime(TimeOnly.MinValue);
+
+        // Set date range: max = today, min = 7 days ago
+        _maxDate = LocalDate.ToDateTime(TimeOnly.MinValue);
+        _minDate = LocalDate.AddDays(-7).ToDateTime(TimeOnly.MinValue);
+
         if (IsBinaryType())
         {
             _isCompleted = false;
@@ -82,8 +103,8 @@
 
     private string GetCheckinPrompt()
     {
-        return IsBinaryType() 
-            ? "Czy wykonałeś ten nawyk dzisiaj?" 
+        return IsBinaryType()
+            ? "Czy wykonałeś ten nawyk dzisiaj?"
             : $"Ile udało Ci się wykonać? (cel: {Item.TargetLabel})";
     }
 
@@ -91,7 +112,29 @@
     {
         _hasValidationError = false;
         _validationErrorMessage = null;
+        _hasDateValidationError = false;
+        _dateValidationErrorMessage = null;
 
+        // Validate date
+        if (!_selectedDate.HasValue)
+        {
+            _hasDateValidationError = true;
+            _dateValidationErrorMessage = "Data jest wymagana";
+            return false;
+        }
+
+        var selectedDateOnly = DateOnly.FromDateTime(_selectedDate.Value);
+        var minDateOnly = DateOnly.FromDateTime(_minDate);
+        var maxDateOnly = DateOnly.FromDateTime(_maxDate);
+
+        if (selectedDateOnly < minDateOnly || selectedDateOnly > maxDateOnly)
+        {
+            _hasDateValidationError = true;
+            _dateValidationErrorMessage = "Data musi być w zakresie ostatnich 7 dni";
+            return false;
+        }
+
+        // Validate value for quantitative types
         if (IsBinaryType())
         {
             return true;
@@ -128,11 +171,12 @@
         try
         {
             var actualValue = IsBinaryType() ? (_isCompleted ? 1 : 0) : _actualValue;
-            
+
             var result = new CheckinResult
             {
                 Success = true,
-                ActualValue = actualValue
+                ActualValue = actualValue,
+                SelectedDate = DateOnly.FromDateTime(_selectedDate!.Value)
             };
 
             await OnSubmit.InvokeAsync(result);
@@ -157,6 +201,7 @@
     {
         public bool Success { get; set; }
         public int ActualValue { get; set; }
+        public DateOnly SelectedDate { get; set; }
         public string? ErrorMessage { get; set; }
     }
 }

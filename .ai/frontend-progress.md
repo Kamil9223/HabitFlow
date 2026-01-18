@@ -1,7 +1,7 @@
 # Frontend - Status implementacji
 
-**Data aktualizacji:** 2026-01-17 (19:30)
-**Dokument referencyjny:** `.ai/ui-plan.md`, `.ai/prd.md`
+**Data aktualizacji:** 2026-01-18 (10:45)
+**Dokument referencyjny:** `.ai/ui-plan.md`, `.ai/prd.md`, `.ai/api-plan.md`
 
 ## Przegląd ogólny
 
@@ -130,7 +130,22 @@ Aplikacja Blazor Server jest w trakcie implementacji. Widoki autoryzacji i podst
 
 ---
 
-### 4. Layout & Navigation (100% zgodności) ✅ **ZAKOŃCZONE 2026-01-17**
+### 4. Landing/Root (`/`) ✅ **ZAKOŃCZONE 2026-01-18**
+
+#### `Home.razor` - Przekierowanie root
+- **Status:** ✅ Zaimplementowane (2026-01-18)
+- **Lokalizacja:** `Components/Pages/Home.razor`
+- **Funkcje:**
+  - Sprawdzenie stanu autentykacji w OnInitializedAsync
+  - Przekierowanie zalogowanych → `/today` (replace: true)
+  - Przekierowanie niezalogowanych → `/auth/login` (replace: true)
+  - Integracja z ApiAuthenticationStateProvider
+- **API:** N/A (client-side routing)
+- **Powiązane wymagania:** F-001, US-002, US-020
+
+---
+
+### 5. Layout & Navigation (100% zgodności) ✅ **ZAKOŃCZONE 2026-01-17**
 
 #### `MainLayout.razor`
 - **Status:** ✅ Zaimplementowane
@@ -191,20 +206,9 @@ Aplikacja Blazor Server jest w trakcie implementacji. Widoki autoryzacji i podst
 
 ## ❌ Widoki BRAKUJĄCE (wymagane przez ui-plan.md i PRD)
 
-### 1. Landing/Root (`/`) - **PRIORYTET: ŚREDNI**
-
-- **Status:** ❌ Obecnie wyświetla "Hello, world!"
-- **Wymagane:**
-  - Redirect na `/today` dla zalogowanych użytkowników
-  - Redirect na `/auth/login` dla niezalogowanych
-  - `AppShellRouter` / `AuthRedirectGuard` (logika przekierowania)
-- **API:** N/A (tylko logika routing)
-- **Powiązane wymagania:** F-001, US-002, US-020
-- **Komponenty do utworzenia:** `Home.razor` (refaktoring)
-
 ---
 
-### 2. Habits - Lista (`/habits`) - **PRIORYTET: KRYTYCZNY**
+### 1. Habits - Lista (`/habits`) - **PRIORYTET: KRYTYCZNY**
 
 - **Status:** ⚠️ Strona zastępcza istnieje (2026-01-17)
 - **Funkcje wymagane:**
@@ -237,7 +241,7 @@ Aplikacja Blazor Server jest w trakcie implementacji. Widoki autoryzacji i podst
 
 ---
 
-### 3. Habit Details (`/habits/{id}`) - **PRIORYTET: KRYTYCZNY**
+### 2. Habit Details (`/habits/{id}`) - **PRIORYTET: KRYTYCZNY**
 
 - **Status:** ❌ Całkowicie brak
 - **Funkcje wymagane:**
@@ -282,7 +286,7 @@ Aplikacja Blazor Server jest w trakcie implementacji. Widoki autoryzacji i podst
 
 ---
 
-### 4. Notifications (`/notifications`) - **PRIORYTET: WYSOKI**
+### 3. Notifications (`/notifications`) - **PRIORYTET: WYSOKI**
 
 - **Status:** ⚠️ Strona zastępcza istnieje (2026-01-17)
 - **Funkcje wymagane:**
@@ -311,7 +315,7 @@ Aplikacja Blazor Server jest w trakcie implementacji. Widoki autoryzacji i podst
 
 ---
 
-### 5. Error Boundary & 404 - **PRIORYTET: ŚREDNI**
+### 4. Error Boundary & 404 - **PRIORYTET: ŚREDNI**
 
 - **Status:** ❌ Częściowo (podstawowy `Error.razor` + `#blazor-error-ui`)
 - **Funkcje wymagane:**
@@ -330,7 +334,7 @@ Aplikacja Blazor Server jest w trakcie implementacji. Widoki autoryzacji i podst
 
 ---
 
-### 6. Email Confirmation Gate - **PRIORYTET: WYSOKI**
+### 5. Email Confirmation Gate - **PRIORYTET: WYSOKI**
 
 - **Status:** ❌ Całkowicie brak
 - **Funkcje wymagane:**
@@ -358,31 +362,30 @@ Aplikacja Blazor Server jest w trakcie implementacji. Widoki autoryzacji i podst
 | **Auth Views** | 6/6 | 0 | **100%** | ✅ Gotowe |
 | **Business Views** | 2/5 | 3 (Habits Lista, Details, Notifications) | **40%** | ⚠️ W trakcie |
 | **Layout & Navigation** | **Kompletne** ✅ | Global banners (niski priorytet) | **~95%** | ✅ **Gotowe (2026-01-17)** |
-| **Komponenty Today** | 6/6 | Date picker w CheckinDialog (backfill) | **~90%** | ✅ Prawie gotowe |
+| **Landing/Root Redirect** | **1/1** ✅ | 0 | **100%** | ✅ **Gotowe (2026-01-18)** |
+| **Komponenty Today** | **7/7** ✅ | 0 | **100%** | ✅ **Gotowe (2026-01-18)** |
 | **Komponenty Profile** | 4/4 | 0 | **100%** | ✅ Gotowe |
 | **Komponenty Habits** | 1/7+ (strona zastępcza) | List, Item, FormDialog, CalendarView, Chart, ConfirmDialog | **~10%** | ❌ Brak |
 | **Komponenty Notifications** | 2/4+ (strona + Bell) | List, Item, Pagination | **~40%** | ⚠️ Częściowo |
 | **Error Handling** | Podstawowy | ErrorBoundary, ErrorView, NotFound dedicated | **~30%** | ❌ Brak |
 
-**Ogólne pokrycie MVP:** ~55% (↑ +5% po Layout & Navigation)
+**Ogólne pokrycie MVP:** ~62% (↑ +2% po implementacji landing redirect)
 
 ---
 
-## 🚨 Priorytety implementacji (rekomendacja)
 
-### ✅ Zakończone (2026-01-17)
+### ✅ Zakończone (2026-01-18)
 - ~~**NavMenu update**~~ - dodano linki "Nawyki" i "Powiadomienia" ✅
 - ~~**Strony zastępcze**~~ - `/habits` i `/notifications` ✅
 - ~~**NotificationsBell**~~ - ikona dzwonka w top bar ✅
 - ~~**BottomNav**~~ - responsive navigation dla mobile ✅
-- ~~**Refaktoring struktury folderów**~~ - feature-based organization ✅
+- ~~**Today View (100%)**~~ - backfill date picker + TODO w empty state ✅
 
 ### Sprint 1 - Krytyczne (Habits CRUD)
 1. **`/habits` (lista)** - podstawowa funkcjonalność CRUD
    - HabitList, HabitItem, HabitFormDialog, ConfirmDialog
    - API: GET/POST/PATCH/DELETE /api/v1/habits
-2. **Landing redirect (`/`)** - UX onboarding
-   - AuthRedirectGuard logic
+2. ~~**Landing redirect (`/`)**~~ ✅ **ZAKOŃCZONE 2026-01-18** - UX onboarding
 
 ### Sprint 2 - Wysokie (Visualizations & Notifications)
 4. **`/habits/{id}` (detale)** - kalendarz readonly i wykres rolling 7/30
@@ -469,7 +472,62 @@ Aplikacja Blazor Server jest w trakcie implementacji. Widoki autoryzacji i podst
 - Ogólne pokrycie MVP: 50% → 55% ↑
 - Struktura folderów: spójna, feature-based, skalowalna ✅
 
+
+### 2026-01-18 (10:45) - Today View 100% ✅
+**Ukończenie punktu 2 - Today View (90% → 100%):**
+
+**Zmiany w CheckinDialog.razor:**
+- ✅ Dodano `MudDatePicker` do wyboru daty check-in
+- ✅ Zakres dat: dzisiaj i 7 dni wstecz (zgodnie z US-013)
+- ✅ Domyślna wartość: dzisiejsza data
+- ✅ Walidacja daty (min/max range)
+- ✅ Dodano nowe pola: `_selectedDate`, `_maxDate`, `_minDate`, `_hasDateValidationError`, `_dateValidationErrorMessage`
+- ✅ Rozszerzono `CheckinResult` o `SelectedDate` (DateOnly)
+- ✅ Wysyłanie wybranej daty do API
+
+**Zmiany w Today.razor:**
+- ✅ Empty state: zamieniono link `/habits/new` na disabled button
+- ✅ Dodano TODO komentarz wskazujący na Sprint 1 i HabitFormDialog
+- ✅ Dodano komunikat dla użytkownika o przyszłej dostępności funkcji
+- ✅ Zaktualizowano `HandleCheckinSubmitAsync` aby używać `result.SelectedDate`
+
+**Rezultat:**
+- Build: ✅ Sukces (0 błędów, 4 ostrzeżenia MudBlazor - istniejące wcześniej)
+- Pokrycie Today View: 90% → 100% ✅
+- Ogólne pokrycie MVP: 55% → 60% ↑
+- US-013 (backfill) zaimplementowane w pełni ✅
+
 ---
 
-**Ostatnia aktualizacja:** 2026-01-17 (19:30)
+### 2026-01-18 (11:30) - Landing/Root Redirect ✅
+**Ukończenie punktu 1 - Landing/Root (`/`) przekierowanie:**
+
+**Zmiany w Home.razor:**
+- ✅ Dodano `@inject AuthenticationStateProvider` i `@inject NavigationManager`
+- ✅ Dodano `@rendermode InteractiveServer`
+- ✅ Zaimplementowano `OnInitializedAsync` z logiką przekierowania:
+  - Sprawdzenie `authState.User.Identity?.IsAuthenticated`
+  - Przekierowanie zalogowanych → `/today` (replace: true)
+  - Przekierowanie niezalogowanych → `/auth/login` (replace: true)
+- ✅ Usunięto placeholder "Hello, world!"
+- ✅ Integracja z `ApiAuthenticationStateProvider` (istniejący serwis)
+
+**Dokumentacja:**
+- ✅ Zaktualizowano `frontend-progress.md`:
+  - Przeniesiono punkt z sekcji "Brakujące" do "Zaimplementowane"
+  - Dodano sekcję "Landing/Root (`/`)" jako punkt 4 w zaimplementowanych widokach
+  - Zaktualizowano tabelę pokrycia MVP (Landing/Root Redirect: 100%)
+  - Zaktualizowano ogólne pokrycie: 60% → 62%
+  - Oznaczono punkt w Sprint 1 jako zakończony
+  - Dodano sekcję w "Historia zmian" (2026-01-18 11:30)
+
+**Rezultat:**
+- Build: ✅ Sukces (0 błędów, 4 ostrzeżenia MudBlazor - istniejące wcześniej)
+- Landing Redirect: 0% → 100% ✅
+- Ogólne pokrycie MVP: 60% → 62% ↑
+- F-001, US-002, US-020 zaimplementowane ✅
+
+---
+
+**Ostatnia aktualizacja:** 2026-01-18 (11:30)
 **Autor analizy:** Claude (agent AI)
