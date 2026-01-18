@@ -1,0 +1,187 @@
+﻿@using HabitFlow.Blazor.Components.Pages.Habits.Models
+@using HabitFlow.Client
+
+<MudPaper Elevation="1" Class="pa-4 mb-3">
+    <MudStack Spacing="2">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
+            <MudStack Spacing="1" Style="flex: 1;">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudText Typo="Typo.h6">@Item.Title</MudText>
+                    <MudChip T="string"
+                             Size="Size.Small"
+                             Color="@GetTypeColor(Item.Type)"
+                             Variant="Variant.Outlined">
+                        @GetTypeLabel(Item.Type)
+                    </MudChip>
+                    <MudChip T="string"
+                             Size="Size.Small"
+                             Color="Color.Default"
+                             Variant="Variant.Outlined">
+                        @GetCompletionModeLabel(Item.CompletionMode)
+                    </MudChip>
+                </MudStack>
+
+                @if (!string.IsNullOrWhiteSpace(Item.Description))
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        @Item.Description
+                    </MudText>
+                }
+
+                <MudStack Row="true" Spacing="3" AlignItems="AlignItems.Center" Class="mt-2">
+                    <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                        <MudIcon Icon="@Icons.Material.Filled.CalendarMonth" Size="Size.Small" />
+                        <MudText Typo="Typo.body2">@Item.ScheduleLabel</MudText>
+                    </MudStack>
+
+                    @if (Item.CompletionMode == CompletionMode.Quantitative)
+                    {
+                        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                            <MudIcon Icon="@Icons.Material.Filled.Repeat" Size="Size.Small" />
+                            <MudText Typo="Typo.body2">
+                                @Item.TargetValue @(Item.TargetUnit ?? "powtórzeń")
+                            </MudText>
+                        </MudStack>
+                    }
+
+                    @if (Item.DeadlineDate.HasValue)
+                    {
+                        <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                            <MudIcon Icon="@Icons.Material.Filled.Event" 
+                                     Size="Size.Small"
+                                     Color="@GetDeadlineColor(Item.DeadlineDate.Value)" />
+                            <MudText Typo="Typo.body2" Color="@GetDeadlineColor(Item.DeadlineDate.Value)">
+                                Deadline: @Item.DeadlineDate.Value.ToString("dd.MM.yyyy")
+                            </MudText>
+                        </MudStack>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Item.SuccessRateShort))
+                    {
+                        <MudBadge Content="@Item.SuccessRateShort" 
+                                  Color="@GetSuccessRateColor(Item.SuccessRateShort)"
+                                  Overlap="true">
+                            <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Small" />
+                        </MudBadge>
+                    }
+                </MudStack>
+            </MudStack>
+
+            <MudStack Row="true" Spacing="1">
+                <MudTooltip Text="Szybki check-in">
+                    <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
+                                   Color="Color.Success"
+                                   Size="Size.Small"
+                                   Disabled="@Item.IsBusy"
+                                   OnClick="HandleCheckin" />
+                </MudTooltip>
+                
+                <MudTooltip Text="Edytuj">
+                    <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                   Color="Color.Primary"
+                                   Size="Size.Small"
+                                   Disabled="@Item.IsBusy"
+                                   OnClick="HandleEdit" />
+                </MudTooltip>
+                
+                <MudTooltip Text="Usuń">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Color="Color.Error"
+                                   Size="Size.Small"
+                                   Disabled="@Item.IsBusy"
+                                   OnClick="HandleDelete" />
+                </MudTooltip>
+            </MudStack>
+        </MudStack>
+
+        @if (Item.IsBusy)
+        {
+            <MudProgressLinear Color="Color.Primary" Indeterminate="true" Size="Size.Small" />
+        }
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired]
+    public HabitListItemVm Item { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<HabitListItemVm> OnEdit { get; set; }
+
+    [Parameter]
+    public EventCallback<HabitListItemVm> OnDelete { get; set; }
+
+    [Parameter]
+    public EventCallback<HabitListItemVm> OnCheckin { get; set; }
+
+    private async Task HandleEdit()
+    {
+        await OnEdit.InvokeAsync(Item);
+    }
+
+    private async Task HandleDelete()
+    {
+        await OnDelete.InvokeAsync(Item);
+    }
+
+    private async Task HandleCheckin()
+    {
+        await OnCheckin.InvokeAsync(Item);
+    }
+
+    private static Color GetTypeColor(HabitType type) =>
+        type switch
+        {
+            HabitType.Start => Color.Success,
+            HabitType.Stop => Color.Warning,
+            _ => Color.Default
+        };
+
+    private static string GetTypeLabel(HabitType type) =>
+        type switch
+        {
+            HabitType.Start => "Start",
+            HabitType.Stop => "Stop",
+            _ => type.ToString()
+        };
+
+    private static string GetCompletionModeLabel(CompletionMode mode) =>
+        mode switch
+        {
+            CompletionMode.Binary => "Tak/Nie",
+            CompletionMode.Quantitative => "Ilościowy",
+            _ => mode.ToString()
+        };
+
+    private static Color GetDeadlineColor(DateOnly deadline)
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var daysUntil = deadline.DayNumber - today.DayNumber;
+
+        return daysUntil switch
+        {
+            < 0 => Color.Error,
+            <= 7 => Color.Warning,
+            _ => Color.Default
+        };
+    }
+
+    private static Color GetSuccessRateColor(string successRate)
+    {
+        if (successRate == "-" || !successRate.Contains('%'))
+            return Color.Default;
+
+        var percentStr = successRate.Split('%')[0].Trim();
+        if (int.TryParse(percentStr, out var percent))
+        {
+            return percent switch
+            {
+                >= 80 => Color.Success,
+                >= 50 => Color.Warning,
+                _ => Color.Error
+            };
+        }
+
+        return Color.Default;
+    }
+}

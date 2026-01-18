@@ -1,0 +1,63 @@
+﻿@using HabitFlow.Blazor.Components.Pages.Habits.Models
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.h6">@Options.Title</MudText>
+            <MudText Typo="Typo.body1">@Options.Message</MudText>
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="HandleCancel" Disabled="@IsProcessing">
+            @Options.CancelButtonText
+        </MudButton>
+
+        <MudButton OnClick="HandleConfirm"
+                   Variant="Variant.Filled"
+                   Color="Color.Error"
+                   Disabled="@IsProcessing">
+            @if (IsProcessing)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                <MudText Class="ml-2">Przetwarzanie...</MudText>
+            }
+            else
+            {
+                <text>@Options.ConfirmButtonText</text>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter] 
+    private IMudDialogInstance? MudDialog { get; set; }
+
+    [Parameter] public ConfirmDialogOptions Options { get; set; } = new();
+    [Parameter] public EventCallback OnConfirm { get; set; }
+
+    private bool IsProcessing { get; set; }
+
+    private async Task HandleConfirm()
+    {
+        IsProcessing = true;
+        try
+        {
+            await OnConfirm.InvokeAsync();
+            MudDialog?.Close(DialogResult.Ok(true));
+        }
+        catch
+        {
+            MudDialog?.Close(DialogResult.Ok(false));
+        }
+        finally
+        {
+            IsProcessing = false;
+        }
+    }
+
+    private void HandleCancel()
+    {
+        MudDialog?.Cancel();
+    }
+}

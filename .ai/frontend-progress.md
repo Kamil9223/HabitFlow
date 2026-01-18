@@ -1,533 +1,407 @@
 # Frontend - Status implementacji
 
-**Data aktualizacji:** 2026-01-18 (10:45)
+**Data aktualizacji:** 2026-01-19 (00:01)
 **Dokument referencyjny:** `.ai/ui-plan.md`, `.ai/prd.md`, `.ai/api-plan.md`
 
-## Przegląd ogólny
+## Przeglad ogolny
 
-Aplikacja Blazor Server jest w trakcie implementacji. Widoki autoryzacji i podstawowe widoki biznesowe (Today, Profile) są gotowe. Brakuje kluczowych widoków do zarządzania nawykami (Habits) oraz powiadomień (Notifications).
+Aplikacja Blazor Server jest w trakcie implementacji. Widoki autoryzacji oraz podstawowe widoki biznesowe (Today, Profile) sa gotowe. Widok listy nawykow (Habits) jest zaimplementowany z CRUD. Brakuje widoku detali nawyku oraz powiadomien (Notifications).
 
 ---
 
-## ✅ Widoki zaimplementowane
+## Widoki zaimplementowane
 
-### 1. Auth Views (100% zgodności z ui-plan.md)
+### 1. Auth Views (100% zgodnosci z ui-plan.md)
 
 #### `/auth/register` - Rejestracja
-- **Status:** ✅ Zaimplementowane
+- **Status:** Zaimplementowane
 - **Komponenty:** `Register.razor`, `AuthLayout`
 - **Funkcje:**
-  - Walidacja client-side (email, hasło ≥8 znaków, wielka/mała litera, cyfra)
+  - Walidacja client-side (email, haslo >=8 znakow, wielka/mala litera, cyfra)
   - Pole DisplayName (opcjonalne)
-  - Obsługa błędów 400/409/422
+  - Obsluga bledow 400/409/422
   - Przekierowanie do `/auth/login?registered=true`
 - **API:** `POST /api/v1/auth/register`
-- **Powiązane wymagania:** F-001, US-001, US-021
+- **Powiazane wymagania:** F-001, US-001, US-021
 
 #### `/auth/login` - Logowanie
-- **Status:** ✅ Zaimplementowane
+- **Status:** Zaimplementowane
 - **Komponenty:** `Login.razor`, `AuthLayout`
 - **Funkcje:**
-  - Walidacja email/hasło
-  - Obsługa 401 (błędne dane), 403 (niezweryfikowany email)
+  - Walidacja email/haslo
+  - Obsluga 401 (bledne dane), 403 (niezweryfikowany email)
   - Link do forgot-password
   - Przekierowanie do `/today` po sukcesie
 - **API:** `POST /api/v1/auth/login`
-- **Powiązane wymagania:** F-001, US-002, US-021
+- **Powiazane wymagania:** F-001, US-002, US-021
 
 #### `/auth/confirm-email` - Potwierdzenie email
-- **Status:** ✅ Zaimplementowane
+- **Status:** Zaimplementowane
 - **Komponenty:** `ConfirmEmail.razor`, `AuthLayout`
 - **Funkcje:**
-  - Obsługa linku potwierdzającego
-  - Komunikat sukcesu/błędu
+  - Obsluga linku potwierdzajacego
+  - Komunikat sukcesu/bledu
   - CTA do logowania
 - **API:** `POST /api/v1/auth/confirm-email`
-- **Powiązane wymagania:** US-001
+- **Powiazane wymagania:** US-001
 
-#### `/auth/forgot-password` - Zapomniane hasło
-- **Status:** ✅ Zaimplementowane
+#### `/auth/forgot-password` - Zapomniane haslo
+- **Status:** Zaimplementowane
 - **Komponenty:** `ForgotPassword.razor`, `AuthLayout`
 - **Funkcje:**
   - Pole email
   - Komunikat sukcesu (nie ujawnia czy email istnieje)
 - **API:** `POST /api/v1/auth/forgot-password`
-- **Powiązane wymagania:** US-003
+- **Powiazane wymagania:** US-003
 
-#### `/auth/reset-password` - Reset hasła
-- **Status:** ✅ Zaimplementowane
+#### `/auth/reset-password` - Reset hasla
+- **Status:** Zaimplementowane
 - **Komponenty:** `ResetPassword.razor`, `AuthLayout`
 - **Funkcje:**
-  - Pola: email, token, nowe hasło
-  - Walidacja hasła
+  - Pola: email, token, nowe haslo
+  - Walidacja hasla
   - CTA do logowania po sukcesie
 - **API:** `POST /api/v1/auth/reset-password`
-- **Powiązane wymagania:** US-003
+- **Powiazane wymagania:** US-003
 
 #### `/auth/logout` - Wylogowanie
-- **Status:** ✅ Zaimplementowane
+- **Status:** Zaimplementowane
 - **Komponenty:** `Logout.razor`
 - **Funkcje:**
-  - Zakończenie sesji
+  - Zakonczenie sesji
   - Przekierowanie do logowania
 - **API:** N/A (sesyjne)
-- **Powiązane wymagania:** US-020
+- **Powiazane wymagania:** US-020
 
 ---
 
-### 2. Today View (90% zgodności)
+### 2. Today View (95% zgodnosci)
 
-#### `/today` - Ekran dzisiejszych zadań
-- **Status:** ✅ Zaimplementowane (z drobnymi brakami)
+#### `/today` - Ekran dzisiejszych zadan
+- **Status:** Zaimplementowane (drobne braki)
 - **Komponenty:**
-  - `Today.razor` (strona główna)
-  - `TodayProgressHeader.razor` (nagłówek X/Y)
-  - `TodayChecklist.razor` (lista itemów)
+  - `Today.razor` (strona glowna)
+  - `TodayProgressHeader.razor` (naglowek X/Y)
+  - `TodayChecklist.razor` (lista itemow)
   - `TodayChecklistItem.razor` (pojedynczy item)
   - `CheckinDialog.razor` (modal check-in)
   - `EmptyStateCard.razor` (puste stany)
-  - `RefreshButton.razor` (odświeżanie)
+  - `RefreshButton.razor` (odswiezanie)
 - **Funkcje:**
-  - Lista dzisiejszych kroków z harmonogramem
+  - Lista dzisiejszych krokow z harmonogramem
   - Loading states (global spinner)
-  - Empty state z CTA "Dodaj swój pierwszy nawyk" → `/habits/new` ⚠️
+  - Empty state z CTA (na razie button disabled)
   - Error handling z retry
-  - Licznik postępu X/Y completed
+  - Licznik postepu X/Y completed
   - Check-in przez modal (Binary i Quantitative)
   - Optymistyczna aktualizacja UI
-  - Obsługa błędów 400/401/403/404/409/422
+  - Obsluga bledow 400/401/403/404/409/422
+  - Date picker do backfill (7 dni wstecz)
 - **API:**
   - `GET /api/v1/today`
   - `POST /api/v1/habits/{id}/checkins`
-- **Powiązane wymagania:** F-004, F-005, F-012, US-010, US-011, US-012, US-025
+- **Powiazane wymagania:** F-004, F-005, F-012, US-010, US-011, US-012, US-025
 
-**⚠️ Braki:**
-- CheckinDialog nie ma date pickera do backfill (uzupełnianie do 7 dni wstecz) - wymagane przez US-013
-- Empty state linkuje do `/habits/new` (strona nie istnieje) zamiast otwierać HabitFormDialog
+**Braki:**
+- Empty state ma wylaczony przycisk i TODO zamiast otwierania HabitFormDialog
 
 ---
 
-### 3. Profile View (100% zgodności)
+### 3. Habits View (Lista) (90%+ zgodnosci)
 
-#### `/profile` - Profil użytkownika
-- **Status:** ✅ Zaimplementowane
+#### `/habits` - Lista nawykow
+- **Status:** Zaimplementowane
 - **Komponenty:**
-  - `Profile.razor` (strona główna)
-  - `ProfileSummary.razor` (podsumowanie: email, createdAt, emailConfirmed, habitsCount)
-  - `TimeZoneEditor.razor` (edycja strefy czasowej)
-  - `DeleteAccountSection.razor` (sekcja usuwania konta)
-  - `ConfirmDeleteAccountDialog.razor` (potwierdzenie usunięcia)
+  - `Habits.razor`, `Habits.razor.cs`
+  - `HabitList.razor`, `HabitItem.razor`
+  - `HabitFilters.razor`, `HabitFormDialog.razor`
+  - `ConfirmDialog.razor`, `EmptyState.razor`
 - **Funkcje:**
-  - Wyświetlanie danych profilu
-  - Zmiana timeZoneId z komunikatem o wejściu od następnej doby
-  - Hard delete konta z potwierdzeniem (tekst "DELETE")
-  - Obsługa błędów 400/401/422
-- **API:**
-  - `GET /api/v1/profile`
-  - `PATCH /api/v1/profile/timezone`
-  - `DELETE /api/v1/profile`
-- **Powiązane wymagania:** F-002, F-010, US-004, US-019
-
----
-
-### 4. Landing/Root (`/`) ✅ **ZAKOŃCZONE 2026-01-18**
-
-#### `Home.razor` - Przekierowanie root
-- **Status:** ✅ Zaimplementowane (2026-01-18)
-- **Lokalizacja:** `Components/Pages/Home.razor`
-- **Funkcje:**
-  - Sprawdzenie stanu autentykacji w OnInitializedAsync
-  - Przekierowanie zalogowanych → `/today` (replace: true)
-  - Przekierowanie niezalogowanych → `/auth/login` (replace: true)
-  - Integracja z ApiAuthenticationStateProvider
-- **API:** N/A (client-side routing)
-- **Powiązane wymagania:** F-001, US-002, US-020
-
----
-
-### 5. Layout & Navigation (100% zgodności) ✅ **ZAKOŃCZONE 2026-01-17**
-
-#### `MainLayout.razor`
-- **Status:** ✅ Zaimplementowane
-- **Funkcje:**
-  - Sidebar z NavMenu (desktop) ✅
-  - Top bar z linkiem "About" i przyciskiem Wyloguj/Zaloguj ✅
-  - **NotificationsBell w top bar** ✅ (2026-01-17)
-  - **Responsive bottom-nav dla mobile (≤768px)** ✅ (2026-01-17)
-  - MudBlazor providers (Theme, Dialog, Snackbar, Popover) ✅
-  - ErrorBoundary (#blazor-error-ui) ✅
-  - Ukrycie sidebara na mobile ✅ (2026-01-17)
-- **⚠️ Braki (niski priorytet):**
-  - Brak globalnego loadera (GlobalProgressBar)
-  - Brak bannera reconnect (SignalR disconnect)
-
-#### `NavMenu.razor`
-- **Status:** ✅ Zaimplementowane
-- **Linki obecne:**
-  - Dziś (/today) ✅
-  - **Nawyki (/habits)** ✅ (2026-01-17)
-  - **Powiadomienia (/notifications)** ✅ (2026-01-17)
-  - Profil (/profile) ✅
-- **Zmiany:** Usunięto niepotrzebny link "Home" ✅ (2026-01-17)
-
-#### `BottomNav.razor` - **NOWY komponent** ✅
-- **Status:** ✅ Zaimplementowane (2026-01-17)
-- **Lokalizacja:** `Components/Shared/BottomNav.razor`
-- **Funkcje:**
-  - Custom bottom navigation dla mobile
-  - 4 przyciski: Dziś, Nawyki, Powiadomienia, Profil
-  - Aktywna zakładka podświetlana
-  - Badge na ikonie Powiadomień (gdy unreadCount > 0)
-  - Widoczny tylko dla zalogowanych użytkowników
-  - Responsywny (ukryty >768px, widoczny ≤768px)
-  - Dedicated CSS z animacjami i hover states
-
-#### `NotificationsBell.razor` - **NOWY komponent** ✅
-- **Status:** ✅ Zaimplementowane (2026-01-17)
-- **Lokalizacja:** `Components/Shared/NotificationsBell.razor`
-- **Funkcje:**
-  - Ikona dzwonka w top bar
-  - Badge z licznikiem nieprzeczytanych (TODO: API integration)
-  - Link do `/notifications`
-  - Widoczny tylko dla zalogowanych użytkowników
-
-#### Strony zastępcze - **NOWE** ✅
-- **`/habits`** ✅ (2026-01-17) - Strona "w budowie" w `Pages/Habits/Habits.razor`
-- **`/notifications`** ✅ (2026-01-17) - Strona "w budowie" w `Pages/Notifications/Notifications.razor`
-
-#### `AuthLayout.razor`
-- **Status:** ✅ Zaimplementowane
-- **Funkcje:**
-  - Top bar z logo i przyciskami Login/Register
-  - Brak sidebara (poprawnie dla auth views)
-  - MudBlazor providers
-
----
-
-## ❌ Widoki BRAKUJĄCE (wymagane przez ui-plan.md i PRD)
-
----
-
-### 1. Habits - Lista (`/habits`) - **PRIORYTET: KRYTYCZNY**
-
-- **Status:** ⚠️ Strona zastępcza istnieje (2026-01-17)
-- **Funkcje wymagane:**
-  - Lista wszystkich nawyków użytkownika
-  - Wyświetlanie: tytuł, typ (Start/Stop), harmonogram, skrócony success_rate, deadline, licznik N/20
-  - Filtrowanie i paginacja (opcjonalnie)
-  - Akcje: Create (FAB/button), Edit, Delete, Quick Check-in, View Details
-  - Komunikat o limicie 20 nawyków (F-012)
-  - Empty state z CTA "Utwórz pierwszy nawyk"
-  - Obsługa błędów 401/403/409 (limit)
+  - Lista nawykow z harmonogramem, deadline i skroconym success_rate
+  - Paginacja + wybor rozmiaru strony
+  - Filtry: typ, tryb, status, szukaj, sortowanie
+  - Akcje: Create, Edit, Delete, Quick Check-in
+  - Limit 20 nawykow + alert o limicie
+  - Empty state
+  - Obsluga bledow 401/404/409/422
 - **API:**
   - `GET /api/v1/habits` (lista)
   - `POST /api/v1/habits` (tworzenie)
   - `PATCH /api/v1/habits/{id}` (edycja)
   - `DELETE /api/v1/habits/{id}` (usuwanie)
   - `POST /api/v1/habits/{id}/checkins` (quick check-in)
-- **Powiązane wymagania:** F-003, F-012, US-005, US-006, US-007, US-008, US-009, US-021
-- **Komponenty do utworzenia:**
-  - `Habits.razor` (strona główna)
-  - `HabitList.razor` (lista kart)
-  - `HabitItem.razor` (pojedyncza karta nawyku)
-  - `HabitFormDialog.razor` (modal tworzenia/edycji)
-  - `ConfirmDialog.razor` (potwierdzenie usunięcia)
-  - Reużycie: `CheckinDialog.razor` (z Today)
-
-**HabitFormDialog - szczegóły:**
-- Sekcje: Podstawy (tytuł, typ, opis), Harmonogram (dni tygodnia, targetValue, targetUnit), Deadline (opcjonalny)
-- Walidacje: tytuł ≤80, opis ≤280, targetValue 1..100, CompletionMode (Binary/Quantitative)
-- Dwa tryby: Create i Edit
+  - `GET /api/v1/habits/{id}/progress/rolling` (success_rate)
+- **Powiazane wymagania:** F-003, F-012, US-005, US-006, US-007, US-008, US-009, US-021
 
 ---
 
-### 2. Habit Details (`/habits/{id}`) - **PRIORYTET: KRYTYCZNY**
+### 4. Profile View (100% zgodnosci)
 
-- **Status:** ❌ Całkowicie brak
-- **Funkcje wymagane:**
-  - Szczegóły nawyku: typ, tryb (Binary/Quantitative), harmonogram, targetValue/unit, deadline, success_rate
-  - Dropdown do przełączania między nawykami (HabitSwitchDropdown)
-  - Taby: Calendar (readonly kalendarz statusów), Progress (wykres rolling 7/30)
-  - Kalendarz:
-    - Przyszłość: neutralny (plan)
-    - Przeszłość: zielony (wykonane), czerwony (niewykonane), pomarańczowy (częściowo)
-    - Tooltips: data, ActualValue/TargetValue, status
-    - Readonly (zmiany tylko przez CRUD i check-in)
-  - Wykres rolling success rate:
-    - Przełącznik 7/30 dni
-    - Tooltip: wykonane/zaplanowane w oknie
-    - Linia trendu
-  - Obsługa błędów 404 (cudzy/nieistniejący zasób)
+#### `/profile` - Profil uzytkownika
+- **Status:** Zaimplementowane
+- **Komponenty:**
+  - `Profile.razor` (strona glowna)
+  - `ProfileSummary.razor` (podsumowanie: email, createdAt, emailConfirmed, habitsCount)
+  - `TimeZoneEditor.razor` (edycja strefy czasowej)
+  - `DeleteAccountSection.razor` (sekcja usuwania konta)
+  - `ConfirmDeleteAccountDialog.razor` (potwierdzenie usuniecia)
+- **Funkcje:**
+  - Wyswietlanie danych profilu
+  - Zmiana timeZoneId z komunikatem o wejsciu od nastepnej doby
+  - Hard delete konta z potwierdzeniem (tekst "DELETE")
+  - Obsluga bledow 400/401/422
 - **API:**
-  - `GET /api/v1/habits/{id}` (szczegóły nawyku)
-  - `GET /api/v1/habits/{id}/calendar` (dane kalendarza)
-  - `GET /api/v1/habits/{id}/progress/rolling` (dane wykresu 7/30)
-- **Powiązane wymagania:** F-006, F-007, F-008, US-015, US-016, US-024
-- **Komponenty do utworzenia:**
-  - `HabitDetails.razor` (strona główna)
-  - `HabitDetailsHeader.razor` (nagłówek z tytułem, success_rate, deadline)
-  - `HabitSwitchDropdown.razor` (przełącznik nawyków)
-  - `TabCalendar.razor` (zakładka kalendarza)
-  - `TabProgress.razor` (zakładka wykresu)
-  - `CalendarView.razor` (komponent kalendarza readonly)
-  - `RollingSuccessChart.razor` (wykres z przełącznikiem 7/30)
-
-**CalendarView - szczegóły:**
-- Grid 7 kolumn (dni tygodnia)
-- Kolory wsparty ikonami/tekstami dla dostępności
-- Tooltips z datą, wartościami i statusem
-- Responsywny dla mobile
-
-**RollingSuccessChart - szczegóły:**
-- Biblioteka wykresów: ApexCharts, Chart.js lub Plotly.Blazor
-- Przełącznik 7/30 dni
-- Oś X: data, Oś Y: success_rate (0-100%)
-- Tooltip: "Wykonane X / Zaplanowane Y w oknie"
+  - `GET /api/v1/profile`
+  - `PATCH /api/v1/profile/timezone`
+  - `DELETE /api/v1/profile`
+- **Powiazane wymagania:** F-002, F-010, US-004, US-019
 
 ---
 
-### 3. Notifications (`/notifications`) - **PRIORYTET: WYSOKI**
+### 5. Landing/Root (`/`) - ZAKONCZONE 2026-01-18
 
-- **Status:** ⚠️ Strona zastępcza istnieje (2026-01-17)
+#### `Home.razor` - Przekierowanie root
+- **Status:** Zaimplementowane
+- **Lokalizacja:** `Components/Pages/Home.razor`
+- **Funkcje:**
+  - Sprawdzenie stanu autentykacji w OnInitializedAsync
+  - Przekierowanie zalogowanych -> `/today` (replace: true)
+  - Przekierowanie niezalogowanych -> `/auth/login` (replace: true)
+  - Integracja z ApiAuthenticationStateProvider
+- **API:** N/A (client-side routing)
+- **Powiazane wymagania:** F-001, US-002, US-020
+
+---
+
+### 6. Layout & Navigation (100% zgodnosci) - ZAKONCZONE 2026-01-17
+
+#### `MainLayout.razor`
+- **Status:** Zaimplementowane
+- **Funkcje:**
+  - Sidebar z NavMenu (desktop)
+  - Top bar z linkiem "About" i przyciskiem Wyloguj/Zaloguj
+  - NotificationsBell w top bar
+  - Responsive bottom-nav dla mobile (<=768px)
+  - MudBlazor providers (Theme, Dialog, Snackbar, Popover)
+  - ErrorBoundary (#blazor-error-ui)
+  - Ukrycie sidebara na mobile
+- **Braki (niski priorytet):**
+  - Brak globalnego loadera (GlobalProgressBar)
+  - Brak bannera reconnect (SignalR disconnect)
+
+#### `NavMenu.razor`
+- **Status:** Zaimplementowane
+- **Linki obecne:**
+  - Dzis (/today)
+  - Nawyki (/habits)
+  - Powiadomienia (/notifications)
+  - Profil (/profile)
+- **Zmiany:** Usunieto niepotrzebny link "Home"
+
+#### `BottomNav.razor`
+- **Status:** Zaimplementowane (2026-01-17)
+- **Lokalizacja:** `Components/Shared/BottomNav.razor`
+- **Funkcje:**
+  - Custom bottom navigation dla mobile
+  - 4 przyciski: Dzis, Nawyki, Powiadomienia, Profil
+  - Aktywna zakladka podswietlana
+  - Badge na ikonie Powiadomien (gdy unreadCount > 0)
+  - Widoczny tylko dla zalogowanych uzytkownikow
+  - Responsywny (ukryty >768px, widoczny <=768px)
+  - Dedicated CSS z animacjami i hover states
+
+#### `NotificationsBell.razor`
+- **Status:** Zaimplementowane (2026-01-17)
+- **Lokalizacja:** `Components/Shared/NotificationsBell.razor`
+- **Funkcje:**
+  - Ikona dzwonka w top bar
+  - Badge z licznikiem nieprzeczytanych (TODO: API integration)
+  - Link do `/notifications`
+  - Widoczny tylko dla zalogowanych uzytkownikow
+
+#### Strony zastepcze
+- `/notifications` (2026-01-17) - strona "w budowie" w `Pages/Notifications/Notifications.razor`
+
+---
+
+## Widoki brakujace (wymagane przez ui-plan.md i PRD)
+
+### 1. Habit Details (`/habits/{id}`) - PRIORYTET: KRYTYCZNY
+
+- **Status:** Brak
 - **Funkcje wymagane:**
-  - Lista powiadomień AI (miss due)
-  - Wyświetlanie: tytuł nawyku, data, treść, aiStatus (generated/fallback)
-  - Liczba nowych powiadomień (badge)
+  - Szczegoly nawyku: typ, tryb, harmonogram, targetValue/unit, deadline, success_rate
+  - Dropdown do przelaczania miedzy nawykami (HabitSwitchDropdown)
+  - Taby: Calendar (readonly), Progress (wykres rolling 7/30)
+  - Kalendarz: statusy done/miss/partial + tooltips
+  - Wykres rolling success rate z przelacznikiem 7/30
+  - Obsluga bledow 404
+- **API:**
+  - `GET /api/v1/habits/{id}`
+  - `GET /api/v1/habits/{id}/calendar`
+  - `GET /api/v1/habits/{id}/progress/rolling`
+- **Powiazane wymagania:** F-006, F-007, F-008, US-015, US-016, US-024
+- **Komponenty do utworzenia:**
+  - `HabitDetails.razor`
+  - `HabitDetailsHeader.razor`
+  - `HabitSwitchDropdown.razor`
+  - `TabCalendar.razor`
+  - `TabProgress.razor`
+  - `CalendarView.razor`
+  - `RollingSuccessChart.razor`
+
+### 2. Notifications (`/notifications`) - PRIORYTET: WYSOKI
+
+- **Status:** Strona zastepcza istnieje (2026-01-17)
+- **Funkcje wymagane:**
+  - Lista powiadomien AI (miss due)
+  - Wyswietlanie: tytul nawyku, data, tresc, aiStatus
+  - Liczba nowych powiadomien (badge)
   - Paginacja (zamiast infinite scroll)
   - Sortowanie chronologiczne (najnowsze pierwsze)
-  - Obsługa błędów 401
-  - Empty state: "Brak powiadomień"
+  - Obsluga bledow 401
+  - Empty state: "Brak powiadomien"
 - **API:**
-  - `GET /api/v1/notifications` (lista z paginacją)
-  - Opcjonalnie: `PATCH /api/v1/notifications/{id}/mark-read` (oznaczanie jako przeczytane)
-- **Powiązane wymagania:** F-009, F-011, US-017, US-018, US-022
+  - `GET /api/v1/notifications` (lista z paginacja)
+  - Opcjonalnie: `PATCH /api/v1/notifications/{id}/mark-read`
+- **Powiazane wymagania:** F-009, F-011, US-017, US-018, US-022
 - **Komponenty do utworzenia:**
-  - `Notifications.razor` (strona główna)
-  - `NotificationsList.razor` (lista z paginacją)
-  - `NotificationItem.razor` (pojedyncze powiadomienie)
-  - `NotificationsBell.razor` (ikona dzwonka w top bar z licznikiem)
-  - `Pagination.razor` (komponent stronicowania)
+  - `Notifications.razor`
+  - `NotificationsList.razor`
+  - `NotificationItem.razor`
+  - `Pagination.razor`
 
-**NotificationsBell - integracja:**
-- Dodać do `MainLayout.razor` w top bar
-- Licznik nowych (badge): `GET /api/v1/notifications?unreadOnly=true&limit=1` (count)
-- Kliknięcie → redirect do `/notifications`
+### 3. Error Boundary & 404 - PRIORYTET: SREDNI
 
----
-
-### 4. Error Boundary & 404 - **PRIORYTET: ŚREDNI**
-
-- **Status:** ❌ Częściowo (podstawowy `Error.razor` + `#blazor-error-ui`)
+- **Status:** Czesciowo (podstawowy `Error.razor` + `#blazor-error-ui`)
 - **Funkcje wymagane:**
-  - Globalny ErrorBoundary dla aplikacji
-  - Dedykowana strona 404 z przyjaznym komunikatem
-  - Obsługa 5xx z komunikatem "Spróbuj ponownie później"
-  - CTA do `/today` lub "Wróć do strony głównej"
-  - Brak ujawniania szczegółów technicznych
-- **API:** N/A (tylko UI)
-- **Powiązane wymagania:** US-021, US-023
+  - Globalny ErrorBoundary
+  - Dedykowana strona 404
+  - Obsluga 5xx z komunikatem "Sprobuj ponownie pozniej"
+  - CTA do `/today` lub "Wroc do strony glownej"
+  - Brak ujawniania szczegolow technicznych
 - **Komponenty do utworzenia:**
-  - `ErrorBoundary.razor` (komponent globalny w `App.razor`)
-  - `ErrorView.razor` (widok błędu)
-  - `NotFound.razor` (dedykowana strona 404)
-  - `RetryButton.razor` (przycisk retry z loading state)
+  - `ErrorBoundary.razor`
+  - `ErrorView.razor`
+  - `NotFound.razor`
+  - `RetryButton.razor`
 
----
+### 4. Email Confirmation Gate - PRIORYTET: WYSOKI
 
-### 5. Email Confirmation Gate - **PRIORYTET: WYSOKI**
-
-- **Status:** ❌ Całkowicie brak
+- **Status:** Brak
 - **Funkcje wymagane:**
-  - Globalny banner/modal w App Shell po zalogowaniu
-  - Wyświetlany gdy `emailConfirmed=false` (z GET /api/v1/profile)
-  - Komunikat: "Potwierdź swój email, aby korzystać ze wszystkich funkcji"
-  - CTA: "Wyślij ponownie email" (opcjonalnie)
-  - Blokowanie kluczowych akcji: tworzenie nawyków, check-in
-  - Nie blokować: przeglądanie profilu, wylogowanie
+  - Globalny banner/modal po zalogowaniu
+  - Widoczny gdy `emailConfirmed=false`
+  - CTA: "Wyslij ponownie email" (opcjonalnie)
+  - Blokowanie tworzenia nawykow i check-in
+  - Nie blokowac: profil, wylogowanie
 - **API:**
-  - `GET /api/v1/profile` (sprawdzenie emailConfirmed)
-  - Opcjonalnie: `POST /api/v1/auth/resend-confirmation` (ponowne wysłanie)
-- **Powiązane wymagania:** US-001, US-002
+  - `GET /api/v1/profile`
+  - Opcjonalnie: `POST /api/v1/auth/resend-confirmation`
 - **Komponenty do utworzenia:**
-  - `EmailConfirmationGate.razor` (logika warunkowego wyświetlania)
-  - `AlertBanner.razor` (banner ostrzegawczy w MainLayout)
+  - `EmailConfirmationGate.razor`
+  - `AlertBanner.razor`
   - Integracja w `MainLayout.razor` lub `App.razor`
 
 ---
 
-## 📊 Podsumowanie pokrycia
+## Podsumowanie pokrycia
 
-| Kategoria | Zaimplementowane | Brakujące | Pokrycie | Status |
+| Kategoria | Zaimplementowane | Brakujace | Pokrycie | Status |
 |-----------|-----------------|-----------|----------|--------|
-| **Auth Views** | 6/6 | 0 | **100%** | ✅ Gotowe |
-| **Business Views** | 2/5 | 3 (Habits Lista, Details, Notifications) | **40%** | ⚠️ W trakcie |
-| **Layout & Navigation** | **Kompletne** ✅ | Global banners (niski priorytet) | **~95%** | ✅ **Gotowe (2026-01-17)** |
-| **Landing/Root Redirect** | **1/1** ✅ | 0 | **100%** | ✅ **Gotowe (2026-01-18)** |
-| **Komponenty Today** | **7/7** ✅ | 0 | **100%** | ✅ **Gotowe (2026-01-18)** |
-| **Komponenty Profile** | 4/4 | 0 | **100%** | ✅ Gotowe |
-| **Komponenty Habits** | 1/7+ (strona zastępcza) | List, Item, FormDialog, CalendarView, Chart, ConfirmDialog | **~10%** | ❌ Brak |
-| **Komponenty Notifications** | 2/4+ (strona + Bell) | List, Item, Pagination | **~40%** | ⚠️ Częściowo |
-| **Error Handling** | Podstawowy | ErrorBoundary, ErrorView, NotFound dedicated | **~30%** | ❌ Brak |
+| **Auth Views** | 6/6 | 0 | **100%** | Gotowe |
+| **Business Views** | 3/5 | 2 (Habits Details, Notifications) | **60%** | W trakcie |
+| **Layout & Navigation** | Kompletne | Global banners (niski priorytet) | **~95%** | Gotowe |
+| **Landing/Root Redirect** | 1/1 | 0 | **100%** | Gotowe |
+| **Komponenty Today** | 7/7 | 0 | **100%** | Gotowe |
+| **Komponenty Profile** | 4/4 | 0 | **100%** | Gotowe |
+| **Komponenty Habits (Lista)** | 7/7 | 0 | **100%** | Gotowe |
+| **Komponenty Habits (Detale)** | 0/6+ | CalendarView, RollingSuccessChart, HabitDetailsHeader, SwitchDropdown | **0%** | Brak |
+| **Komponenty Notifications** | 2/4+ (strona + Bell) | List, Item, Pagination | **~40%** | Czescowo |
+| **Error Handling** | Podstawowy | ErrorBoundary, ErrorView, NotFound | **~30%** | Brak |
 
-**Ogólne pokrycie MVP:** ~62% (↑ +2% po implementacji landing redirect)
+**Ogolne pokrycie MVP:** ~70% (po implementacji widoku listy nawykow)
 
 ---
 
-
-### ✅ Zakończone (2026-01-18)
-- ~~**NavMenu update**~~ - dodano linki "Nawyki" i "Powiadomienia" ✅
-- ~~**Strony zastępcze**~~ - `/habits` i `/notifications` ✅
-- ~~**NotificationsBell**~~ - ikona dzwonka w top bar ✅
-- ~~**BottomNav**~~ - responsive navigation dla mobile ✅
-- ~~**Today View (100%)**~~ - backfill date picker + TODO w empty state ✅
+## Zakonczone (2026-01-19)
+- **NavMenu update** - dodano linki "Nawyki" i "Powiadomienia"
+- **Strony zastepcze** - `/notifications`
+- **NotificationsBell** - ikona dzwonka w top bar
+- **BottomNav** - responsive navigation dla mobile
+- **Today View (95%+)** - backfill date picker (empty state nadal TODO)
+- **Habits List (CRUD)** - lista, filtry, paginacja, dialogi create/edit/delete, quick check-in
 
 ### Sprint 1 - Krytyczne (Habits CRUD)
-1. **`/habits` (lista)** - podstawowa funkcjonalność CRUD
-   - HabitList, HabitItem, HabitFormDialog, ConfirmDialog
-   - API: GET/POST/PATCH/DELETE /api/v1/habits
-2. ~~**Landing redirect (`/`)**~~ ✅ **ZAKOŃCZONE 2026-01-18** - UX onboarding
+1. **`/habits` (lista)** - ZAKONCZONE 2026-01-19 (CRUD, filtry, paginacja, quick check-in)
+2. **Landing redirect (`/`)** - ZAKONCZONE 2026-01-18 (UX onboarding)
 
 ### Sprint 2 - Wysokie (Visualizations & Notifications)
-4. **`/habits/{id}` (detale)** - kalendarz readonly i wykres rolling 7/30
-   - CalendarView, RollingSuccessChart, HabitDetailsHeader
-   - API: GET /api/v1/habits/{id}, /calendar, /progress/rolling
-5. **`/notifications`** - powiadomienia AI (F-009 z PRD)
-   - NotificationsList, NotificationItem, NotificationsBell
-   - API: GET /api/v1/notifications
-6. **EmailConfirmationGate** - blokada niepotwierdzonego email (US-001)
+3. **`/habits/{id}` (detale)** - kalendarz readonly i wykres rolling 7/30
+4. **`/notifications`** - powiadomienia AI (F-009 z PRD)
+5. **EmailConfirmationGate** - blokada niepotwierdzonego email (US-001)
 
-### Sprint 3 - Średnie (UX Polish)
-7. **Backfill date picker** w CheckinDialog - uzupełnianie historii (US-013)
-8. **Mobile bottom-nav** - dostępność na urządzeniach mobilnych
-9. **Error Boundary & 404** - dedykowane widoki błędów
-10. **Global banners** - reconnect, loading, info
+### Sprint 3 - Srednie (UX Polish)
+6. **Backfill date picker** w CheckinDialog - zrobione (US-013)
+7. **Mobile bottom-nav** - zrobione
+8. **Error Boundary & 404** - dedykowane widoki bledow
+9. **Global banners** - reconnect, loading, info
 
 ---
 
-## 📝 Notatki implementacyjne
+## Notatki implementacyjne
 
-### Biblioteki do rozważenia:
-- **Wykresy:** ApexCharts.Blazor, Plotly.Blazor, lub Blazor.FluentUI (Charts)
-- **Kalendarz:** Custom z MudBlazor Grid lub FluentUI Calendar
-- **Date picker:** MudBlazor DatePicker (już używane)
+### Biblioteki do rozwazenia:
+- **Wykresy:** ApexCharts.Blazor, Plotly.Blazor, lub Chart.js
+- **Kalendarz:** Custom z MudBlazor Grid
+- **Date picker:** MudBlazor DatePicker (juz uzywane)
 
 ### Wzorce architektoniczne (zgodnie z ui-plan.md):
 - **State management:** Scoped services `*State` (per SignalR circuit) + `*Service` (API calls)
-- **Modale:** MudBlazor DialogService (już używane)
+- **Modale:** MudBlazor DialogService
 - **Loading states:** Globalne (top bar progress) + lokalne (spinner w komponentach)
-- **Error handling:** ProblemDetails → snackbary + inline errors w formularzach
+- **Error handling:** ProblemDetails -> snackbary + inline errors w formularzach
 
 ### Konwencje nazewnictwa (zgodnie z AGENTS.md):
-- **Feature-based organization** (od 2026-01-17):
+- **Feature-based organization**:
   - Strony i komponenty: `Components/Pages/{Feature}/{ComponentName}.razor`
   - Shared: `Components/Shared/{ComponentName}.razor`
   - Layout: `Components/Layout/{LayoutName}.razor`
 - **Namespace:** Dodaj `@using HabitFlow.Blazor.Components.Pages.{Feature}` w `_Imports.razor`
-- **Zasada:** Komponenty które się zmieniają razem, są przechowywane razem
+- **Zasada:** Komponenty ktore sie zmieniaja razem, sa przechowywane razem
 
 ---
 
-## 🔗 Powiązane dokumenty
+## Powiazane dokumenty
 
-- **ui-plan.md** - szczegółowa architektura UI, mapa widoków, UX
+- **ui-plan.md** - architektura UI, mapa widokow, UX
 - **prd.md** - wymagania funkcjonalne i user stories
-- **test-plan.md** - strategia testowania komponentów (bUnit)
-- **AGENTS.md** - konwencje projektu, styl kodowania, struktura folderów Blazor
-- **CLAUDE.md** - główny plik konfiguracyjny (referencja do AGENTS.md)
+- **test-plan.md** - strategia testowania komponentow (bUnit)
+- **AGENTS.md** - konwencje projektu, styl kodowania, struktura folderow Blazor
+- **CLAUDE.md** - glowny plik konfiguracyjny
 
 ---
 
-## 📝 Historia zmian
+## Historia zmian
 
-### 2026-01-17 (19:30) - Layout & Navigation + Refaktoring struktury
-**Implementacja punktu 4 z dokumentu + refaktoring folderów:**
+### 2026-01-17 (19:30) - Layout & Navigation + refaktoring struktury
+- Dodano `NotificationsBell`, `BottomNav`
+- Dodano strony zastepcze `/habits` i `/notifications`
+- Zmieniono `NavMenu` (usunieto Home, dodano Nawyki/Powiadomienia)
+- Uporzadkowano strukture folderow (feature-based)
 
-**Nowe komponenty:**
-- `Components/Shared/NotificationsBell.razor` - Ikona dzwonka w top bar z badge
-- `Components/Shared/BottomNav.razor` + CSS - Responsive bottom navigation dla mobile
-- `Components/Pages/Habits/Habits.razor` - Strona zastępcza "w budowie"
-- `Components/Pages/Notifications/Notifications.razor` - Strona zastępcza "w budowie"
+### 2026-01-18 (10:45) - Today View (backfill)
+- Dodano date picker do CheckinDialog (7 dni wstecz)
+- Aktualizacja obsugi check-in o wybrana date
 
-**Zmiany w istniejących komponentach:**
-- `NavMenu.razor` - Usunięto "Home", dodano "Nawyki" i "Powiadomienia"
-- `MainLayout.razor` - Dodano NotificationsBell i BottomNav, ukrycie sidebara na mobile
-- `MainLayout.razor.css` - Media queries dla mobile (≤768px)
-- `_Imports.razor` - Dodano namespace dla Pages/Today, Pages/Habits, Pages/Notifications
+### 2026-01-18 (11:30) - Landing/Root redirect
+- Dodano przekierowanie z `/` do `/today` lub `/auth/login`
+- Aktualizacja dokumentacji postepu
 
-**Refaktoring struktury folderów (feature-based organization):**
-- Przeniesiono `Components/Today/*` → `Pages/Today/`
-- Przeniesiono `Pages/Today.razor` → `Pages/Today/Today.razor`
-- Przeniesiono `Pages/Habits.razor` → `Pages/Habits/Habits.razor`
-- Przeniesiono `Pages/Notifications.razor` → `Pages/Notifications/Notifications.razor`
-- Zaktualizowano using statements w `Today.razor`
-- Usunięto pusty folder `Components/Today/`
+### 2026-01-19 (00:01) - Habits List (CRUD) + poprawki kompilacji
+- Zaimplementowano liste nawykow z filtrami i paginacja
+- Dodano dialogi create/edit/delete + quick check-in
+- Stabilizacja kompilacji: `IMudDialogInstance`, `SelectedDays` zgodne z MudChipSet
 
-**Dokumentacja:**
-- Zaktualizowano `AGENTS.md` - dodano sekcję "Struktura folderów Blazor"
-- Przywrócono `CLAUDE.md` do stanu `@file:AGENTS.md`
-
-**Rezultat:**
-- Build: ✅ Sukces (0 błędów)
-- Pokrycie Layout & Navigation: 60% → 95% ✅
-- Ogólne pokrycie MVP: 50% → 55% ↑
-- Struktura folderów: spójna, feature-based, skalowalna ✅
-
-
-### 2026-01-18 (10:45) - Today View 100% ✅
-**Ukończenie punktu 2 - Today View (90% → 100%):**
-
-**Zmiany w CheckinDialog.razor:**
-- ✅ Dodano `MudDatePicker` do wyboru daty check-in
-- ✅ Zakres dat: dzisiaj i 7 dni wstecz (zgodnie z US-013)
-- ✅ Domyślna wartość: dzisiejsza data
-- ✅ Walidacja daty (min/max range)
-- ✅ Dodano nowe pola: `_selectedDate`, `_maxDate`, `_minDate`, `_hasDateValidationError`, `_dateValidationErrorMessage`
-- ✅ Rozszerzono `CheckinResult` o `SelectedDate` (DateOnly)
-- ✅ Wysyłanie wybranej daty do API
-
-**Zmiany w Today.razor:**
-- ✅ Empty state: zamieniono link `/habits/new` na disabled button
-- ✅ Dodano TODO komentarz wskazujący na Sprint 1 i HabitFormDialog
-- ✅ Dodano komunikat dla użytkownika o przyszłej dostępności funkcji
-- ✅ Zaktualizowano `HandleCheckinSubmitAsync` aby używać `result.SelectedDate`
-
-**Rezultat:**
-- Build: ✅ Sukces (0 błędów, 4 ostrzeżenia MudBlazor - istniejące wcześniej)
-- Pokrycie Today View: 90% → 100% ✅
-- Ogólne pokrycie MVP: 55% → 60% ↑
-- US-013 (backfill) zaimplementowane w pełni ✅
-
----
-
-### 2026-01-18 (11:30) - Landing/Root Redirect ✅
-**Ukończenie punktu 1 - Landing/Root (`/`) przekierowanie:**
-
-**Zmiany w Home.razor:**
-- ✅ Dodano `@inject AuthenticationStateProvider` i `@inject NavigationManager`
-- ✅ Dodano `@rendermode InteractiveServer`
-- ✅ Zaimplementowano `OnInitializedAsync` z logiką przekierowania:
-  - Sprawdzenie `authState.User.Identity?.IsAuthenticated`
-  - Przekierowanie zalogowanych → `/today` (replace: true)
-  - Przekierowanie niezalogowanych → `/auth/login` (replace: true)
-- ✅ Usunięto placeholder "Hello, world!"
-- ✅ Integracja z `ApiAuthenticationStateProvider` (istniejący serwis)
-
-**Dokumentacja:**
-- ✅ Zaktualizowano `frontend-progress.md`:
-  - Przeniesiono punkt z sekcji "Brakujące" do "Zaimplementowane"
-  - Dodano sekcję "Landing/Root (`/`)" jako punkt 4 w zaimplementowanych widokach
-  - Zaktualizowano tabelę pokrycia MVP (Landing/Root Redirect: 100%)
-  - Zaktualizowano ogólne pokrycie: 60% → 62%
-  - Oznaczono punkt w Sprint 1 jako zakończony
-  - Dodano sekcję w "Historia zmian" (2026-01-18 11:30)
-
-**Rezultat:**
-- Build: ✅ Sukces (0 błędów, 4 ostrzeżenia MudBlazor - istniejące wcześniej)
-- Landing Redirect: 0% → 100% ✅
-- Ogólne pokrycie MVP: 60% → 62% ↑
-- F-001, US-002, US-020 zaimplementowane ✅
-
----
-
-**Ostatnia aktualizacja:** 2026-01-18 (11:30)
+**Ostatnia aktualizacja:** 2026-01-19 (00:01)
 **Autor analizy:** Claude (agent AI)

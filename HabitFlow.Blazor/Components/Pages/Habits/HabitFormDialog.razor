@@ -1,0 +1,237 @@
+﻿@using HabitFlow.Blazor.Components.Pages.Habits.Models
+@using HabitFlow.Client
+@using MudBlazor
+
+<MudDialog>
+    <DialogContent>
+        <EditForm Model="@Model" OnValidSubmit="HandleSubmit">
+            <DataAnnotationsValidator />
+            
+            <MudStack Spacing="3">
+                <MudTextField @bind-Value="Model.Title"
+                              Label="Tytuł nawyku"
+                              Required="true"
+                              Counter="80"
+                              MaxLength="80"
+                              Immediate="true"
+                              For="@(() => Model.Title)" />
+
+                <MudTextField @bind-Value="Model.Description"
+                              Label="Opis (opcjonalny)"
+                              Lines="3"
+                              Counter="280"
+                              MaxLength="280"
+                              Immediate="true"
+                              For="@(() => Model.Description)" />
+
+                <MudSelect @bind-Value="Model.Type"
+                           Label="Typ nawyku"
+                           Required="true"
+                           For="@(() => Model.Type)">
+                    <MudSelectItem Value="@HabitType.Start">Buduj (Build)</MudSelectItem>
+                    <MudSelectItem Value="@HabitType.Stop">Rzuć (Stop)</MudSelectItem>
+                </MudSelect>
+
+                <MudSelect Value="@Model.CompletionMode"
+                           ValueChanged="OnCompletionModeChanged"
+                           Label="Tryb uzupełniania"
+                           Required="true"
+                           For="@(() => Model.CompletionMode)"
+                           T="CompletionMode">
+                    <MudSelectItem Value="@CompletionMode.Binary">Tak/Nie (Binary)</MudSelectItem>
+                    <MudSelectItem Value="@CompletionMode.Quantitative">Ilościowy (Quantitative)</MudSelectItem>
+                </MudSelect>
+
+                @if (Model.CompletionMode == CompletionMode.Quantitative)
+                {
+                    <MudStack Row="true" Spacing="2">
+                        <MudNumericField @bind-Value="Model.TargetValue"
+                                         Label="Liczba powtórzeń"
+                                         Min="1"
+                                         Max="100"
+                                         Required="true"
+                                         For="@(() => Model.TargetValueProxy)"
+                                         Style="flex: 2;" />
+                        
+                        <MudTextField @bind-Value="Model.TargetUnit"
+                                      Label="Jednostka (opcjonalna)"
+                                      MaxLength="20"
+                                      Placeholder="np. km, razy"
+                                      For="@(() => Model.TargetUnit)"
+                                      Style="flex: 1;" />
+                    </MudStack>
+                }
+
+                <MudText Typo="Typo.subtitle2" Class="mt-2">Dni tygodnia</MudText>
+                <MudChipSet T="DayOfWeek" @bind-SelectedValues="SelectedDays" MultiSelection="true" Filter="true">
+                    <MudChip Value="@DayOfWeek.Monday" Color="Color.Primary" Size="Size.Small">Pn</MudChip>
+                    <MudChip Value="@DayOfWeek.Tuesday" Color="Color.Primary" Size="Size.Small">Wt</MudChip>
+                    <MudChip Value="@DayOfWeek.Wednesday" Color="Color.Primary" Size="Size.Small">Śr</MudChip>
+                    <MudChip Value="@DayOfWeek.Thursday" Color="Color.Primary" Size="Size.Small">Czw</MudChip>
+                    <MudChip Value="@DayOfWeek.Friday" Color="Color.Primary" Size="Size.Small">Pt</MudChip>
+                    <MudChip Value="@DayOfWeek.Saturday" Color="Color.Primary" Size="Size.Small">Sob</MudChip>
+                    <MudChip Value="@DayOfWeek.Sunday" Color="Color.Primary" Size="Size.Small">Ndz</MudChip>
+                </MudChipSet>
+                @if (Model.DaysOfWeekMask == 0)
+                {
+                    <MudText Color="Color.Error" Typo="Typo.caption">Musisz wybrać przynajmniej jeden dzień tygodnia</MudText>
+                }
+
+                <MudDatePicker @bind-Date="Model.DeadlineDateTime"
+                               Label="Termin (opcjonalny)"
+                               Editable="true"
+                               Clearable="true"
+                               MinDate="@DateTime.Today"
+                               For="@(() => Model.DeadlineDateTime)" />
+
+                @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+                {
+                    <MudAlert Severity="Severity.Error" Variant="Variant.Filled">@ErrorMessage</MudAlert>
+                }
+
+                <ValidationSummary />
+            </MudStack>
+
+            <MudStack Row="true" Justify="Justify.FlexEnd" Class="mt-4">
+                <MudButton OnClick="HandleCancel" 
+                           Disabled="@IsSubmitting">
+                    Anuluj
+                </MudButton>
+                <MudButton ButtonType="ButtonType.Submit"
+                           Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           Disabled="@(IsSubmitting || Model.DaysOfWeekMask == 0)">
+                    @if (IsSubmitting)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                        <MudText Class="ml-2">Zapisywanie...</MudText>
+                    }
+                    else
+                    {
+                        <text>@(Mode == FormMode.Create ? "Utwórz" : "Zapisz")</text>
+                    }
+                </MudButton>
+            </MudStack>
+        </EditForm>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [Parameter]
+    public FormMode Mode { get; set; } = FormMode.Create;
+
+    [Parameter]
+    public HabitFormModel Model { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<HabitFormModel> OnSubmit { get; set; }
+
+    private bool IsSubmitting { get; set; }
+    private string? ErrorMessage { get; set; }
+    
+    private IReadOnlyCollection<DayOfWeek> SelectedDays { get; set; } = Array.Empty<DayOfWeek>();
+    private DateTime? DeadlineDate { get; set; }
+
+    protected override void OnInitialized()
+    {
+        // Initialize selected days from mask
+        SelectedDays = GetDaysFromMask(Model.DaysOfWeekMask);
+        
+        // Initialize deadline date
+        DeadlineDate = Model.DeadlineDate?.ToDateTime(TimeOnly.MinValue);
+    }
+
+    private void OnCompletionModeChanged(CompletionMode newMode)
+    {
+        Model.CompletionMode = newMode;
+        if (newMode == CompletionMode.Binary)
+        {
+            Model.TargetValue = null;
+            Model.TargetUnit = null;
+        }
+        else if (Model.TargetValue == null)
+        {
+            Model.TargetValue = 1;
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        // Update mask when selected days change
+        Model.DaysOfWeekMask = GetMaskFromDays(SelectedDays);
+        
+        // Update deadline date
+        if (DeadlineDate.HasValue)
+        {
+            Model.DeadlineDate = DateOnly.FromDateTime(DeadlineDate.Value);
+            Model.ClearDeadline = false;
+        }
+        else
+        {
+            Model.DeadlineDate = null;
+            Model.ClearDeadline = Mode == FormMode.Edit; // Only set ClearDeadline flag in edit mode
+        }
+    }
+
+    private async Task HandleSubmit()
+    {
+        ErrorMessage = null;
+        IsSubmitting = true;
+        
+        try
+        {
+            // Final validation of days
+            Model.DaysOfWeekMask = GetMaskFromDays(SelectedDays);
+            
+            if (Model.DaysOfWeekMask == 0)
+            {
+                ErrorMessage = "Musisz wybrać przynajmniej jeden dzień tygodnia";
+                return;
+            }
+
+            await OnSubmit.InvokeAsync(Model);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Wystąpił błąd: {ex.Message}";
+        }
+        finally
+        {
+            IsSubmitting = false;
+        }
+    }
+
+    private void HandleCancel()
+    {
+        // Dialog will be closed by parent
+    }
+
+    private static byte GetMaskFromDays(IEnumerable<DayOfWeek> days)
+    {
+        byte mask = 0;
+        foreach (var day in days)
+        {
+            mask |= (byte)(1 << (int)day);
+        }
+        return mask;
+    }
+
+    private static HashSet<DayOfWeek> GetDaysFromMask(int mask)
+    {
+        var days = new HashSet<DayOfWeek>();
+        for (int i = 0; i < 7; i++)
+        {
+            if ((mask & (1 << i)) != 0)
+            {
+                days.Add((DayOfWeek)i);
+            }
+        }
+        return days;
+    }
+
+    public enum FormMode
+    {
+        Create,
+        Edit
+    }
+}

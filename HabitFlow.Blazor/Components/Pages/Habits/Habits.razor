@@ -1,31 +1,71 @@
 ﻿@page "/habits"
+@using HabitFlow.Blazor.Components.Pages.Habits.Models
+@using HabitFlow.Blazor.Components.Pages.Habits.Helpers
+@using HabitFlow.Blazor.Components.Shared
+@using HabitFlow.Client
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @rendermode InteractiveServer
+@inject IHabitFlowApiClient ApiClient
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject NavigationManager Navigation
+@implements IDisposable
 
 <PageTitle>Nawyki - HabitFlow</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Nawyki</MudText>
-    
-    <MudPaper Class="pa-8 mt-4" Elevation="0">
-        <MudStack Spacing="4" AlignItems="AlignItems.Center">
-            <MudIcon Icon="@Icons.Material.Outlined.Construction" 
-                     Size="Size.Large" 
-                     Color="Color.Default" 
-                     Style="font-size: 80px; opacity: 0.3;" />
-            
-            <MudText Typo="Typo.h5" Align="Align.Center">
-                Strona w budowie
-            </MudText>
-            
-            <MudText Typo="Typo.body1" Align="Align.Center" Color="Color.Secondary" Style="max-width: 500px;">
-                Ta strona będzie zawierać listę wszystkich Twoich nawyków. Funkcjonalność jest w trakcie implementacji.
-            </MudText>
-            
-            <MudButton Variant="Variant.Filled" 
-                       Color="Color.Primary" 
-                       Href="/today">
-                Wróć do strony głównej
-            </MudButton>
+    <MudStack Spacing="4">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.h4">Nawyki</MudText>
+
+            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                <MudChip T="string"
+                         Color="@(_state.TotalCountAll >= MaxHabits ? Color.Error : Color.Info)"
+                         Variant="Variant.Outlined">
+                    @_state.TotalCountAll / @MaxHabits
+                </MudChip>
+
+                <MudButton Variant="Variant.Filled"
+                          Color="Color.Primary"
+                          StartIcon="@Icons.Material.Filled.Add"
+                          OnClick="HandleCreateHabit"
+                          Disabled="@(_state.IsLoading || _state.TotalCountAll >= MaxHabits)">
+                    Dodaj nawyk
+                </MudButton>
+            </MudStack>
         </MudStack>
-    </MudPaper>
+
+        @if (_state.TotalCountAll >= MaxHabits)
+        {
+            <MudAlert Severity="Severity.Warning" Variant="Variant.Filled">
+                Osiągnięto limit @MaxHabits nawyków. Usuń nieaktywne nawyki, aby dodać nowe.
+            </MudAlert>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(_state.ErrorMessage))
+        {
+            <MudAlert Severity="Severity.Error"
+                      Variant="Variant.Filled"
+                      CloseIconClicked="() => _state.ErrorMessage = null"
+                      ShowCloseIcon="true">
+                @_state.ErrorMessage
+            </MudAlert>
+        }
+
+        <HabitFilters Filters="@_state.Filters"
+                     OnFiltersChanged="HandleFiltersChanged"
+                     IsBusy="@_state.IsLoading" />
+
+        <HabitList Items="@_state.Items"
+                  TotalCount="@_state.TotalCountFiltered"
+                  CurrentPage="@_state.Filters.Page"
+                  PageSize="@_state.Filters.PageSize"
+                  IsLoading="@_state.IsLoading"
+                  OnPageChanged="HandlePageChanged"
+                  OnPageSizeChanged="HandlePageSizeChanged"
+                  OnEdit="HandleEditHabit"
+                  OnDelete="HandleDeleteHabit"
+                  OnCheckin="HandleCheckinHabit" />
+    </MudStack>
 </MudContainer>

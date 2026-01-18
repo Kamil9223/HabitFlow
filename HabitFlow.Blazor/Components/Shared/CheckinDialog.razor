@@ -1,0 +1,217 @@
+﻿@using HabitFlow.Client
+@using MudBlazor
+
+<MudDialog>
+    <DialogContent>
+        <MudStack Spacing="3">
+            <MudText Typo="Typo.h6">@Title</MudText>
+
+            <MudText Typo="Typo.body2" Color="Color.Secondary">
+                @GetCheckinPrompt()
+            </MudText>
+
+            <MudDatePicker @bind-Date="_selectedDate"
+                           Label="Data check-in"
+                           Variant="Variant.Outlined"
+                           MaxDate="_maxDate"
+                           MinDate="_minDate"
+                           HelperText="Możesz zaznaczyć check-in do 7 dni wstecz"
+                           Error="@_hasDateValidationError"
+                           ErrorText="@_dateValidationErrorMessage" />
+
+            @if (CompletionMode == CompletionMode.Binary)
+            {
+                <MudCheckBox @bind-Value="_isCompleted"
+                             Label="Zrobione"
+                             Color="Color.Primary" />
+            }
+            else
+            {
+                <MudNumericField @bind-Value="_actualValue"
+                                 Label="Wartość wykonana"
+                                 Variant="Variant.Outlined"
+                                 Min="0"
+                                 Max="TargetValue"
+                                 HelperText="@GetTargetLabel()"
+                                 Error="@_hasValidationError"
+                                 ErrorText="@_validationErrorMessage" />
+            }
+
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <MudAlert Severity="Severity.Error">@_errorMessage</MudAlert>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel" 
+                   Variant="Variant.Text"
+                   Disabled="_isSubmitting">
+            Anuluj
+        </MudButton>
+        <MudButton OnClick="Submit"
+                   Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Disabled="_isSubmitting">
+            @if (_isSubmitting)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                <text>Zapisywanie...</text>
+            }
+            else
+            {
+                <text>Zapisz</text>
+            }
+        </MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [Parameter, EditorRequired]
+    public int HabitId { get; set; }
+
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public CompletionMode CompletionMode { get; set; }
+
+    [Parameter, EditorRequired]
+    public int TargetValue { get; set; }
+
+    [Parameter]
+    public string? TargetUnit { get; set; }
+
+    [Parameter, EditorRequired]
+    public DateOnly LocalDate { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<CheckinDialogResult> OnSubmit { get; set; }
+
+    private int _actualValue;
+    private bool _isCompleted;
+    private bool _isSubmitting;
+    private bool _hasValidationError;
+    private string? _validationErrorMessage;
+    private bool _hasDateValidationError;
+    private string? _dateValidationErrorMessage;
+    private string? _errorMessage;
+    private DateTime? _selectedDate;
+    private DateTime _maxDate;
+    private DateTime _minDate;
+
+    protected override void OnInitialized()
+    {
+        _selectedDate = LocalDate.ToDateTime(TimeOnly.MinValue);
+        _maxDate = LocalDate.ToDateTime(TimeOnly.MinValue);
+        _minDate = LocalDate.AddDays(-7).ToDateTime(TimeOnly.MinValue);
+
+        if (CompletionMode == CompletionMode.Binary)
+        {
+            _isCompleted = false;
+        }
+        else
+        {
+            _actualValue = 0;
+        }
+    }
+
+    private string GetCheckinPrompt()
+    {
+        return CompletionMode == CompletionMode.Binary
+            ? "Czy wykonałeś ten nawyk?"
+            : $"Ile udało Ci się wykonać? (cel: {GetTargetLabel()})";
+    }
+
+    private string GetTargetLabel()
+    {
+        var unit = string.IsNullOrWhiteSpace(TargetUnit) ? "powtórzeń" : TargetUnit;
+        return $"{TargetValue} {unit}";
+    }
+
+    private bool ValidateInput()
+    {
+        _hasValidationError = false;
+        _validationErrorMessage = null;
+        _hasDateValidationError = false;
+        _dateValidationErrorMessage = null;
+
+        if (!_selectedDate.HasValue)
+        {
+            _hasDateValidationError = true;
+            _dateValidationErrorMessage = "Data jest wymagana";
+            return false;
+        }
+
+        var selectedDateOnly = DateOnly.FromDateTime(_selectedDate.Value);
+        var minDateOnly = DateOnly.FromDateTime(_minDate);
+        var maxDateOnly = DateOnly.FromDateTime(_maxDate);
+
+        if (selectedDateOnly < minDateOnly || selectedDateOnly > maxDateOnly)
+        {
+            _hasDateValidationError = true;
+            _dateValidationErrorMessage = "Data musi być w zakresie ostatnich 7 dni";
+            return false;
+        }
+
+        if (CompletionMode == CompletionMode.Binary)
+        {
+            return true;
+        }
+
+        if (_actualValue < 0)
+        {
+            _hasValidationError = true;
+            _validationErrorMessage = "Wartość nie może być ujemna";
+            return false;
+        }
+
+        if (_actualValue > TargetValue)
+        {
+            _hasValidationError = true;
+            _validationErrorMessage = $"Wartość nie może przekraczać celu ({TargetValue})";
+            return false;
+        }
+
+        return true;
+    }
+
+    private async Task Cancel()
+    {
+        
+    }
+
+    private async Task Submit()
+    {
+        if (!ValidateInput())
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+        _errorMessage = null;
+        StateHasChanged();
+
+        try
+        {
+            var actualValue = CompletionMode == CompletionMode.Binary 
+                ? (_isCompleted ? 1 : 0) 
+                : _actualValue;
+
+            var result = new CheckinDialogResult
+            {
+                HabitId = HabitId,
+                ActualValue = actualValue,
+                SelectedDate = DateOnly.FromDateTime(_selectedDate!.Value)
+            };
+
+            await OnSubmit.InvokeAsync(result);
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = ex.Message;
+            _isSubmitting = false;
+            StateHasChanged();
+        }
+    }
+}
