@@ -152,7 +152,7 @@ public partial class HabitDetails : IDisposable
             if (!token.IsCancellationRequested)
             {
                 _state.Progress = progressResponse.ToProgressVm();
-                
+
                 // Update success rate in header
                 var latestPoint = progressResponse.Points?.LastOrDefault();
                 if (_state.Habit != null && latestPoint != null)
@@ -184,10 +184,10 @@ public partial class HabitDetails : IDisposable
     private async Task HandleWindowChange(int newWindowDays)
     {
         _state.WindowDays = newWindowDays;
-        
+
         _cts?.Cancel();
         _cts = new CancellationTokenSource();
-        
+
         await LoadProgressAsync(_cts.Token);
     }
 

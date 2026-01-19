@@ -328,7 +328,7 @@ public partial class Habits : IDisposable
 
             await ApiClient.CreateCheckinAsync(result.HabitId, request);
             Snackbar.Add("Check-in został zapisany", Severity.Success);
-            
+
             _successRateCache.Remove(item.Id);
             await LoadHabitsAsync();
         }

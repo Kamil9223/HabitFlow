@@ -36,8 +36,8 @@ public static class HabitMappingExtensions
             Type = response.Type,
             CompletionMode = response.CompletionMode,
             DaysOfWeekMask = (byte)response.DaysOfWeekMask,
-            TargetValue = response.CompletionMode == CompletionMode.Quantitative 
-                ? response.TargetValue 
+            TargetValue = response.CompletionMode == CompletionMode.Quantitative
+                ? response.TargetValue
                 : null,
             TargetUnit = response.TargetUnit,
             DeadlineDate = response.DeadlineDate is null ? null : DateOnly.FromDateTime(response.DeadlineDate.Value.DateTime),
@@ -50,17 +50,17 @@ public static class HabitMappingExtensions
         return new CreateHabitRequest
         {
             Title = model.Title.Trim(),
-            Description = string.IsNullOrWhiteSpace(model.Description) 
-                ? null 
+            Description = string.IsNullOrWhiteSpace(model.Description)
+                ? null
                 : model.Description.Trim(),
             Type = model.Type,
             CompletionMode = model.CompletionMode,
             DaysOfWeekMask = model.DaysOfWeekMask,
-            TargetValue = model.CompletionMode == CompletionMode.Quantitative 
-                ? model.TargetValue ?? 1 
+            TargetValue = model.CompletionMode == CompletionMode.Quantitative
+                ? model.TargetValue ?? 1
                 : 1,
-            TargetUnit = model.CompletionMode == CompletionMode.Quantitative 
-                ? model.TargetUnit?.Trim() 
+            TargetUnit = model.CompletionMode == CompletionMode.Quantitative
+                ? model.TargetUnit?.Trim()
                 : null,
             DeadlineDate = model.DeadlineDate is null ? null : new DateTimeOffset(model.DeadlineDate.Value.ToDateTime(TimeOnly.MinValue))
         };
@@ -71,17 +71,17 @@ public static class HabitMappingExtensions
         return new UpdateHabitRequest
         {
             Title = model.Title.Trim(),
-            Description = string.IsNullOrWhiteSpace(model.Description) 
-                ? null 
+            Description = string.IsNullOrWhiteSpace(model.Description)
+                ? null
                 : model.Description.Trim(),
             Type = model.Type,
             CompletionMode = model.CompletionMode,
             DaysOfWeekMask = model.DaysOfWeekMask,
-            TargetValue = model.CompletionMode == CompletionMode.Quantitative 
-                ? model.TargetValue ?? 1 
+            TargetValue = model.CompletionMode == CompletionMode.Quantitative
+                ? model.TargetValue ?? 1
                 : 1,
-            TargetUnit = model.CompletionMode == CompletionMode.Quantitative 
-                ? model.TargetUnit?.Trim() 
+            TargetUnit = model.CompletionMode == CompletionMode.Quantitative
+                ? model.TargetUnit?.Trim()
                 : null,
             DeadlineDate = model.DeadlineDate is null ? null : new DateTimeOffset(model.DeadlineDate.Value.ToDateTime(TimeOnly.MinValue)),
             ClearDeadline = model.ClearDeadline

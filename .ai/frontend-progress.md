@@ -75,10 +75,10 @@ Aplikacja Blazor Server jest w trakcie implementacji. Widoki autoryzacji oraz po
 
 ---
 
-### 2. Today View (95% zgodnosci)
+### 2. Today View (100% zgodnosci)
 
 #### `/today` - Ekran dzisiejszych zadan
-- **Status:** Zaimplementowane (drobne braki)
+- **Status:** Zaimplementowane
 - **Komponenty:**
   - `Today.razor` (strona glowna)
   - `TodayProgressHeader.razor` (naglowek X/Y)
@@ -87,23 +87,24 @@ Aplikacja Blazor Server jest w trakcie implementacji. Widoki autoryzacji oraz po
   - `CheckinDialog.razor` (modal check-in)
   - `EmptyStateCard.razor` (puste stany)
   - `RefreshButton.razor` (odswiezanie)
+  - `HabitFormDialog.razor` (tworzenie nawyku z empty state)
 - **Funkcje:**
   - Lista dzisiejszych krokow z harmonogramem
   - Loading states (global spinner)
-  - Empty state z CTA (na razie button disabled)
+  - Empty state z CTA otwierajacym HabitFormDialog
   - Error handling z retry
   - Licznik postepu X/Y completed
   - Check-in przez modal (Binary i Quantitative)
   - Optymistyczna aktualizacja UI
   - Obsluga bledow 400/401/403/404/409/422
   - Date picker do backfill (7 dni wstecz)
+  - Tworzenie nowego nawyku z pustego stanu (HandleCreateHabit)
+  - Snackbar z komunikatami sukcesu/bledu
 - **API:**
   - `GET /api/v1/today`
   - `POST /api/v1/habits/{id}/checkins`
-- **Powiazane wymagania:** F-004, F-005, F-012, US-010, US-011, US-012, US-025
-
-**Braki:**
-- Empty state ma wylaczony przycisk i TODO zamiast otwierania HabitFormDialog
+  - `POST /api/v1/habits` (tworzenie nawyku)
+- **Powiazane wymagania:** F-003, F-004, F-005, F-012, US-005, US-006, US-010, US-011, US-012, US-025
 
 ---
 
@@ -335,14 +336,14 @@ Aplikacja Blazor Server jest w trakcie implementacji. Widoki autoryzacji oraz po
 | **Business Views** | 4/5 | 1 (Notifications) | **80%** | W trakcie |
 | **Layout & Navigation** | Kompletne | Global banners (niski priorytet) | **~95%** | ✅ Gotowe |
 | **Landing/Root Redirect** | 1/1 | 0 | **100%** | ✅ Gotowe |
-| **Komponenty Today** | 7/7 | 0 | **100%** | ✅ Gotowe |
+| **Komponenty Today** | 8/8 | 0 | **100%** | ✅ Gotowe |
 | **Komponenty Profile** | 4/4 | 0 | **100%** | ✅ Gotowe |
 | **Komponenty Habits (Lista)** | 7/7 | 0 | **100%** | ✅ Gotowe |
 | **Komponenty Habits (Detale)** | 7/7 | 0 | **100%** | ✅ Gotowe |
 | **Komponenty Notifications** | 2/4+ (strona + Bell) | List, Item, Pagination | **~40%** | Czescowo |
 | **Error Handling** | Podstawowy | ErrorBoundary, ErrorView, NotFound | **~30%** | Brak |
 
-**Ogolne pokrycie MVP:** ~85% (po implementacji widoku szczegolów nawyku)
+**Ogolne pokrycie MVP:** ~87% (po implementacji empty state CTA w Today View)
 
 ---
 
@@ -426,6 +427,14 @@ Aplikacja Blazor Server jest w trakcie implementacji. Widoki autoryzacji oraz po
 - Dodano dialogi create/edit/delete + quick check-in
 - Stabilizacja kompilacji: `IMudDialogInstance`, `SelectedDays` zgodne z MudChipSet
 
+### 2026-01-19 (23:55) - Today View Empty State CTA
+- Zaimplementowano otwarcie HabitFormDialog z empty state w widoku Today
+- Dodano metody HandleCreateHabit i SaveNewHabitAsync
+- Integracja z Snackbar dla komunikatow sukcesu/bledu
+- Po utworzeniu nawyku odswiezany jest widok Today (LoadDataAsync)
+- Obsluga limitu 20 nawykow (409) i bledow walidacji (400)
+- Usunieto TODO i wylaczony button z empty state
+
 ### 2026-01-19 (23:45) - Habit Details (kompletny widok)
 - Utworzono modele: `HabitDetailsVm`, `CalendarDayVm`, `HabitCalendarVm`, `ProgressRollingVm`, `ProgressPointVm`, `HabitDetailsState`, `DayStatus` enum
 - Rozszerzono `HabitMappingExtensions` o mapowania dla detali, kalendarza i wykresu
@@ -442,5 +451,5 @@ Aplikacja Blazor Server jest w trakcie implementacji. Widoki autoryzacji oraz po
   - Kolorowanie: zielony (done/≥75%), pomaranczowy (partial/≥50%), czerwony (miss/<50%), szary (not planned)
 - Naprawiono błąd RZ9986 w CalendarView (string interpolation w atrybucie Style)
 
-**Ostatnia aktualizacja:** 2026-01-19 (23:45)
+**Ostatnia aktualizacja:** 2026-01-19 (23:55)
 **Autor analizy:** Claude (agent AI)

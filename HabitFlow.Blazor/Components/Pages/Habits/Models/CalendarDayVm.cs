@@ -11,20 +11,20 @@ public class CalendarDayVm
     public CompletionMode? CompletionModeSnapshot { get; set; }
     public HabitType? HabitTypeSnapshot { get; set; }
     public double DailyScore { get; set; }
-    
+
     public DayStatus Status
     {
         get
         {
             if (!IsPlanned)
                 return DayStatus.NotPlanned;
-            
+
             if (ActualValue == 0)
                 return DayStatus.Miss;
-            
+
             if (DailyScore >= 1.0)
                 return DayStatus.Done;
-            
+
             return DayStatus.Partial;
         }
     }

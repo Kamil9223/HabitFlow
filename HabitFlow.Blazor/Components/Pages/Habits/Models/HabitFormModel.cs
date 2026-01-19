@@ -31,13 +31,13 @@ public sealed class HabitFormModel
     public DateOnly? DeadlineDate { get; set; }
 
     public bool ClearDeadline { get; set; }
-    
+
     public int TargetValueProxy
     {
         get => TargetValue ?? 0;
         set => TargetValue = value;
     }
-    
+
     public DateTime? DeadlineDateTime
     {
         get => DeadlineDate?.ToDateTime(TimeOnly.MinValue);

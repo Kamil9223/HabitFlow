@@ -1,8 +1,12 @@
 @page "/today"
 @using HabitFlow.Client
+@using HabitFlow.Blazor.Components.Pages.Habits
+@using HabitFlow.Blazor.Components.Pages.Habits.Models
+@using HabitFlow.Blazor.Components.Pages.Habits.Helpers
 @using TodayItemVm = TodayChecklist.TodayItemVm
 @inject IHabitFlowApiClient ApiClient
 @inject IDialogService DialogService
+@inject ISnackbar Snackbar
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
@@ -41,17 +45,14 @@
                 <MudText Typo="Typo.body1" Align="Align.Center" Color="Color.Secondary" Style="max-width: 500px;">
                     Nie masz jeszcze żadnych nawyków. Zacznij od stworzenia swojego pierwszego nawyku i zacznij budować lepsze przyzwyczajenia!
                 </MudText>
-                
-                @* TODO: Replace with HabitFormDialog when implemented in Sprint 1 (see frontend-progress.md) *@
-                <MudButton Variant="Variant.Filled" 
-                           Color="Color.Primary" 
-                           Disabled="true"
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="HandleCreateHabit"
+                           Disabled="@_state.IsLoading"
                            StartIcon="@Icons.Material.Filled.Add">
                     Dodaj swój pierwszy nawyk
                 </MudButton>
-                <MudText Typo="Typo.caption" Color="Color.Secondary">
-                    (Funkcja będzie dostępna po implementacji HabitFormDialog)
-                </MudText>
             </MudStack>
         </MudPaper>
     }
@@ -214,6 +215,52 @@
         {
             item.IsSubmitting = false;
             StateHasChanged();
+        }
+    }
+
+    private async Task HandleCreateHabit()
+    {
+        var model = new HabitFormModel();
+        var parameters = new DialogParameters<HabitFormDialog>
+        {
+            { x => x.Mode, HabitFormDialog.FormMode.Create },
+            { x => x.Model, model },
+            { x => x.OnSubmit, EventCallback.Factory.Create<HabitFormModel>(this, SaveNewHabitAsync) }
+        };
+
+        var options = new DialogOptions
+        {
+            CloseButton = true,
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true
+        };
+
+        await DialogService.ShowAsync<HabitFormDialog>("Nowy nawyk", parameters, options);
+    }
+
+    private async Task SaveNewHabitAsync(HabitFormModel model)
+    {
+        try
+        {
+            var request = model.ToCreateRequest();
+            await ApiClient.CreateHabitAsync(request);
+
+            Snackbar.Add("Nawyk został utworzony", Severity.Success);
+            await LoadDataAsync();
+        }
+        catch (ApiException ex) when (ex.StatusCode == 409)
+        {
+            Snackbar.Add("Osiągnięto limit 20 nawyków", Severity.Error);
+        }
+        catch (ApiException ex) when (ex.StatusCode == 400)
+        {
+            Snackbar.Add($"Błąd walidacji: {ex.Message}", Severity.Error);
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Błąd podczas tworzenia nawyku: {ex.Message}", Severity.Error);
+            throw;
         }
     }
 
