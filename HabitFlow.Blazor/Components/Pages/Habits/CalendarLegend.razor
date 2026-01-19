@@ -1,0 +1,29 @@
+﻿@using HabitFlow.Blazor.Components.Pages.Habits.Models
+
+<MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+    <MudText Typo="Typo.caption" Color="Color.Secondary">Legenda:</MudText>
+    
+    <MudChip T="string" 
+             Size="Size.Small" 
+             Style="background-color: #4caf50; color: white;">
+        Wykonane
+    </MudChip>
+    
+    <MudChip T="string" 
+             Size="Size.Small" 
+             Style="background-color: #ff9800; color: white;">
+        Częściowo
+    </MudChip>
+    
+    <MudChip T="string" 
+             Size="Size.Small" 
+             Style="background-color: #f44336; color: white;">
+        Niewykonane
+    </MudChip>
+    
+    <MudChip T="string" 
+             Size="Size.Small" 
+             Style="background-color: #e0e0e0; color: #757575;">
+        Nie zaplanowane
+    </MudChip>
+</MudStack>

@@ -1,0 +1,141 @@
+﻿@using HabitFlow.Blazor.Components.Pages.Habits.Models
+@using HabitFlow.Client
+
+<MudPaper Elevation="2" Class="pa-4">
+    <MudStack Spacing="3">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
+            <MudStack Spacing="2" Style="flex: 1;">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudText Typo="Typo.h5">@Habit.Title</MudText>
+                    
+                    @if (AllHabits.Count > 1)
+                    {
+                        <HabitSwitchDropdown SelectedHabitId="@Habit.Id"
+                                           AllHabits="@AllHabits"
+                                           OnChange="@OnHabitChange" />
+                    }
+                </MudStack>
+
+                @if (!string.IsNullOrWhiteSpace(Habit.Description))
+                {
+                    <MudText Typo="Typo.body2" Color="Color.Secondary">
+                        @Habit.Description
+                    </MudText>
+                }
+            </MudStack>
+
+            @if (!string.IsNullOrWhiteSpace(Habit.SuccessRate))
+            {
+                <MudChip T="string" 
+                         Color="@GetSuccessRateColor(Habit.SuccessRate)"
+                         Variant="Variant.Filled"
+                         Size="Size.Large">
+                    @Habit.SuccessRate
+                </MudChip>
+            }
+        </MudStack>
+
+        <MudDivider />
+
+        <MudStack Row="true" Spacing="2" Class="flex-wrap">
+            <MudChip T="string" 
+                     Icon="@GetTypeIcon(Habit.Type)" 
+                     Color="@GetTypeColor(Habit.Type)"
+                     Size="Size.Small">
+                @GetTypeLabel(Habit.Type)
+            </MudChip>
+
+            <MudChip T="string" 
+                     Icon="@Icons.Material.Filled.CheckCircle"
+                     Color="Color.Info"
+                     Size="Size.Small">
+                @GetCompletionModeLabel(Habit.CompletionMode)
+            </MudChip>
+
+            @if (Habit.CompletionMode == CompletionMode.Quantitative)
+            {
+                <MudChip T="string" 
+                         Icon="@Icons.Material.Filled.Numbers"
+                         Color="Color.Default"
+                         Size="Size.Small">
+                    Cel: @Habit.TargetValue @Habit.TargetUnit
+                </MudChip>
+            }
+
+            <MudChip T="string" 
+                     Icon="@Icons.Material.Filled.CalendarToday"
+                     Color="Color.Default"
+                     Size="Size.Small">
+                @Habit.ScheduleLabel
+            </MudChip>
+
+            @if (Habit.DeadlineDate.HasValue)
+            {
+                var daysLeft = (Habit.DeadlineDate.Value.ToDateTime(TimeOnly.MinValue) - DateTime.Today).Days;
+                var deadlineColor = daysLeft < 7 ? Color.Error : (daysLeft < 30 ? Color.Warning : Color.Default);
+                
+                <MudChip T="string" 
+                         Icon="@Icons.Material.Filled.Flag"
+                         Color="@deadlineColor"
+                         Size="Size.Small">
+                    Termin: @Habit.DeadlineDate.Value.ToString("dd.MM.yyyy") (@daysLeft dni)
+                </MudChip>
+            }
+        </MudStack>
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired]
+    public HabitDetailsVm Habit { get; set; } = null!;
+
+    [Parameter]
+    public List<HabitListItemVm> AllHabits { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<int> OnHabitChange { get; set; }
+
+    private string GetTypeIcon(HabitType type) => type switch
+    {
+        HabitType.Start => Icons.Material.Filled.PlayArrow,
+        HabitType.Stop => Icons.Material.Filled.Stop,
+        _ => Icons.Material.Filled.Help
+    };
+
+    private Color GetTypeColor(HabitType type) => type switch
+    {
+        HabitType.Start => Color.Success,
+        HabitType.Stop => Color.Error,
+        _ => Color.Default
+    };
+
+    private string GetTypeLabel(HabitType type) => type switch
+    {
+        HabitType.Start => "Buduj (Start)",
+        HabitType.Stop => "Rzuć (Stop)",
+        _ => type.ToString()
+    };
+
+    private string GetCompletionModeLabel(CompletionMode mode) => mode switch
+    {
+        CompletionMode.Binary => "Tak/Nie",
+        CompletionMode.Quantitative => "Ilościowy",
+        _ => mode.ToString()
+    };
+
+    private Color GetSuccessRateColor(string successRate)
+    {
+        if (string.IsNullOrWhiteSpace(successRate) || successRate == "-")
+            return Color.Default;
+
+        var percentStr = successRate.Split('%')[0].Trim();
+        if (int.TryParse(percentStr, out var percent))
+        {
+            if (percent >= 75) return Color.Success;
+            if (percent >= 50) return Color.Warning;
+            return Color.Error;
+        }
+
+        return Color.Default;
+    }
+}

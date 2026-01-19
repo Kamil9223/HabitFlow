@@ -1,0 +1,147 @@
+﻿@using HabitFlow.Blazor.Components.Pages.Habits.Models
+
+<MudStack Spacing="3">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h6">Rolling Success Rate</MudText>
+        
+        <MudToggleGroup T="int" 
+                       Value="@WindowDays" 
+                       ValueChanged="@HandleWindowChange"
+                       Color="Color.Primary"
+                       CheckMark="true"
+                       FixedContent="true">
+            <MudToggleItem Value="7" Text="7 dni" />
+            <MudToggleItem Value="30" Text="30 dni" />
+        </MudToggleGroup>
+    </MudStack>
+
+    @if (Progress.Points.Any())
+    {
+        <MudPaper Elevation="1" Class="pa-4">
+            <MudStack Spacing="3">
+                @* Summary stats *@
+                <MudStack Row="true" Justify="Justify.SpaceAround" Class="mb-4">
+                    @{
+                        var latestPoint = Progress.Points.LastOrDefault();
+                        var avgSuccessRate = Progress.Points.Any() 
+                            ? Progress.Points.Average(p => p.SuccessRate) 
+                            : 0;
+                    }
+
+                    @if (latestPoint != null)
+                    {
+                        <MudStack Spacing="1" AlignItems="AlignItems.Center">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Aktualny wynik</MudText>
+                            <MudText Typo="Typo.h4" Color="@GetSuccessRateColor(latestPoint.SuccessRate)">
+                                @Math.Round(latestPoint.SuccessRate * 100)%
+                            </MudText>
+                        </MudStack>
+
+                        <MudDivider Vertical="true" FlexItem="true" />
+
+                        <MudStack Spacing="1" AlignItems="AlignItems.Center">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Średni wynik</MudText>
+                            <MudText Typo="Typo.h4" Color="@GetSuccessRateColor(avgSuccessRate)">
+                                @Math.Round(avgSuccessRate * 100)%
+                            </MudText>
+                        </MudStack>
+
+                        <MudDivider Vertical="true" FlexItem="true" />
+
+                        <MudStack Spacing="1" AlignItems="AlignItems.Center">
+                            <MudText Typo="Typo.caption" Color="Color.Secondary">Próg sukcesu</MudText>
+                            <MudText Typo="Typo.h4">75%</MudText>
+                        </MudStack>
+                    }
+                </MudStack>
+
+                @* Simple chart visualization *@
+                <MudStack Spacing="2">
+                    @foreach (var point in Progress.Points.TakeLast(WindowDays))
+                    {
+                        var percentage = point.SuccessRate * 100;
+                        var color = GetSuccessRateColor(point.SuccessRate);
+                        
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                            <MudText Typo="Typo.caption" Style="min-width: 80px;">
+                                @point.Date.ToString("dd.MM")
+                            </MudText>
+                            
+                            <MudProgressLinear Color="@color" 
+                                             Value="@percentage" 
+                                             Size="Size.Large"
+                                             Class="flex-grow-1" />
+                            
+                            <MudText Typo="Typo.body2" Style="min-width: 60px; text-align: right;">
+                                @Math.Round(percentage)%
+                            </MudText>
+                            
+                            <MudTooltip>
+                                <ChildContent>
+                                    <MudIcon Icon="@Icons.Material.Filled.Info" Size="Size.Small" Color="Color.Default" />
+                                </ChildContent>
+                                <TooltipContent>
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.caption">
+                                            Data: @point.Date.ToString("dd.MM.yyyy")
+                                        </MudText>
+                                        <MudText Typo="Typo.caption">
+                                            Dni zaplanowane: @point.PlannedDays
+                                        </MudText>
+                                        <MudText Typo="Typo.caption">
+                                            Suma punktów: @Math.Round(point.SumDailyScore, 2)
+                                        </MudText>
+                                        <MudText Typo="Typo.caption">
+                                            Success rate: @Math.Round(point.SuccessRate * 100)%
+                                        </MudText>
+                                    </MudStack>
+                                </TooltipContent>
+                            </MudTooltip>
+                        </MudStack>
+                    }
+                </MudStack>
+
+                @* Success threshold indicator *@
+                <MudDivider />
+                <MudText Typo="Typo.caption" Color="Color.Secondary" Align="Align.Center">
+                    <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Small" />
+                    Utrzymuj wynik powyżej 75% aby osiągnąć sukces
+                </MudText>
+            </MudStack>
+        </MudPaper>
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Info">
+            Brak danych postępu w wybranym oknie czasowym (@WindowDays dni).
+        </MudAlert>
+    }
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired]
+    public ProgressRollingVm Progress { get; set; } = null!;
+
+    [Parameter]
+    public int WindowDays { get; set; } = 7;
+
+    [Parameter]
+    public EventCallback<int> OnWindowChange { get; set; }
+
+    private async Task HandleWindowChange(int newWindowDays)
+    {
+        if (newWindowDays != WindowDays)
+        {
+            await OnWindowChange.InvokeAsync(newWindowDays);
+        }
+    }
+
+    private Color GetSuccessRateColor(double successRate)
+    {
+        var percentage = successRate * 100;
+        
+        if (percentage >= 75) return Color.Success;
+        if (percentage >= 50) return Color.Warning;
+        return Color.Error;
+    }
+}

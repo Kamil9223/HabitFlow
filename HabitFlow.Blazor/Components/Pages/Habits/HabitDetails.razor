@@ -1,0 +1,87 @@
+﻿@page "/habits/{id:int}"
+@using HabitFlow.Blazor.Components.Pages.Habits.Models
+@using HabitFlow.Blazor.Components.Pages.Habits.Helpers
+@using HabitFlow.Client
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
+@rendermode InteractiveServer
+@inject IHabitFlowApiClient ApiClient
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@implements IDisposable
+
+<PageTitle>@(_state.Habit?.Title ?? "Nawyk") - HabitFlow</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
+    @if (_state.IsLoading)
+    {
+        <MudStack Spacing="3">
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="60px" />
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="200px" />
+            <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="400px" />
+        </MudStack>
+    }
+    else if (!string.IsNullOrWhiteSpace(_state.ErrorMessage))
+    {
+        <MudAlert Severity="Severity.Error" Variant="Variant.Filled">
+            @_state.ErrorMessage
+            <MudButton OnClick="LoadHabitDetailsAsync" 
+                       Color="Color.Inherit" 
+                       Variant="Variant.Text" 
+                       Size="Size.Small"
+                       Class="ml-2">
+                Spróbuj ponownie
+            </MudButton>
+        </MudAlert>
+    }
+    else if (_state.Habit != null)
+    {
+        <MudStack Spacing="4">
+            <HabitDetailsHeader Habit="_state.Habit" 
+                              AllHabits="_allHabits"
+                              OnHabitChange="HandleHabitChange" />
+
+            <MudTabs @bind-ActivePanelIndex="_state.ActiveTab" 
+                     Elevation="2" 
+                     Rounded="true" 
+                     ApplyEffectsToContainer="true"
+                     PanelClass="pa-4">
+                <MudTabPanel Text="Kalendarz" Icon="@Icons.Material.Filled.CalendarMonth">
+                    @if (_state.IsLoadingCalendar)
+                    {
+                        <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+                    }
+                    else if (_state.Calendar != null)
+                    {
+                        <CalendarView Calendar="_state.Calendar" />
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body1" Color="Color.Secondary">
+                            Brak danych kalendarza
+                        </MudText>
+                    }
+                </MudTabPanel>
+
+                <MudTabPanel Text="Postęp" Icon="@Icons.Material.Filled.TrendingUp">
+                    @if (_state.IsLoadingProgress)
+                    {
+                        <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+                    }
+                    else if (_state.Progress != null)
+                    {
+                        <ProgressView Progress="_state.Progress" 
+                                    WindowDays="_state.WindowDays"
+                                    OnWindowChange="HandleWindowChange" />
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.body1" Color="Color.Secondary">
+                            Brak danych postępu
+                        </MudText>
+                    }
+                </MudTabPanel>
+            </MudTabs>
+        </MudStack>
+    }
+</MudContainer>

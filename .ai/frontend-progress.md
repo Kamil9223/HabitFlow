@@ -1,11 +1,11 @@
 # Frontend - Status implementacji
 
-**Data aktualizacji:** 2026-01-19 (00:01)
+**Data aktualizacji:** 2026-01-19 (23:45)
 **Dokument referencyjny:** `.ai/ui-plan.md`, `.ai/prd.md`, `.ai/api-plan.md`
 
 ## Przeglad ogolny
 
-Aplikacja Blazor Server jest w trakcie implementacji. Widoki autoryzacji oraz podstawowe widoki biznesowe (Today, Profile) sa gotowe. Widok listy nawykow (Habits) jest zaimplementowany z CRUD. Brakuje widoku detali nawyku oraz powiadomien (Notifications).
+Aplikacja Blazor Server jest w trakcie implementacji. Widoki autoryzacji oraz podstawowe widoki biznesowe (Today, Profile) sa gotowe. Widok listy nawykow (Habits) jest zaimplementowany z CRUD. **Widok szczegolów nawyku (Habit Details) jest kompletny**. Pozostaje do zaimplementowania widok powiadomien (Notifications).
 
 ---
 
@@ -224,33 +224,55 @@ Aplikacja Blazor Server jest w trakcie implementacji. Widoki autoryzacji oraz po
 
 ---
 
-## Widoki brakujace (wymagane przez ui-plan.md i PRD)
+### 7. Habit Details View (100% zgodnosci) - ZAKONCZONE 2026-01-19
 
-### 1. Habit Details (`/habits/{id}`) - PRIORYTET: KRYTYCZNY
-
-- **Status:** Brak
-- **Funkcje wymagane:**
+#### `/habits/{id}` - Szczegoly nawyku
+- **Status:** Zaimplementowane
+- **Komponenty:**
+  - `HabitDetails.razor` + `HabitDetails.razor.cs` (strona routowana)
+  - `HabitDetailsHeader.razor` (naglowek z meta danymi)
+  - `HabitSwitchDropdown.razor` (przełącznik nawykow)
+  - `CalendarView.razor` + `CalendarLegend.razor` (kalendarz readonly)
+  - `ProgressView.razor` (wykres rolling success rate)
+- **Modele:**
+  - `HabitDetailsVm`, `HabitDetailsState`
+  - `CalendarDayVm`, `HabitCalendarVm`
+  - `ProgressRollingVm`, `ProgressPointVm`
+  - `DayStatus` enum (NotPlanned, Done, Miss, Partial)
+- **Funkcje:**
   - Szczegoly nawyku: typ, tryb, harmonogram, targetValue/unit, deadline, success_rate
-  - Dropdown do przelaczania miedzy nawykami (HabitSwitchDropdown)
+  - Kolorowe chipy dla meta-danych (typ: zielony/czerwony, deadline: warning gdy <30 dni)
+  - Dropdown do szybkiego przelaczania miedzy nawykami
   - Taby: Calendar (readonly), Progress (wykres rolling 7/30)
-  - Kalendarz: statusy done/miss/partial + tooltips
-  - Wykres rolling success rate z przelacznikiem 7/30
-  - Obsluga bledow 404
+  - Kalendarz:
+    - Siatka dni z kolorami: zielony (done), czerwony (miss), pomaranczowy (partial), szary (not planned)
+    - Tooltips z szczegolami: data, status, wykonanie (actual/target), wynik (%)
+    - Legenda kolorow
+    - Obsługa pierwszego dnia miesiąca (puste komórki)
+  - Wykres rolling success rate:
+    - Toggle switch 7/30 dni
+    - Statystyki: aktualny wynik, sredni wynik, prog sukcesu (75%)
+    - Wizualizacja przez MudProgressLinear (kazdy dzien osobny pasek)
+    - Kolorowanie: zielony ≥75%, pomaranczowy ≥50%, czerwony <50%
+    - Tooltips z detalami kazdego punktu
+  - Loading states: skeleton dla strony, spinner dla zakladek
+  - Error handling: 401 (redirect), 404 (komunikat), retry button
+  - Rownolegle ladowanie kalendarza i wykresu (Task.WhenAll)
+  - CancellationToken w kazdym request
 - **API:**
   - `GET /api/v1/habits/{id}`
-  - `GET /api/v1/habits/{id}/calendar`
-  - `GET /api/v1/habits/{id}/progress/rolling`
+  - `GET /api/v1/habits/{id}/calendar?from=...&to=...`
+  - `GET /api/v1/habits/{id}/progress/rolling?windowDays=...`
 - **Powiazane wymagania:** F-006, F-007, F-008, US-015, US-016, US-024
-- **Komponenty do utworzenia:**
-  - `HabitDetails.razor`
-  - `HabitDetailsHeader.razor`
-  - `HabitSwitchDropdown.razor`
-  - `TabCalendar.razor`
-  - `TabProgress.razor`
-  - `CalendarView.razor`
-  - `RollingSuccessChart.razor`
+- **Mapowania:** rozszerzono `HabitMappingExtensions` o:
+  - `ToDetailsVm()`, `ToCalendarVm()`, `ToCalendarDayVm()`
+  - `ToProgressVm()`, `ToProgressPointVm()`
 
-### 2. Notifications (`/notifications`) - PRIORYTET: WYSOKI
+---
+
+## Widoki brakujace (wymagane przez ui-plan.md i PRD)
+
+### 1. Notifications (`/notifications`) - PRIORYTET: WYSOKI
 
 - **Status:** Strona zastepcza istnieje (2026-01-17)
 - **Funkcje wymagane:**
@@ -271,7 +293,7 @@ Aplikacja Blazor Server jest w trakcie implementacji. Widoki autoryzacji oraz po
   - `NotificationItem.razor`
   - `Pagination.razor`
 
-### 3. Error Boundary & 404 - PRIORYTET: SREDNI
+### 2. Error Boundary & 404 - PRIORYTET: SREDNI
 
 - **Status:** Czesciowo (podstawowy `Error.razor` + `#blazor-error-ui`)
 - **Funkcje wymagane:**
@@ -286,7 +308,7 @@ Aplikacja Blazor Server jest w trakcie implementacji. Widoki autoryzacji oraz po
   - `NotFound.razor`
   - `RetryButton.razor`
 
-### 4. Email Confirmation Gate - PRIORYTET: WYSOKI
+### 3. Email Confirmation Gate - PRIORYTET: WYSOKI
 
 - **Status:** Brak
 - **Funkcje wymagane:**
@@ -309,18 +331,18 @@ Aplikacja Blazor Server jest w trakcie implementacji. Widoki autoryzacji oraz po
 
 | Kategoria | Zaimplementowane | Brakujace | Pokrycie | Status |
 |-----------|-----------------|-----------|----------|--------|
-| **Auth Views** | 6/6 | 0 | **100%** | Gotowe |
-| **Business Views** | 3/5 | 2 (Habits Details, Notifications) | **60%** | W trakcie |
-| **Layout & Navigation** | Kompletne | Global banners (niski priorytet) | **~95%** | Gotowe |
-| **Landing/Root Redirect** | 1/1 | 0 | **100%** | Gotowe |
-| **Komponenty Today** | 7/7 | 0 | **100%** | Gotowe |
-| **Komponenty Profile** | 4/4 | 0 | **100%** | Gotowe |
-| **Komponenty Habits (Lista)** | 7/7 | 0 | **100%** | Gotowe |
-| **Komponenty Habits (Detale)** | 0/6+ | CalendarView, RollingSuccessChart, HabitDetailsHeader, SwitchDropdown | **0%** | Brak |
+| **Auth Views** | 6/6 | 0 | **100%** | ✅ Gotowe |
+| **Business Views** | 4/5 | 1 (Notifications) | **80%** | W trakcie |
+| **Layout & Navigation** | Kompletne | Global banners (niski priorytet) | **~95%** | ✅ Gotowe |
+| **Landing/Root Redirect** | 1/1 | 0 | **100%** | ✅ Gotowe |
+| **Komponenty Today** | 7/7 | 0 | **100%** | ✅ Gotowe |
+| **Komponenty Profile** | 4/4 | 0 | **100%** | ✅ Gotowe |
+| **Komponenty Habits (Lista)** | 7/7 | 0 | **100%** | ✅ Gotowe |
+| **Komponenty Habits (Detale)** | 7/7 | 0 | **100%** | ✅ Gotowe |
 | **Komponenty Notifications** | 2/4+ (strona + Bell) | List, Item, Pagination | **~40%** | Czescowo |
 | **Error Handling** | Podstawowy | ErrorBoundary, ErrorView, NotFound | **~30%** | Brak |
 
-**Ogolne pokrycie MVP:** ~70% (po implementacji widoku listy nawykow)
+**Ogolne pokrycie MVP:** ~85% (po implementacji widoku szczegolów nawyku)
 
 ---
 
@@ -331,15 +353,16 @@ Aplikacja Blazor Server jest w trakcie implementacji. Widoki autoryzacji oraz po
 - **BottomNav** - responsive navigation dla mobile
 - **Today View (95%+)** - backfill date picker (empty state nadal TODO)
 - **Habits List (CRUD)** - lista, filtry, paginacja, dialogi create/edit/delete, quick check-in
+- **Habit Details (100%)** - szczegoly nawyku z kalendarzem i wykresem rolling success rate
 
-### Sprint 1 - Krytyczne (Habits CRUD)
-1. **`/habits` (lista)** - ZAKONCZONE 2026-01-19 (CRUD, filtry, paginacja, quick check-in)
-2. **Landing redirect (`/`)** - ZAKONCZONE 2026-01-18 (UX onboarding)
+### Sprint 1 - Krytyczne (Habits CRUD) ✅ ZAKONCZONE
+1. **`/habits` (lista)** - ✅ ZAKONCZONE 2026-01-19 (CRUD, filtry, paginacja, quick check-in)
+2. **Landing redirect (`/`)** - ✅ ZAKONCZONE 2026-01-18 (UX onboarding)
 
 ### Sprint 2 - Wysokie (Visualizations & Notifications)
-3. **`/habits/{id}` (detale)** - kalendarz readonly i wykres rolling 7/30
-4. **`/notifications`** - powiadomienia AI (F-009 z PRD)
-5. **EmailConfirmationGate** - blokada niepotwierdzonego email (US-001)
+3. **`/habits/{id}` (detale)** - ✅ ZAKONCZONE 2026-01-19 (23:45) - kalendarz readonly i wykres rolling 7/30
+4. **`/notifications`** - powiadomienia AI (F-009 z PRD) - TODO
+5. **EmailConfirmationGate** - blokada niepotwierdzonego email (US-001) - TODO
 
 ### Sprint 3 - Srednie (UX Polish)
 6. **Backfill date picker** w CheckinDialog - zrobione (US-013)
@@ -403,5 +426,21 @@ Aplikacja Blazor Server jest w trakcie implementacji. Widoki autoryzacji oraz po
 - Dodano dialogi create/edit/delete + quick check-in
 - Stabilizacja kompilacji: `IMudDialogInstance`, `SelectedDays` zgodne z MudChipSet
 
-**Ostatnia aktualizacja:** 2026-01-19 (00:01)
+### 2026-01-19 (23:45) - Habit Details (kompletny widok)
+- Utworzono modele: `HabitDetailsVm`, `CalendarDayVm`, `HabitCalendarVm`, `ProgressRollingVm`, `ProgressPointVm`, `HabitDetailsState`, `DayStatus` enum
+- Rozszerzono `HabitMappingExtensions` o mapowania dla detali, kalendarza i wykresu
+- Zaimplementowano komponenty:
+  - `HabitDetails.razor` + code-behind (routing `/habits/{id:int}`)
+  - `HabitDetailsHeader.razor` (meta dane, success rate badge, kolorowe chipy)
+  - `HabitSwitchDropdown.razor` (menu do przełączania nawykow)
+  - `CalendarView.razor` + `CalendarLegend.razor` (siatka kalendarza z kolorami i tooltipami)
+  - `ProgressView.razor` (wykres rolling success rate z toggle 7/30 dni)
+- Funkcjonalności:
+  - Rownolegle ladowanie kalendarza i wykresu (Task.WhenAll)
+  - Obsługa CancellationToken w kazdym request
+  - Loading states (skeleton, spinner) i error handling (401, 404, retry)
+  - Kolorowanie: zielony (done/≥75%), pomaranczowy (partial/≥50%), czerwony (miss/<50%), szary (not planned)
+- Naprawiono błąd RZ9986 w CalendarView (string interpolation w atrybucie Style)
+
+**Ostatnia aktualizacja:** 2026-01-19 (23:45)
 **Autor analizy:** Claude (agent AI)

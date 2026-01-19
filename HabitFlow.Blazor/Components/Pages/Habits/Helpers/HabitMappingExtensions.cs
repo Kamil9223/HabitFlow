@@ -129,4 +129,70 @@ public static class HabitMappingExtensions
         var percentage = $"{Math.Round(point.SuccessRate * 100)}%";
         return $"{percentage} / {windowDays}d";
     }
+
+    public static HabitDetailsVm ToDetailsVm(this HabitResponse response)
+    {
+        return new HabitDetailsVm
+        {
+            Id = response.Id,
+            Title = response.Title,
+            Description = response.Description,
+            Type = response.Type,
+            CompletionMode = response.CompletionMode,
+            DaysOfWeekMask = response.DaysOfWeekMask,
+            ScheduleLabel = GetScheduleLabel(response.DaysOfWeekMask),
+            TargetValue = response.TargetValue,
+            TargetUnit = response.TargetUnit,
+            DeadlineDate = response.DeadlineDate is null ? null : DateOnly.FromDateTime(response.DeadlineDate.Value.DateTime),
+            CreatedAtUtc = response.CreatedAtUtc,
+            SuccessRate = null // Will be loaded separately
+        };
+    }
+
+    public static HabitCalendarVm ToCalendarVm(this HabitCalendarResponse response)
+    {
+        return new HabitCalendarVm
+        {
+            HabitId = response.HabitId,
+            From = DateOnly.FromDateTime(response.From.DateTime),
+            To = DateOnly.FromDateTime(response.To.DateTime),
+            Days = response.Days.Select(d => d.ToCalendarDayVm()).ToList()
+        };
+    }
+
+    public static CalendarDayVm ToCalendarDayVm(this HabitCalendarDay day)
+    {
+        return new CalendarDayVm
+        {
+            Date = DateOnly.FromDateTime(day.Date.DateTime),
+            IsPlanned = day.IsPlanned,
+            ActualValue = day.ActualValue,
+            TargetValueSnapshot = day.TargetValueSnapshot,
+            CompletionModeSnapshot = day.CompletionModeSnapshot,
+            HabitTypeSnapshot = day.HabitTypeSnapshot,
+            DailyScore = day.DailyScore
+        };
+    }
+
+    public static ProgressRollingVm ToProgressVm(this ProgressRollingResponse response)
+    {
+        return new ProgressRollingVm
+        {
+            HabitId = response.HabitId,
+            WindowDays = response.WindowDays,
+            Until = DateOnly.FromDateTime(response.Until.DateTime),
+            Points = response.Points.Select(p => p.ToProgressPointVm()).ToList()
+        };
+    }
+
+    public static ProgressPointVm ToProgressPointVm(this ProgressRollingPoint point)
+    {
+        return new ProgressPointVm
+        {
+            Date = DateOnly.FromDateTime(point.Date.DateTime),
+            PlannedDays = point.PlannedDays,
+            SumDailyScore = point.SumDailyScore,
+            SuccessRate = point.SuccessRate
+        };
+    }
 }

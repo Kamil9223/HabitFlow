@@ -1,0 +1,139 @@
+﻿@using HabitFlow.Blazor.Components.Pages.Habits.Models
+
+<MudStack Spacing="3">
+    <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h6">
+            Kalendarz: @Calendar.From.ToString("dd.MM.yyyy") - @Calendar.To.ToString("dd.MM.yyyy")
+        </MudText>
+        
+        <CalendarLegend />
+    </MudStack>
+
+    @if (Calendar.Days.Any())
+    {
+        <MudPaper Elevation="0" Class="pa-3">
+            <MudGrid Spacing="1">
+                @* Header row with day names *@
+                @foreach (var dayName in new[] { "Pon", "Wt", "Śr", "Czw", "Pt", "Sob", "Ndz" })
+                {
+                    <MudItem xs="12" sm="12/7" Class="d-flex justify-center">
+                        <MudText Typo="Typo.caption" Color="Color.Secondary" Align="Align.Center">
+                            <strong>@dayName</strong>
+                        </MudText>
+                    </MudItem>
+                }
+
+                @* Calendar days *@
+                @{
+                    var firstDay = Calendar.Days.First().Date;
+                    var startDayOfWeek = (int)firstDay.DayOfWeek;
+                    // Adjust for Monday as first day (DayOfWeek.Sunday = 0, we want Monday = 0)
+                    startDayOfWeek = startDayOfWeek == 0 ? 6 : startDayOfWeek - 1;
+
+                    // Empty cells before first day
+                    for (int i = 0; i < startDayOfWeek; i++)
+                    {
+                        <MudItem xs="12" sm="12/7">
+                            <div style="height: 60px;"></div>
+                        </MudItem>
+                    }
+
+                    // Calendar days
+                    foreach (var day in Calendar.Days)
+                    {
+                        <MudItem xs="12" sm="12/7">
+                            <MudTooltip>
+                                <ChildContent>
+                                    <MudPaper Elevation="1"
+                                             Class="pa-2 d-flex flex-column align-center justify-center"
+                                             Style="@($"{GetDayStyle(day)} height: 60px; cursor: pointer;")">
+                                        <MudText Typo="Typo.body2" Align="Align.Center">
+                                            <strong>@day.Date.Day</strong>
+                                        </MudText>
+                                        @if (day.Status != DayStatus.NotPlanned)
+                                        {
+                                            <MudIcon Icon="@GetStatusIcon(day.Status)" 
+                                                    Size="Size.Small" 
+                                                    Color="@GetStatusIconColor(day.Status)" />
+                                        }
+                                    </MudPaper>
+                                </ChildContent>
+                                <TooltipContent>
+                                    <MudStack Spacing="1">
+                                        <MudText Typo="Typo.caption">
+                                            <strong>@day.Date.ToString("dd.MM.yyyy (ddd)")</strong>
+                                        </MudText>
+                                        <MudText Typo="Typo.caption">
+                                            Status: @GetStatusLabel(day.Status)
+                                        </MudText>
+                                        @if (day.IsPlanned)
+                                        {
+                                            <MudText Typo="Typo.caption">
+                                                Wykonano: @day.ActualValue / @day.TargetValueSnapshot
+                                            </MudText>
+                                            <MudText Typo="Typo.caption">
+                                                Wynik: @Math.Round(day.DailyScore * 100)%
+                                            </MudText>
+                                        }
+                                    </MudStack>
+                                </TooltipContent>
+                            </MudTooltip>
+                        </MudItem>
+                    }
+                }
+            </MudGrid>
+        </MudPaper>
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Info">
+            Brak danych w wybranym zakresie kalendarza.
+        </MudAlert>
+    }
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired]
+    public HabitCalendarVm Calendar { get; set; } = null!;
+
+    private static string GetDayStyle(CalendarDayVm day)
+    {
+        var bgColor = day.Status switch
+        {
+            DayStatus.Done => "#4caf50",      // Green
+            DayStatus.Miss => "#f44336",      // Red
+            DayStatus.Partial => "#ff9800",   // Orange
+            DayStatus.NotPlanned => "#e0e0e0", // Gray
+            _ => "#e0e0e0"
+        };
+
+        var textColor = day.Status == DayStatus.NotPlanned ? "#757575" : "#ffffff";
+
+        return $"background-color: {bgColor}; color: {textColor};";
+    }
+
+    private string GetStatusIcon(DayStatus status) => status switch
+    {
+        DayStatus.Done => Icons.Material.Filled.CheckCircle,
+        DayStatus.Miss => Icons.Material.Filled.Cancel,
+        DayStatus.Partial => Icons.Material.Filled.RemoveCircle,
+        _ => Icons.Material.Filled.Circle
+    };
+
+    private Color GetStatusIconColor(DayStatus status) => status switch
+    {
+        DayStatus.Done => Color.Inherit,
+        DayStatus.Miss => Color.Inherit,
+        DayStatus.Partial => Color.Inherit,
+        _ => Color.Default
+    };
+
+    private string GetStatusLabel(DayStatus status) => status switch
+    {
+        DayStatus.Done => "Wykonane",
+        DayStatus.Miss => "Niewykonane",
+        DayStatus.Partial => "Częściowo",
+        DayStatus.NotPlanned => "Nie zaplanowane",
+        _ => status.ToString()
+    };
+}
