@@ -48,11 +48,28 @@ public static class NotificationEndpoints
         .Produces<PagedResponse<NotificationResponse>>(200)
         .Produces(401);
 
-        group.MapGet("/{id:long}", (long id) =>
-            Results.StatusCode(501))
-            .WithName("GetNotification")
-            .Produces<NotificationResponse>(200)
-            .Produces(401)
-            .Produces(404);
+        group.MapGet("/{id:long}", async (
+            long id,
+            IQueryDispatcher dispatcher,
+            CancellationToken cancellationToken) =>
+        {
+            var query = new GetNotificationByIdQuery(id);
+            var result = await dispatcher.Dispatch(query, cancellationToken);
+
+            return result.ToHttpResult(dto => Results.Ok(new NotificationDetailResponse(
+                dto.Id,
+                dto.HabitId,
+                dto.HabitName,
+                dto.LocalDate,
+                (int)dto.Type,
+                dto.Content,
+                (int?)dto.AiStatus,
+                new DateTimeOffset(dto.CreatedAtUtc, TimeSpan.Zero)
+            )));
+        })
+        .WithName("GetNotification")
+        .Produces<NotificationDetailResponse>(200)
+        .Produces(401)
+        .Produces(404);
     }
 }
