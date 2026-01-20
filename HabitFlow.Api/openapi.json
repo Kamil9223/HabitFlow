@@ -901,13 +901,30 @@
             "x-position": 2
           },
           {
-            "name": "sort",
+            "name": "sortField",
             "in": "query",
             "schema": {
-              "type": "string",
-              "nullable": true
+              "nullable": true,
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/NotificationSortField"
+                }
+              ]
             },
             "x-position": 3
+          },
+          {
+            "name": "sortDirection",
+            "in": "query",
+            "schema": {
+              "nullable": true,
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/SortDirection"
+                }
+              ]
+            },
+            "x-position": 4
           }
         ],
         "responses": {
@@ -1658,6 +1675,20 @@
             "format": "date-time"
           }
         }
+      },
+      "NotificationSortField": {
+        "type": "string",
+        "description": "",
+        "x-enumNames": [
+          "CreatedAtUtc",
+          "LocalDate",
+          "Type"
+        ],
+        "enum": [
+          "CreatedAtUtc",
+          "LocalDate",
+          "Type"
+        ]
       }
     }
   }
