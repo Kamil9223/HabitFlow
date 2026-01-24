@@ -25,7 +25,9 @@ public sealed class IntegrationTestFactory(string connectionString)
                 ["Email:Smtp:Password"] = "test",
                 ["Email:FromEmail"] = "test@habitflow.test",
                 ["Email:FromName"] = "HabitFlow Test",
-                ["Email:Smtp:EnableSsl"] = "false"
+                ["Email:Smtp:EnableSsl"] = "false",
+                ["NotificationJobSettings:Enabled"] = "false",
+                ["LlmSettings:Enabled"] = "false"
             });
         });
     }

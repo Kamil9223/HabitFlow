@@ -6,9 +6,10 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
-    <ItemGroup>
-      <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
-    </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Http.Polly" Version="9.0.0" />
+  </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\HabitFlow.Data\HabitFlow.Data.csproj" />

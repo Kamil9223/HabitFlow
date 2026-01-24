@@ -148,6 +148,26 @@ The MVP focuses on simplicity and clarity, helping beginners easily adopt habit 
    - Blazor app: `https://localhost:5001` (or port specified in launch settings)
    - API documentation (Development mode): `https://localhost:7001/swagger` (or port specified in launch settings)
 
+### AI Notifications (Optional)
+
+AI-generated notifications are optional. For local development, do not commit API keys.
+
+**Set API key via user-secrets:**
+```bash
+cd HabitFlow.Api
+dotnet user-secrets set "LlmSettings:ApiKey" "sk-..."
+dotnet user-secrets set "LlmSettings:Enabled" "true"
+```
+
+**Or set via environment variables:**
+```bash
+$env:LlmSettings__ApiKey="sk-..."
+$env:LlmSettings__Enabled="true"
+```
+
+**Cost guard (MVP):**
+- `LlmSettings:MaxDailyRequests` limits AI calls per daily job run. After the limit, the system falls back to templates.
+
 ## Available Scripts
 
 - **Restore dependencies:**

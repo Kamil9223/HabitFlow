@@ -49,7 +49,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 });
 
 // Add Core services (Command handlers, dispatchers, EmailSender)
-builder.Services.AddCore();
+builder.Services.AddCore(builder.Configuration);
 builder.Services.AddHttpContextAccessor();
 
 // Configure JSON serialization (camelCase)
