@@ -1,0 +1,24 @@
+@* Stan pusty dla widoku powiadomień *@
+
+<MudPaper Class="pa-8 mt-4" Elevation="0">
+    <MudStack Spacing="4" AlignItems="AlignItems.Center">
+        <MudIcon Icon="@Icons.Material.Outlined.NotificationsNone"
+                 Size="Size.Large"
+                 Color="Color.Default"
+                 Style="font-size: 80px; opacity: 0.3;" />
+
+        <MudText Typo="Typo.h5" Align="Align.Center">
+            Brak powiadomień
+        </MudText>
+
+        <MudText Typo="Typo.body1" Align="Align.Center" Color="Color.Secondary" Style="max-width: 500px;">
+            Powiadomienia pojawią się tutaj, gdy pominiesz zaplanowany dzień nawyku.
+        </MudText>
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   Href="/today">
+            Przejdź do Dziś
+        </MudButton>
+    </MudStack>
+</MudPaper>

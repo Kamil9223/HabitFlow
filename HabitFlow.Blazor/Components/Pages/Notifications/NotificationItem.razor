@@ -1,0 +1,66 @@
+@using HabitFlow.Blazor.Components.Pages.Notifications.Models
+
+<MudPaper Elevation="1" Class="pa-4 mb-2">
+    <MudStack Spacing="2">
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Start">
+            <MudStack Spacing="1" Style="flex: 1;">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    <MudText Typo="Typo.h6">
+                        @(Item.HabitTitle ?? $"Nawyk #{Item.HabitId}")
+                    </MudText>
+
+                    <MudChip T="string"
+                             Size="Size.Small"
+                             Color="Color.Info"
+                             Variant="Variant.Outlined">
+                        @FormatLocalDate(Item.LocalDate)
+                    </MudChip>
+                </MudStack>
+            </MudStack>
+
+            @if (Item.AiStatus.HasValue)
+            {
+                <MudTooltip Text="@Item.AiStatusLabel">
+                    <MudIcon Icon="@GetAiStatusIcon(Item.AiStatus.Value)"
+                             Color="@GetAiStatusColor(Item.AiStatus.Value)"
+                             Size="Size.Small" />
+                </MudTooltip>
+            }
+        </MudStack>
+
+        <MudText Typo="Typo.body1">
+            @Item.Content
+        </MudText>
+
+        <MudText Typo="Typo.caption" Color="Color.Secondary">
+            @FormatCreatedAt(Item.CreatedAtUtc)
+        </MudText>
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter, EditorRequired]
+    public NotificationListItemVm Item { get; set; } = null!;
+
+    private static string FormatLocalDate(DateTimeOffset date) =>
+        date.ToString("dd.MM.yyyy");
+
+    private static string FormatCreatedAt(DateTimeOffset date) =>
+        $"Utworzono: {date.ToString("dd.MM.yyyy HH:mm")}";
+
+    private static string GetAiStatusIcon(AiGenerationStatus status) => status switch
+    {
+        AiGenerationStatus.Success => Icons.Material.Filled.CheckCircle,
+        AiGenerationStatus.Fallback => Icons.Material.Filled.Warning,
+        AiGenerationStatus.Error => Icons.Material.Filled.Error,
+        _ => Icons.Material.Filled.Info
+    };
+
+    private static Color GetAiStatusColor(AiGenerationStatus status) => status switch
+    {
+        AiGenerationStatus.Success => Color.Success,
+        AiGenerationStatus.Fallback => Color.Warning,
+        AiGenerationStatus.Error => Color.Error,
+        _ => Color.Default
+    };
+}

@@ -175,11 +175,11 @@ namespace HabitFlow.Client
         System.Threading.Tasks.Task<PagedResponseOfNotificationResponse> GetNotificationsAsync(int? page, int? pageSize, NotificationSortField? sortField, SortDirection? sortDirection, System.Threading.CancellationToken cancellationToken);
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<NotificationResponse> GetNotificationAsync(long id);
+        System.Threading.Tasks.Task<NotificationDetailResponse> GetNotificationAsync(long id);
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<NotificationResponse> GetNotificationAsync(long id, System.Threading.CancellationToken cancellationToken);
+        System.Threading.Tasks.Task<NotificationDetailResponse> GetNotificationAsync(long id, System.Threading.CancellationToken cancellationToken);
 
     }
 
@@ -2267,14 +2267,14 @@ namespace HabitFlow.Client
         }
 
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual System.Threading.Tasks.Task<NotificationResponse> GetNotificationAsync(long id)
+        public virtual System.Threading.Tasks.Task<NotificationDetailResponse> GetNotificationAsync(long id)
         {
             return GetNotificationAsync(id, System.Threading.CancellationToken.None);
         }
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<NotificationResponse> GetNotificationAsync(long id, System.Threading.CancellationToken cancellationToken)
+        public virtual async System.Threading.Tasks.Task<NotificationDetailResponse> GetNotificationAsync(long id, System.Threading.CancellationToken cancellationToken)
         {
             if (id == null)
                 throw new System.ArgumentNullException("id");
@@ -2319,7 +2319,7 @@ namespace HabitFlow.Client
                         var status_ = (int)response_.StatusCode;
                         if (status_ == 200)
                         {
-                            var objectResponse_ = await ReadObjectResponseAsync<NotificationResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
+                            var objectResponse_ = await ReadObjectResponseAsync<NotificationDetailResponse>(response_, headers_, cancellationToken).ConfigureAwait(false);
                             if (objectResponse_.Object == null)
                             {
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
@@ -3083,6 +3083,37 @@ namespace HabitFlow.Client
 
         [System.Runtime.Serialization.EnumMember(Value = @"Type")]
         Type = 2,
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.2.0.0 (NJsonSchema v11.1.0.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class NotificationDetailResponse
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("id")]
+        public long Id { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("habitId")]
+        public int HabitId { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("habitName")]
+        public string HabitName { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("localDate")]
+        [System.Text.Json.Serialization.JsonConverter(typeof(DateFormatConverter))]
+        public System.DateTimeOffset LocalDate { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("type")]
+        public int Type { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("content")]
+        public string Content { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("aiStatus")]
+        public int? AiStatus { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("createdAtUtc")]
+        public System.DateTimeOffset CreatedAtUtc { get; set; } = default!;
 
     }
 

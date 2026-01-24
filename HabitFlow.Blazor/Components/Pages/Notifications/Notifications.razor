@@ -1,31 +1,36 @@
 ﻿@page "/notifications"
+@using HabitFlow.Blazor.Components.Pages.Notifications.Models
+@using HabitFlow.Blazor.Components.Pages.Notifications.Helpers
+@using HabitFlow.Client
+@using Microsoft.AspNetCore.Authorization
+@attribute [Authorize]
 @rendermode InteractiveServer
+@inject IHabitFlowApiClient ApiClient
+@inject NavigationManager Navigation
+@implements IDisposable
 
 <PageTitle>Powiadomienia - HabitFlow</PageTitle>
 
 <MudContainer MaxWidth="MaxWidth.Large" Class="mt-4">
-    <MudText Typo="Typo.h4" Class="mb-4">Powiadomienia</MudText>
-    
-    <MudPaper Class="pa-8 mt-4" Elevation="0">
-        <MudStack Spacing="4" AlignItems="AlignItems.Center">
-            <MudIcon Icon="@Icons.Material.Outlined.Construction" 
-                     Size="Size.Large" 
-                     Color="Color.Default" 
-                     Style="font-size: 80px; opacity: 0.3;" />
-            
-            <MudText Typo="Typo.h5" Align="Align.Center">
-                Strona w budowie
-            </MudText>
-            
-            <MudText Typo="Typo.body1" Align="Align.Center" Color="Color.Secondary" Style="max-width: 500px;">
-                Ta strona będzie zawierać Twoje powiadomienia i motywacyjne wiadomości. Funkcjonalność jest w trakcie implementacji.
-            </MudText>
-            
-            <MudButton Variant="Variant.Filled" 
-                       Color="Color.Primary" 
-                       Href="/today">
-                Wróć do strony głównej
-            </MudButton>
-        </MudStack>
-    </MudPaper>
+    <MudStack Spacing="4">
+        <MudText Typo="Typo.h4">Powiadomienia</MudText>
+
+        @if (!string.IsNullOrWhiteSpace(_state.ErrorMessage))
+        {
+            <MudAlert Severity="Severity.Error"
+                      Variant="Variant.Filled"
+                      CloseIconClicked="() => _state.ErrorMessage = null"
+                      ShowCloseIcon="true">
+                @_state.ErrorMessage
+            </MudAlert>
+        }
+
+        <NotificationsList Items="@_state.Items"
+                          TotalCount="@_state.TotalCount"
+                          CurrentPage="@_state.CurrentPage"
+                          PageSize="@_state.PageSize"
+                          IsLoading="@_state.IsLoading"
+                          OnPageChanged="HandlePageChanged"
+                          OnPageSizeChanged="HandlePageSizeChanged" />
+    </MudStack>
 </MudContainer>

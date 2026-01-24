@@ -1,0 +1,111 @@
+@using HabitFlow.Blazor.Components.Pages.Notifications.Models
+
+<MudStack Spacing="3">
+    @if (IsLoading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+    }
+
+    @if (Items == null || !Items.Any())
+    {
+        @if (!IsLoading)
+        {
+            <NotificationsEmptyState />
+        }
+    }
+    else
+    {
+        <MudStack Spacing="2">
+            @foreach (var item in Items)
+            {
+                <NotificationItem Item="@item" />
+            }
+        </MudStack>
+
+        @if (TotalCount > PageSize)
+        {
+            <MudStack AlignItems="AlignItems.Center" Class="mt-4">
+                <MudPagination Count="@TotalPages"
+                              Selected="@CurrentPage"
+                              SelectedChanged="HandlePageChanged"
+                              ShowFirstButton="true"
+                              ShowLastButton="true"
+                              BoundaryCount="1"
+                              MiddleCount="3"
+                              Disabled="@IsLoading" />
+
+                <MudText Typo="Typo.body2" Color="Color.Secondary">
+                    Wyświetlanie @((CurrentPage - 1) * PageSize + 1)-@Math.Min(CurrentPage * PageSize, TotalCount) z @TotalCount powiadomień
+                </MudText>
+
+                <MudSelect Value="@_selectedPageSize"
+                          ValueChanged="HandlePageSizeChanged"
+                          Label="Elementów na stronę"
+                          Disabled="@IsLoading"
+                          T="int"
+                          Style="max-width: 200px;">
+                    <MudSelectItem Value="10">10</MudSelectItem>
+                    <MudSelectItem Value="20">20</MudSelectItem>
+                    <MudSelectItem Value="50">50</MudSelectItem>
+                </MudSelect>
+            </MudStack>
+        }
+    }
+</MudStack>
+
+@code {
+    [Parameter]
+    public List<NotificationListItemVm>? Items { get; set; }
+
+    [Parameter]
+    public int TotalCount { get; set; }
+
+    [Parameter]
+    public int CurrentPage { get; set; } = 1;
+
+    [Parameter]
+    public int PageSize { get; set; } = 20;
+
+    [Parameter]
+    public bool IsLoading { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnPageChanged { get; set; }
+
+    [Parameter]
+    public EventCallback<int> OnPageSizeChanged { get; set; }
+
+    private int _selectedPageSize;
+
+    private int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
+
+    protected override void OnInitialized()
+    {
+        _selectedPageSize = PageSize;
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (_selectedPageSize != PageSize)
+        {
+            _selectedPageSize = PageSize;
+        }
+    }
+
+    private async Task HandlePageChanged(int newPage)
+    {
+        if (newPage != CurrentPage)
+        {
+            await OnPageChanged.InvokeAsync(newPage);
+        }
+    }
+
+    private async Task HandlePageSizeChanged(int newPageSize)
+    {
+        if (newPageSize != PageSize)
+        {
+            _selectedPageSize = newPageSize;
+            await OnPageSizeChanged.InvokeAsync(newPageSize);
+        }
+    }
+}
