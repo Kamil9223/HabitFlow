@@ -378,4 +378,110 @@ public class AuthEndpointsTests(IntegrationTestFixture fixture) : IClassFixture<
         // Assert
         Assert.Equal(HttpStatusCode.BadRequest, deleteResponse.StatusCode);
     }
+
+    [Fact]
+    public async Task ResendConfirmation_WithUnconfirmedEmail_ReturnsNoContent()
+    {
+        // Arrange: Create a user with unconfirmed email
+        using var scope = fixture.Factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        var testEmail = $"resend-confirmation-test-{Guid.NewGuid()}@test.com";
+        var testPassword = "Test123!";
+
+        var user = new ApplicationUser
+        {
+            UserName = testEmail,
+            Email = testEmail,
+            EmailConfirmed = false, // Email NOT confirmed
+            TimeZoneId = "Europe/Warsaw",
+            CreatedAtUtc = DateTime.UtcNow
+        };
+
+        var createResult = await userManager.CreateAsync(user, testPassword);
+        Assert.True(createResult.Succeeded);
+
+        // Manually confirm email to allow login (in real scenario, user would need to confirm first)
+        // We'll temporarily set it to true for login, then set back to false
+        user.EmailConfirmed = true;
+        await userManager.UpdateAsync(user);
+
+        // Login to get authentication cookie
+        using var client = fixture.CreateClient();
+        var loginRequest = new LoginRequest(testEmail, testPassword);
+        var loginResponse = await client.PostAsJsonAsync("/api/v1/auth/login", loginRequest);
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+
+        // Extract cookies from login response
+        var cookies = loginResponse.Headers.GetValues("Set-Cookie");
+        foreach (var cookie in cookies)
+        {
+            client.DefaultRequestHeaders.Add("Cookie", cookie.Split(';')[0]);
+        }
+
+        // Set email back to unconfirmed for the actual test
+        user.EmailConfirmed = false;
+        await userManager.UpdateAsync(user);
+
+        // Act: Resend confirmation email
+        var resendResponse = await client.PostAsync("/api/v1/auth/resend-confirmation", new StringContent(string.Empty));
+
+        // Assert
+        Assert.Equal(HttpStatusCode.NoContent, resendResponse.StatusCode);
+    }
+
+    [Fact]
+    public async Task ResendConfirmation_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        // Arrange
+        using var client = fixture.CreateClient();
+
+        // Act: Try to resend confirmation without being authenticated
+        var response = await client.PostAsync("/api/v1/auth/resend-confirmation", new StringContent(string.Empty));
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task ResendConfirmation_WithAlreadyConfirmedEmail_ReturnsConflict()
+    {
+        // Arrange: Create a user with confirmed email
+        using var scope = fixture.Factory.Services.CreateScope();
+        var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+
+        var testEmail = $"resend-already-confirmed-{Guid.NewGuid()}@test.com";
+        var testPassword = "Test123!";
+
+        var user = new ApplicationUser
+        {
+            UserName = testEmail,
+            Email = testEmail,
+            EmailConfirmed = true, // Email already confirmed
+            TimeZoneId = "Europe/Warsaw",
+            CreatedAtUtc = DateTime.UtcNow
+        };
+
+        var createResult = await userManager.CreateAsync(user, testPassword);
+        Assert.True(createResult.Succeeded);
+
+        // Login
+        using var client = fixture.CreateClient();
+        var loginRequest = new LoginRequest(testEmail, testPassword);
+        var loginResponse = await client.PostAsJsonAsync("/api/v1/auth/login", loginRequest);
+        Assert.Equal(HttpStatusCode.OK, loginResponse.StatusCode);
+
+        // Extract cookies from login response
+        var cookies = loginResponse.Headers.GetValues("Set-Cookie");
+        foreach (var cookie in cookies)
+        {
+            client.DefaultRequestHeaders.Add("Cookie", cookie.Split(';')[0]);
+        }
+
+        // Act: Try to resend confirmation for already confirmed email
+        var resendResponse = await client.PostAsync("/api/v1/auth/resend-confirmation", new StringContent(string.Empty));
+
+        // Assert
+        Assert.Equal(HttpStatusCode.Conflict, resendResponse.StatusCode);
+    }
 }

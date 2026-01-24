@@ -105,6 +105,23 @@ public static class AuthEndpoints
         .Produces(204)
         .Produces(400);
 
+        group.MapPost("/resend-confirmation", async (
+            ICommandDispatcher dispatcher,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await dispatcher.Dispatch(new ResendConfirmationCommand(), cancellationToken);
+
+            return result.ToHttpResult(Results.NoContent);
+        })
+        .WithName("ResendConfirmation")
+        .WithSummary("Resend email confirmation link")
+        .WithDescription("Sends a new email confirmation link to the authenticated user's email address. Only available for users with unconfirmed email.")
+        .Produces(204)
+        .Produces(401)
+        .Produces(404)
+        .Produces(409)
+        .RequireAuthorization();
+
         group.MapPost("/logout", async (
             ICommandDispatcher dispatcher,
             CancellationToken cancellationToken) =>

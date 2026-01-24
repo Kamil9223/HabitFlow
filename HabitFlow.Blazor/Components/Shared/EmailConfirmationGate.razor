@@ -1,0 +1,124 @@
+@using HabitFlow.Client
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IHabitFlowApiClient ApiClient
+@inject AuthenticationStateProvider AuthStateProvider
+@inject ISnackbar Snackbar
+@rendermode InteractiveServer
+
+<AuthorizeView>
+    <Authorized>
+        @if (_showBanner && !_emailConfirmed)
+        {
+            <MudAlert Severity="Severity.Warning"
+                      Variant="Variant.Filled"
+                      Class="mb-4"
+                      CloseIconClicked="HandleDismiss"
+                      ShowCloseIcon="true"
+                      Elevation="2">
+                <MudStack Spacing="2">
+                    <MudText Typo="Typo.body1">
+                        <strong>Potwierdź swój adres email</strong>
+                    </MudText>
+                    <MudText Typo="Typo.body2">
+                        Aby korzystać z pełni funkcji aplikacji, musisz potwierdzić swój adres email.
+                        Sprawdź swoją skrzynkę pocztową i kliknij link aktywacyjny.
+                    </MudText>
+                    <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                        <MudButton Variant="Variant.Text"
+                                   Color="Color.Inherit"
+                                   OnClick="HandleResendConfirmation"
+                                   Disabled="@_isResending"
+                                   StartIcon="@Icons.Material.Filled.Email"
+                                   Size="Size.Small">
+                            @if (_isResending)
+                            {
+                                <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
+                                <span>Wysyłanie...</span>
+                            }
+                            else
+                            {
+                                <span>Wyślij ponownie email</span>
+                            }
+                        </MudButton>
+                    </MudStack>
+                </MudStack>
+            </MudAlert>
+        }
+    </Authorized>
+</AuthorizeView>
+
+@code {
+    private bool _emailConfirmed = true;
+    private bool _showBanner = false;
+    private bool _isResending = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CheckEmailConfirmationStatus();
+    }
+
+    private async Task CheckEmailConfirmationStatus()
+    {
+        try
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            if (authState.User.Identity?.IsAuthenticated == true)
+            {
+                var profile = await ApiClient.GetProfileAsync(CancellationToken.None);
+                _emailConfirmed = profile.EmailConfirmed;
+                _showBanner = !_emailConfirmed;
+            }
+        }
+        catch (ApiException ex) when (ex.StatusCode == 401)
+        {
+            // User not authenticated, hide banner
+            _showBanner = false;
+        }
+        catch
+        {
+            // Ignore other errors
+            _showBanner = false;
+        }
+    }
+
+    private async Task HandleResendConfirmation()
+    {
+        _isResending = true;
+        StateHasChanged();
+
+        try
+        {
+            await ApiClient.ResendConfirmationAsync(CancellationToken.None);
+            Snackbar.Add("Email potwierdzający został wysłany. Sprawdź swoją skrzynkę pocztową.", Severity.Success);
+        }
+        catch (ApiException ex) when (ex.StatusCode == 409)
+        {
+            Snackbar.Add("Email jest już potwierdzony.", Severity.Info);
+            _showBanner = false;
+        }
+        catch (ApiException ex) when (ex.StatusCode == 401)
+        {
+            Snackbar.Add("Musisz być zalogowany, aby wysłać ponownie email.", Severity.Error);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Nie udało się wysłać emaila. Spróbuj ponownie później.", Severity.Error);
+        }
+        finally
+        {
+            _isResending = false;
+            StateHasChanged();
+        }
+    }
+
+    private void HandleDismiss()
+    {
+        _showBanner = false;
+        StateHasChanged();
+    }
+
+    /// <summary>
+    /// Public method to check if email is confirmed (used by other components to block actions)
+    /// </summary>
+    public bool IsEmailConfirmed() => _emailConfirmed;
+}

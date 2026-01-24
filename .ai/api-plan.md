@@ -83,7 +83,14 @@ Conventions:
 - Response 204 No Content
 - Errors: 400 (invalid token/policies)
 
-6) POST /api/v1/auth/logout
+6) POST /api/v1/auth/resend-confirmation
+- Description: Resend email confirmation link to authenticated user.
+- Request: No body (uses authenticated user context)
+- Response 204 No Content
+- Errors: 401 (not authenticated), 404 (user not found), 409 (email already confirmed)
+- Security: Requires authentication
+
+7) POST /api/v1/auth/logout
 - Description: Invalidate current session/cookie and end user session.
 - Response 204 No Content
 - Errors: 401
