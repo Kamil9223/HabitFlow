@@ -4,10 +4,22 @@ using HabitFlow.Core;
 using HabitFlow.Core.Infrastructure;
 using HabitFlow.Data;
 using HabitFlow.Data.Entities;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+
+var blazorOrigins = builder.Configuration
+    .GetSection("Cors:AllowedOrigins")
+    .Get<string[]>() ?? Array.Empty<string>();
+
+var keyRingPath = Path.GetFullPath(
+    Path.Combine(builder.Environment.ContentRootPath, "..", ".authkeys"));
+
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(keyRingPath))
+    .SetApplicationName("HabitFlow");
 
 // Add DbContext
 builder.Services.AddDbContext<HabitFlowDbContext>(options =>
@@ -72,6 +84,20 @@ builder.Services.AddOpenApiDocument(config =>
 // Add authorization services (placeholder for JWT later)
 builder.Services.AddAuthorization();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("BlazorCors", policy =>
+    {
+        if (blazorOrigins.Length > 0)
+        {
+            policy.WithOrigins(blazorOrigins)
+                .AllowAnyHeader()
+                .AllowAnyMethod()
+                .AllowCredentials();
+        }
+    });
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -87,6 +113,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("BlazorCors");
 app.UseAuthentication();
 app.UseAuthorization();
 

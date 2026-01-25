@@ -1,8 +1,10 @@
 @page "/auth/login"
 @layout AuthLayout
 @using HabitFlow.Blazor.Components.Layout
-@using HabitFlow.Client
-@inject IHabitFlowApiClient ApiClient
+@using HabitFlow.Blazor.Services
+@inject IConfiguration Configuration
+@inject IJSRuntime JsRuntime
+@inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
@@ -129,36 +131,40 @@
 
         try
         {
-            var request = new LoginRequest
+            var apiBaseUrl = Configuration["Api:BaseUrl"];
+            if (string.IsNullOrWhiteSpace(apiBaseUrl))
             {
-                Email = _model.Email!,
-                Password = _model.Password!
-            };
+                _state.ErrorMessage = "Brak konfiguracji Api:BaseUrl.";
+                return;
+            }
 
-            var response = await ApiClient.LoginAsync(request, CancellationToken.None);
+            var result = await JsRuntime.InvokeAsync<AuthResult>(
+                "habitFlowAuth.login",
+                apiBaseUrl,
+                _model.Email!,
+                _model.Password!);
 
             // Success - redirect to today page
-            Navigation.NavigateTo("/today", forceLoad: true);
-        }
-        catch (ApiException ex) when (ex.StatusCode == 401)
-        {
-            _state.ErrorMessage = "Nieprawidłowy email lub hasło.";
-        }
-        catch (ApiException ex) when (ex.StatusCode == 403)
-        {
-            _state.ErrorMessage = "Potwierdź swój adres email, aby się zalogować. Sprawdź skrzynkę pocztową.";
-        }
-        catch (ApiException ex) when (ex.StatusCode == 400)
-        {
-            _state.ErrorMessage = "Niepoprawne dane logowania.";
-        }
-        catch (ApiException)
-        {
-            _state.ErrorMessage = "Wystąpił błąd podczas logowania. Spróbuj ponownie później.";
-        }
-        catch (HttpRequestException ex)
-        {
-            _state.ErrorMessage = $"Nie można połączyć się z API: {ex.Message}";
+            if (result.Ok)
+            {
+                if (AuthStateProvider is ApiAuthenticationStateProvider apiAuthProvider)
+                {
+                    apiAuthProvider.NotifyAuthenticationStateChanged();
+                }
+
+                Navigation.NavigateTo("/today", forceLoad: true);
+                return;
+            }
+
+            _state.ErrorMessage = result.Status switch
+            {
+                401 => "Nieprawidłowy email lub hasło.",
+                403 => "Potwierdź swój adres email, aby się zalogować. Sprawdź skrzynkę pocztową.",
+                400 => "Niepoprawne dane logowania.",
+                _ => string.IsNullOrWhiteSpace(result.Message)
+                    ? "Wystąpił błąd podczas logowania. Spróbuj ponownie później."
+                    : result.Message
+            };
         }
         catch (Exception ex)
         {
@@ -208,5 +214,12 @@
     {
         public bool IsSubmitting { get; set; }
         public string? ErrorMessage { get; set; }
+    }
+
+    private sealed class AuthResult
+    {
+        public bool Ok { get; set; }
+        public int Status { get; set; }
+        public string? Message { get; set; }
     }
 }

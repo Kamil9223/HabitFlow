@@ -1,8 +1,8 @@
 @page "/auth/logout"
 @layout AuthLayout
 @using HabitFlow.Blazor.Components.Layout
-@using HabitFlow.Client
-@inject IHabitFlowApiClient ApiClient
+@inject IConfiguration Configuration
+@inject IJSRuntime JsRuntime
 @inject NavigationManager Navigation
 @rendermode InteractiveServer
 
@@ -49,16 +49,31 @@
 
         try
         {
-            await ApiClient.LogoutAsync(CancellationToken.None);
-            _state.IsSuccess = true;
-        }
-        catch (ApiException)
-        {
-            _state.ErrorMessage = "Wystapil blad podczas wylogowania.";
-        }
-        catch (HttpRequestException ex)
-        {
-            _state.ErrorMessage = $"Nie mozna polaczyc sie z API: {ex.Message}";
+            var apiBaseUrl = Configuration["Api:BaseUrl"];
+            if (string.IsNullOrWhiteSpace(apiBaseUrl))
+            {
+                _state.ErrorMessage = "Brak konfiguracji Api:BaseUrl.";
+                return;
+            }
+
+            var result = await JsRuntime.InvokeAsync<AuthResult>(
+                "habitFlowAuth.logout",
+                apiBaseUrl);
+
+            if (result.Ok)
+            {
+                _state.IsSuccess = true;
+            }
+            else
+            {
+                _state.ErrorMessage = result.Status switch
+                {
+                    401 => "Sesja wygasła. Zaloguj się ponownie.",
+                    _ => string.IsNullOrWhiteSpace(result.Message)
+                        ? "Wystąpił błąd podczas wylogowania."
+                        : result.Message
+                };
+            }
         }
         catch (Exception ex)
         {
@@ -75,5 +90,12 @@
         public bool IsLoading { get; set; }
         public bool IsSuccess { get; set; }
         public string ErrorMessage { get; set; } = "Nie udalo sie wylogowac.";
+    }
+
+    private sealed class AuthResult
+    {
+        public bool Ok { get; set; }
+        public int Status { get; set; }
+        public string? Message { get; set; }
     }
 }

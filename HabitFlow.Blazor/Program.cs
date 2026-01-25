@@ -1,7 +1,10 @@
 using HabitFlow.Blazor.Components;
 using HabitFlow.Blazor.Services;
 using HabitFlow.Client;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.Identity;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,6 +15,22 @@ builder.Services.AddRazorComponents()
 
 // Add MudBlazor services
 builder.Services.AddMudServices();
+
+var keyRingPath = Path.GetFullPath(
+    Path.Combine(builder.Environment.ContentRootPath, "..", ".authkeys"));
+
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(keyRingPath))
+    .SetApplicationName("HabitFlow");
+
+builder.Services.AddAuthentication(IdentityConstants.ApplicationScheme)
+    .AddCookie(IdentityConstants.ApplicationScheme, options =>
+    {
+        options.Cookie.Name = ".AspNetCore.Identity.Application";
+        options.LoginPath = "/auth/login";
+        options.AccessDeniedPath = "/auth/login";
+    });
+builder.Services.AddAuthorization();
 
 // Add authentication state provider
 builder.Services.AddScoped<AuthenticationStateProvider, ApiAuthenticationStateProvider>();
@@ -24,30 +43,34 @@ builder.Services.AddHttpContextAccessor();
 var apiBaseUrl = builder.Configuration["Api:BaseUrl"]
     ?? throw new InvalidOperationException("Api:BaseUrl configuration is missing");
 
-builder.Services.AddHttpClient<IHabitFlowApiClient, HabitFlowApiClient>(client =>
-{
-    client.BaseAddress = new Uri(apiBaseUrl);
-})
-.ConfigurePrimaryHttpMessageHandler(sp =>
+builder.Services.AddScoped<System.Net.CookieContainer>();
+
+builder.Services.AddScoped<IHabitFlowApiClient>(sp =>
 {
     var httpContextAccessor = sp.GetService<IHttpContextAccessor>();
-    var handler = new HttpClientHandler
-    {
-        UseCookies = true,
-        CookieContainer = new System.Net.CookieContainer()
-    };
+    var cookieContainer = sp.GetRequiredService<System.Net.CookieContainer>();
+    var baseUri = new Uri(apiBaseUrl);
 
-    // Propagate cookies from HTTP context to API calls
     if (httpContextAccessor?.HttpContext?.Request.Cookies != null)
     {
-        var baseUri = new Uri(apiBaseUrl);
         foreach (var cookie in httpContextAccessor.HttpContext.Request.Cookies)
         {
-            handler.CookieContainer.Add(baseUri, new System.Net.Cookie(cookie.Key, cookie.Value));
+            cookieContainer.Add(baseUri, new System.Net.Cookie(cookie.Key, cookie.Value));
         }
     }
 
-    return handler;
+    var handler = new HttpClientHandler
+    {
+        UseCookies = true,
+        CookieContainer = cookieContainer
+    };
+
+    var httpClient = new HttpClient(handler)
+    {
+        BaseAddress = baseUri
+    };
+
+    return new HabitFlowApiClient(httpClient);
 });
 
 var app = builder.Build();
@@ -61,6 +84,9 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.UseAntiforgery();
 

@@ -58,3 +58,6 @@ nunit-*.xml
 
 #My Prompts
 .ai/Prompts/
+
+# Data Protection key ring (generated)
+.authkeys/

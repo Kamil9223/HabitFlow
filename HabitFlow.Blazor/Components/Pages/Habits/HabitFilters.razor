@@ -1,7 +1,6 @@
 ﻿@using HabitFlow.Blazor.Components.Pages.Habits.Models
 @using HabitFlow.Client
 @using SortDirection = HabitFlow.Client.SortDirection
-@implements IDisposable
 
 <MudPaper Elevation="0" Class="pa-4 mb-4">
     <MudStack Spacing="3">
@@ -9,14 +8,17 @@
             <MudTextField @bind-Value="_searchText"
                           Label="Szukaj"
                           Placeholder="Wpisz tytuł nawyku..."
-                          Immediate="true"
                           Clearable="true"
                           Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Search"
+                          AdornmentIconClickable="true"
+                          OnAdornmentClick="HandleSearchCommit"
+                          OnBlur="HandleSearchCommit"
                           Disabled="@IsBusy"
                           Style="min-width: 250px; flex: 1;" />
 
             <MudSelect @bind-Value="Filters.Type"
+                       @bind-Value:after="OnFilterChanged"
                        Label="Typ"
                        Clearable="true"
                        Disabled="@IsBusy"
@@ -28,6 +30,7 @@
             </MudSelect>
 
             <MudSelect @bind-Value="Filters.CompletionMode"
+                       @bind-Value:after="OnFilterChanged"
                        Label="Tryb"
                        Clearable="true"
                        Disabled="@IsBusy"
@@ -39,6 +42,7 @@
             </MudSelect>
 
             <MudSelect @bind-Value="Filters.Active"
+                       @bind-Value:after="OnFilterChanged"
                        Label="Status"
                        Clearable="true"
                        Disabled="@IsBusy"
@@ -50,6 +54,7 @@
             </MudSelect>
 
             <MudSelect @bind-Value="Filters.SortField"
+                       @bind-Value:after="OnFilterChanged"
                        Label="Sortuj według"
                        Disabled="@IsBusy"
                        T="HabitSortField"
@@ -78,31 +83,31 @@
         @if (HasActiveFilters)
         {
             <MudChipSet T="string">
-                @if (Filters.Type.HasValue)
+                @if (Filters.Type is HabitType type)
                 {
                     <MudChip T="string"
                              OnClose="() => ClearFilter(() => Filters.Type = null)"
                              Color="Color.Primary"
                              Size="Size.Small">
-                        Typ: @Filters.Type.Value
+                        Typ: @type
                     </MudChip>
                 }
-                @if (Filters.CompletionMode.HasValue)
+                @if (Filters.CompletionMode is CompletionMode completionMode)
                 {
                     <MudChip T="string"
                              OnClose="() => ClearFilter(() => Filters.CompletionMode = null)"
                              Color="Color.Primary"
                              Size="Size.Small">
-                        Tryb: @Filters.CompletionMode.Value
+                        Tryb: @completionMode
                     </MudChip>
                 }
-                @if (Filters.Active.HasValue)
+                @if (Filters.Active is bool isActive)
                 {
                     <MudChip T="string"
                              OnClose="() => ClearFilter(() => Filters.Active = null)"
                              Color="Color.Primary"
                              Size="Size.Small">
-                        Status: @(Filters.Active.Value ? "Aktywne" : "Archiwalne")
+                        Status: @(isActive ? "Aktywne" : "Archiwalne")
                     </MudChip>
                 }
                 @if (!string.IsNullOrWhiteSpace(Filters.Search))
@@ -131,8 +136,6 @@
 
     private string? _searchText;
     private bool _sortAscending;
-    private Timer? _debounceTimer;
-    private const int DebounceDelay = 400;
 
     private bool HasActiveFilters =>
         Filters.Type.HasValue ||
@@ -157,11 +160,6 @@
         // Sync sort direction
         _sortAscending = Filters.SortDirection == SortDirection.Asc;
 
-        // Reset to page 1 when filters change
-        if (HasActiveFilters && Filters.Page != 1)
-        {
-            Filters.Page = 1;
-        }
     }
 
     private void OnSortDirectionChanged(bool ascending)
@@ -171,7 +169,13 @@
         Filters.Page = 1;
         NotifyFiltersChanged();
     }
-
+    
+    private async Task OnFilterChanged()
+    {
+        Filters.Page = 1;
+        await NotifyFiltersChanged();
+    }
+    
     private async Task HandleClearFilters()
     {
         Filters.Reset();
@@ -195,33 +199,24 @@
 
     private async Task NotifyFiltersChanged()
     {
-        // Debounce search
-        if (_searchText != Filters.Search)
-        {
-            _debounceTimer?.Dispose();
-            _debounceTimer = new Timer(async _ =>
-            {
-                var trimmedSearch = _searchText?.Trim();
-                if (string.IsNullOrWhiteSpace(trimmedSearch) || trimmedSearch.Length >= 2)
-                {
-                    Filters.Search = trimmedSearch;
-                    Filters.Page = 1;
-                    await InvokeAsync(async () =>
-                    {
-                        await OnFiltersChanged.InvokeAsync(Filters);
-                        StateHasChanged();
-                    });
-                }
-            }, null, DebounceDelay, Timeout.Infinite);
-        }
-        else
-        {
-            await OnFiltersChanged.InvokeAsync(Filters);
-        }
+        await OnFiltersChanged.InvokeAsync(Filters);
     }
 
-    public void Dispose()
+    private async Task HandleSearchCommit()
     {
-        _debounceTimer?.Dispose();
+        var trimmedSearch = _searchText?.Trim();
+        if (string.IsNullOrWhiteSpace(trimmedSearch))
+        {
+            trimmedSearch = null;
+        }
+
+        if (trimmedSearch == Filters.Search)
+        {
+            return;
+        }
+
+        Filters.Search = trimmedSearch;
+        Filters.Page = 1;
+        await NotifyFiltersChanged();
     }
 }

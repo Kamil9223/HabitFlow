@@ -45,12 +45,12 @@
                 @if (Model.CompletionMode == CompletionMode.Quantitative)
                 {
                     <MudStack Row="true" Spacing="2">
-                        <MudNumericField @bind-Value="Model.TargetValue"
+                        <MudNumericField T="int?" @bind-Value="Model.TargetValue"
                                          Label="Liczba powtórzeń"
                                          Min="1"
                                          Max="100"
                                          Required="true"
-                                         For="@(() => Model.TargetValueProxy)"
+                                         For="@(() => Model.TargetValue)"
                                          Style="flex: 2;" />
                         
                         <MudTextField @bind-Value="Model.TargetUnit"
