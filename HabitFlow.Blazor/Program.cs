@@ -2,12 +2,17 @@ using HabitFlow.Blazor.Components;
 using HabitFlow.Blazor.Services;
 using HabitFlow.Client;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Hosting.StaticWebAssets;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Always load static web assets (needed for MudBlazor files from NuGet)
+builder.WebHost.UseStaticWebAssets();
+StaticWebAssetsLoader.UseStaticWebAssets(builder.Environment, builder.Configuration);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
@@ -76,21 +81,38 @@ builder.Services.AddScoped<IHabitFlowApiClient>(sp =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
+if (app.Environment.IsEnvironment("Testing"))
+{
+    // In testing environment, show detailed errors for debugging
+    app.UseDeveloperExceptionPage();
+}
+else if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.UseAntiforgery();
 
-app.MapStaticAssets();
+// Use traditional static files middleware in Testing for better compatibility
+if (app.Environment.IsEnvironment("Testing"))
+{
+    app.UseStaticFiles();
+}
+else
+{
+    app.MapStaticAssets();
+}
+
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 

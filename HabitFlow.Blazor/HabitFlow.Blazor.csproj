@@ -4,6 +4,8 @@
         <TargetFramework>net9.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
+        <!-- Disable scoped CSS bundling in Testing environment to avoid missing .styles.css files -->
+        <ScopedCssEnabled Condition="'$(ASPNETCORE_ENVIRONMENT)' == 'Testing'">false</ScopedCssEnabled>
     </PropertyGroup>
 
     <ItemGroup>

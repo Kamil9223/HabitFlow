@@ -112,7 +112,10 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    app.UseHttpsRedirection();
+}
 app.UseCors("BlazorCors");
 app.UseAuthentication();
 app.UseAuthorization();

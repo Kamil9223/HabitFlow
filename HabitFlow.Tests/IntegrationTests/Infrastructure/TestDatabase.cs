@@ -21,10 +21,11 @@ internal static class TestDatabase
         _container?.GetConnectionString() ?? throw new InvalidOperationException("Test database not initialized.");
 
     public static string SmtpHost =>
-        _smtpContainer?.Hostname ?? throw new InvalidOperationException("SMTP container not initialized.");
+        _smtpContainer != null ? "localhost" : throw new InvalidOperationException("SMTP container not initialized.");
 
-    public static int SmtpPort =>
-        _smtpContainer?.GetMappedPublicPort(1025) ?? throw new InvalidOperationException("SMTP container not initialized.");
+    public static int SmtpPort => 11025;
+
+    public static int MailHogHttpPort => 18025;
 
     public static async Task EnsureStartedAsync()
     {
@@ -49,8 +50,8 @@ internal static class TestDatabase
             // Start MailHog SMTP container for email testing
             _smtpContainer = new ContainerBuilder()
                 .WithImage("mailhog/mailhog:latest")
-                .WithPortBinding(1025, true) // SMTP port
-                .WithPortBinding(8025, true) // HTTP API port
+                .WithPortBinding(11025, 1025) // SMTP port - host 11025 -> container 1025
+                .WithPortBinding(18025, 8025) // HTTP API port - host 18025 -> container 8025
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilPortIsAvailable(1025))
                 .WithLabel("reuse-id", "habitflow_MailHog")
                 .WithReuse(true)
