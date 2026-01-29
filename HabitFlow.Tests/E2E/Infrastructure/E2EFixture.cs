@@ -116,11 +116,12 @@ public class E2EFixture : IAsyncLifetime
             ["Api__BaseUrl"] = ApiBaseUrl
         };
 
+        var configuration = GetBuildConfiguration();
         var staticWebAssetsPath = Path.Combine(
             RepositoryPaths.Root,
             "HabitFlow.Blazor",
             "obj",
-            "Debug",
+            configuration,
             "net9.0",
             "staticwebassets.runtime.json");
 
@@ -130,6 +131,15 @@ public class E2EFixture : IAsyncLifetime
         }
 
         return environment;
+    }
+
+    private static string GetBuildConfiguration()
+    {
+#if DEBUG
+        return "Debug";
+#else
+        return "Release";
+#endif
     }
 
     private static string GetBaseUrl(string envKey, int fallbackPort)

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 namespace HabitFlow.Tests.IntegrationTests.Infrastructure;
 
@@ -27,7 +28,11 @@ public sealed class IntegrationTestFactory(string connectionString)
                 ["Email:FromName"] = "HabitFlow Test",
                 ["Email:Smtp:EnableSsl"] = "false",
                 ["NotificationJobSettings:Enabled"] = "false",
-                ["LlmSettings:Enabled"] = "false"
+                ["LlmSettings:Enabled"] = "false",
+                ["Logging:LogLevel:Default"] = "Warning",
+                ["Logging:LogLevel:Microsoft"] = "Warning",
+                ["Logging:LogLevel:Microsoft.AspNetCore"] = "Warning",
+                ["Logging:LogLevel:Microsoft.EntityFrameworkCore"] = "Warning"
             });
         });
     }
