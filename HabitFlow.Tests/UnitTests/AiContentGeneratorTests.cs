@@ -54,21 +54,16 @@ public class AiContentGeneratorTests
             Provider = "OpenAI",
             MaxRetries = 0
         });
-        var features = Options.Create(new NotificationFeaturesOptions
+        var notificationSettings = Options.Create(new NotificationSettings
         {
-            NotificationsEnabled = true,
-            AiNotifications = new NotificationFeaturesOptions.AiNotificationsOptions
-            {
-                Enabled = true,
-                FallbackOnly = false
-            }
+            Enabled = true
         });
 
         return new AiContentGenerator(
             llmClient,
             new FallbackContentGenerator(new Random(3)),
             llmSettings,
-            features,
+            notificationSettings,
             NullLogger<AiContentGenerator>.Instance);
     }
 

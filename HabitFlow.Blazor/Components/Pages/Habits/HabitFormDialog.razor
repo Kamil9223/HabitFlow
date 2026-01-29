@@ -63,14 +63,56 @@
                 }
 
                 <MudText Typo="Typo.subtitle2" Class="mt-2">Dni tygodnia</MudText>
-                <MudChipSet T="DayOfWeek" @bind-SelectedValues="SelectedDays" MultiSelection="true" Filter="true">
-                    <MudChip Value="@DayOfWeek.Monday" Color="Color.Primary" Size="Size.Small">Pn</MudChip>
-                    <MudChip Value="@DayOfWeek.Tuesday" Color="Color.Primary" Size="Size.Small">Wt</MudChip>
-                    <MudChip Value="@DayOfWeek.Wednesday" Color="Color.Primary" Size="Size.Small">Śr</MudChip>
-                    <MudChip Value="@DayOfWeek.Thursday" Color="Color.Primary" Size="Size.Small">Czw</MudChip>
-                    <MudChip Value="@DayOfWeek.Friday" Color="Color.Primary" Size="Size.Small">Pt</MudChip>
-                    <MudChip Value="@DayOfWeek.Saturday" Color="Color.Primary" Size="Size.Small">Sob</MudChip>
-                    <MudChip Value="@DayOfWeek.Sunday" Color="Color.Primary" Size="Size.Small">Ndz</MudChip>
+                <MudChipSet T="DayOfWeek">
+                    <MudChip T="DayOfWeek"
+                             Variant="@(SelectedDays.Contains(DayOfWeek.Monday) ? Variant.Filled : Variant.Outlined)"
+                             Color="@(SelectedDays.Contains(DayOfWeek.Monday) ? Color.Primary : Color.Default)"
+                             OnClick="() => ToggleDay(DayOfWeek.Monday)"
+                             DisableRipple="true"
+                             Class="habit-day-chip"
+                             Size="Size.Small">Pn</MudChip>
+                    <MudChip T="DayOfWeek"
+                             Variant="@(SelectedDays.Contains(DayOfWeek.Tuesday) ? Variant.Filled : Variant.Outlined)"
+                             Color="@(SelectedDays.Contains(DayOfWeek.Tuesday) ? Color.Primary : Color.Default)"
+                             OnClick="() => ToggleDay(DayOfWeek.Tuesday)"
+                             DisableRipple="true"
+                             Class="habit-day-chip"
+                             Size="Size.Small">Wt</MudChip>
+                    <MudChip T="DayOfWeek"
+                             Variant="@(SelectedDays.Contains(DayOfWeek.Wednesday) ? Variant.Filled : Variant.Outlined)"
+                             Color="@(SelectedDays.Contains(DayOfWeek.Wednesday) ? Color.Primary : Color.Default)"
+                             OnClick="() => ToggleDay(DayOfWeek.Wednesday)"
+                             DisableRipple="true"
+                             Class="habit-day-chip"
+                             Size="Size.Small">Śr</MudChip>
+                    <MudChip T="DayOfWeek"
+                             Variant="@(SelectedDays.Contains(DayOfWeek.Thursday) ? Variant.Filled : Variant.Outlined)"
+                             Color="@(SelectedDays.Contains(DayOfWeek.Thursday) ? Color.Primary : Color.Default)"
+                             OnClick="() => ToggleDay(DayOfWeek.Thursday)"
+                             DisableRipple="true"
+                             Class="habit-day-chip"
+                             Size="Size.Small">Czw</MudChip>
+                    <MudChip T="DayOfWeek"
+                             Variant="@(SelectedDays.Contains(DayOfWeek.Friday) ? Variant.Filled : Variant.Outlined)"
+                             Color="@(SelectedDays.Contains(DayOfWeek.Friday) ? Color.Primary : Color.Default)"
+                             OnClick="() => ToggleDay(DayOfWeek.Friday)"
+                             DisableRipple="true"
+                             Class="habit-day-chip"
+                             Size="Size.Small">Pt</MudChip>
+                    <MudChip T="DayOfWeek"
+                             Variant="@(SelectedDays.Contains(DayOfWeek.Saturday) ? Variant.Filled : Variant.Outlined)"
+                             Color="@(SelectedDays.Contains(DayOfWeek.Saturday) ? Color.Primary : Color.Default)"
+                             OnClick="() => ToggleDay(DayOfWeek.Saturday)"
+                             DisableRipple="true"
+                             Class="habit-day-chip"
+                             Size="Size.Small">Sob</MudChip>
+                    <MudChip T="DayOfWeek"
+                             Variant="@(SelectedDays.Contains(DayOfWeek.Sunday) ? Variant.Filled : Variant.Outlined)"
+                             Color="@(SelectedDays.Contains(DayOfWeek.Sunday) ? Color.Primary : Color.Default)"
+                             OnClick="() => ToggleDay(DayOfWeek.Sunday)"
+                             DisableRipple="true"
+                             Class="habit-day-chip"
+                             Size="Size.Small">Ndz</MudChip>
                 </MudChipSet>
                 @if (Model.DaysOfWeekMask == 0)
                 {
@@ -116,7 +158,19 @@
     </DialogContent>
 </MudDialog>
 
+<style>
+    .habit-day-chip:focus,
+    .habit-day-chip:focus-visible,
+    .habit-day-chip:active {
+        box-shadow: none;
+        outline: none;
+    }
+</style>
+
 @code {
+    [CascadingParameter]
+    private IMudDialogInstance? MudDialog { get; set; }
+
     [Parameter]
     public FormMode Mode { get; set; } = FormMode.Create;
 
@@ -129,7 +183,7 @@
     private bool IsSubmitting { get; set; }
     private string? ErrorMessage { get; set; }
     
-    private IReadOnlyCollection<DayOfWeek> SelectedDays { get; set; } = Array.Empty<DayOfWeek>();
+    private HashSet<DayOfWeek> SelectedDays { get; set; } = new();
     private DateTime? DeadlineDate { get; set; }
 
     protected override void OnInitialized()
@@ -157,9 +211,6 @@
 
     protected override void OnParametersSet()
     {
-        // Update mask when selected days change
-        Model.DaysOfWeekMask = GetMaskFromDays(SelectedDays);
-        
         // Update deadline date
         if (DeadlineDate.HasValue)
         {
@@ -190,6 +241,7 @@
             }
 
             await OnSubmit.InvokeAsync(Model);
+            MudDialog?.Close(DialogResult.Ok(true));
         }
         catch (Exception ex)
         {
@@ -203,7 +255,17 @@
 
     private void HandleCancel()
     {
-        // Dialog will be closed by parent
+        MudDialog?.Cancel();
+    }
+
+    private void ToggleDay(DayOfWeek day)
+    {
+        if (!SelectedDays.Add(day))
+        {
+            SelectedDays.Remove(day);
+        }
+
+        Model.DaysOfWeekMask = GetMaskFromDays(SelectedDays);
     }
 
     private static byte GetMaskFromDays(IEnumerable<DayOfWeek> days)
@@ -211,7 +273,7 @@
         byte mask = 0;
         foreach (var day in days)
         {
-            mask |= (byte)(1 << (int)day);
+            mask |= (byte)(1 << GetBitIndex(day));
         }
         return mask;
     }
@@ -223,10 +285,22 @@
         {
             if ((mask & (1 << i)) != 0)
             {
-                days.Add((DayOfWeek)i);
+                days.Add(GetDayOfWeek(i));
             }
         }
         return days;
+    }
+
+    private static int GetBitIndex(DayOfWeek dayOfWeek)
+    {
+        // Mask: Monday=0, Tuesday=1, ..., Sunday=6
+        return dayOfWeek == DayOfWeek.Sunday ? 6 : (int)dayOfWeek - 1;
+    }
+
+    private static DayOfWeek GetDayOfWeek(int bitIndex)
+    {
+        // Mask: Monday=0, Tuesday=1, ..., Sunday=6
+        return bitIndex == 6 ? DayOfWeek.Sunday : (DayOfWeek)(bitIndex + 1);
     }
 
     public enum FormMode

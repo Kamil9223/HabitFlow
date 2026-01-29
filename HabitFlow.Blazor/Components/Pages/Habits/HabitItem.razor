@@ -58,18 +58,20 @@
 
                     @if (!string.IsNullOrWhiteSpace(Item.SuccessRateShort))
                     {
-                        <MudBadge Content="@Item.SuccessRateShort" 
-                                  Color="@GetSuccessRateColor(Item.SuccessRateShort)"
-                                  Overlap="true">
-                            <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Small" />
-                        </MudBadge>
+                        <MudTooltip Text="@GetSuccessRateTooltip()">
+                            <MudBadge Content="@Item.SuccessRateShort"
+                                      Color="@GetSuccessRateColor(Item.SuccessRateShort)"
+                                      Overlap="true">
+                                <MudIcon Icon="@Icons.Material.Filled.TrendingUp" Size="Size.Small" />
+                            </MudBadge>
+                        </MudTooltip>
                     }
                 </MudStack>
             </MudStack>
 
             <MudStack Row="true" Spacing="1">
                 <MudTooltip Text="Szybki check-in">
-                    <MudIconButton Icon="@Icons.Material.Filled.CheckCircle"
+                    <MudIconButton Icon="@Icons.Material.Filled.AddTask"
                                    Color="Color.Success"
                                    Size="Size.Small"
                                    Disabled="@Item.IsBusy"
@@ -180,5 +182,13 @@
         }
 
         return Color.Default;
+    }
+
+    private string GetSuccessRateTooltip()
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var sevenDaysAgo = today.AddDays(-6);
+
+        return $"Skuteczność za okres {sevenDaysAgo:dd.MM} - {today:dd.MM} (ostatnie 7 dni włącznie z dzisiaj)";
     }
 }

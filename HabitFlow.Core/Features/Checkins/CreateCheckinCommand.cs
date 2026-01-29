@@ -98,8 +98,12 @@ public class CreateCheckinCommandHandler(
         }
 
         // 4. Check if day is planned
-        var dayOfWeek = (int)command.LocalDate.DayOfWeek; // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-        var dayMask = 1 << dayOfWeek;
+        // DayOfWeek: Sunday=0, Monday=1, ..., Saturday=6
+        // Mask bits: Monday=0, Tuesday=1, ..., Sunday=6
+        var bitIndex = command.LocalDate.DayOfWeek == DayOfWeek.Sunday
+            ? 6
+            : (int)command.LocalDate.DayOfWeek - 1;
+        var dayMask = 1 << bitIndex;
         var isPlanned = (habit.DaysOfWeekMask & dayMask) != 0;
 
         if (!isPlanned)
@@ -108,7 +112,7 @@ public class CreateCheckinCommandHandler(
                 "Checkin for Habit {HabitId} on {LocalDate} is not allowed (not a planned day)",
                 command.HabitId, command.LocalDate);
             return Result.Failure<CreateCheckinResult>(
-                Error.Conflict("Checkin.NotPlanned", "Checkin is not allowed for this day (not in planned days)"));
+                Error.UnprocessableEntity("Checkin.NotPlanned", "Checkin is not allowed for this day (not in planned days)"));
         }
 
         // 5. Create snapshots

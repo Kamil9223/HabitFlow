@@ -8,23 +8,26 @@ namespace HabitFlow.Core.Services.Notifications;
 
 /// <summary>
 /// AI-first notification generator with fallback support.
+/// Respects LlmSettings.Enabled for AI availability.
 /// </summary>
 public sealed class AiContentGenerator(
     ILlmClient llmClient,
     FallbackContentGenerator fallbackGenerator,
     IOptions<LlmSettings> llmOptions,
-    IOptions<NotificationFeaturesOptions> featureOptions,
+    IOptions<NotificationSettings> settings,
     ILogger<AiContentGenerator> logger) : INotificationContentGenerator
 {
     private readonly LlmSettings _llmSettings = llmOptions.Value;
-    private readonly NotificationFeaturesOptions _features = featureOptions.Value;
+    private readonly NotificationSettings _settings = settings.Value;
 
     public async Task<NotificationContentResult> GenerateAsync(
         NotificationContentContext context,
         CancellationToken cancellationToken)
     {
-        if (!_features.AiNotifications.Enabled || _features.AiNotifications.FallbackOnly || !_llmSettings.Enabled)
-            return await GenerateFallbackAsync(context, "AI wylaczone - uzyto szablonu.", cancellationToken);
+        // LLM.Enabled is checked in NotificationGenerationService.GenerateContentWithBudgetAsync
+        // but we double-check here for safety
+        if (!_llmSettings.Enabled)
+            return await GenerateFallbackAsync(context, "LLM wyłączone - użyto szablonu.", cancellationToken);
 
         if (!string.Equals(_llmSettings.Provider, "OpenAI", StringComparison.OrdinalIgnoreCase))
             return await GenerateFallbackAsync(context, "Nieobslugiwany dostawca LLM - uzyto szablonu.", cancellationToken);
@@ -58,7 +61,7 @@ User Context:
 - Total completions: {context.TotalCompletions}
 - Last completed: {lastCompletion}
 
-Task: Generate a SHORT (max 100 words), empathetic, motivational message
+Task: Generate a SHORT (max 1000 words), empathetic, motivational message
 that acknowledges the missed day without guilt-tripping, and encourages
 the user to get back on track. Use a warm, personal tone.
 

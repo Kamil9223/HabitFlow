@@ -1,3 +1,4 @@
+using System.Net;
 using System.Reflection;
 using HabitFlow.Core.Abstractions;
 using HabitFlow.Core.Abstractions.Notifications;
@@ -13,8 +14,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Polly;
 using Polly.Extensions.Http;
-using System.Net;
-using HabitFlow.Core.Options;
 
 namespace HabitFlow.Core;
 
@@ -26,13 +25,11 @@ public static class DependencyInjection
 
         services.AddOptions<LlmSettings>()
             .Bind(configuration.GetSection(LlmSettings.SectionName));
-        services.AddOptions<NotificationJobSettings>()
-            .Bind(configuration.GetSection(NotificationJobSettings.SectionName));
-        services.AddOptions<NotificationFeaturesOptions>()
-            .Bind(configuration.GetSection(NotificationFeaturesOptions.SectionName));
+        services.AddOptions<NotificationSettings>()
+            .Bind(configuration.GetSection(NotificationSettings.SectionName));
 
         services.AddSingleton<IValidateOptions<LlmSettings>, LlmSettingsValidator>();
-        services.AddSingleton<IValidateOptions<NotificationJobSettings>, NotificationJobSettingsValidator>();
+        services.AddSingleton<IValidateOptions<NotificationSettings>, NotificationSettingsValidator>();
 
         // Register Command Dispatcher
         services.AddScoped<ICommandDispatcher, CommandDispatcher>();

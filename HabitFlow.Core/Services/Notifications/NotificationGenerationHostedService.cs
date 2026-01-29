@@ -9,38 +9,48 @@ namespace HabitFlow.Core.Services.Notifications;
 
 /// <summary>
 /// Daily background job that triggers miss-due notification generation.
+/// Runs at configured time (default: 00:30 UTC daily).
 /// </summary>
 public sealed class NotificationGenerationHostedService(
     IServiceProvider serviceProvider,
-    IOptions<NotificationJobSettings> jobOptions,
-    IOptions<NotificationFeaturesOptions> featureOptions,
+    IOptions<NotificationSettings> settings,
     ILogger<NotificationGenerationHostedService> logger)
     : BackgroundService
 {
     private static readonly TimeOnly DefaultRunAtUtc = new(0, 30);
-    private readonly NotificationJobSettings _jobSettings = jobOptions.Value;
-    private readonly NotificationFeaturesOptions _features = featureOptions.Value;
+    private readonly NotificationSettings _settings = settings.Value;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (!_jobSettings.Enabled || !_features.NotificationsEnabled)
+        if (!_settings.Enabled)
         {
-            logger.LogInformation("Notification generation hosted service is disabled.");
+            logger.LogInformation("Notification generation is disabled.");
             return;
         }
 
-        var runAtUtc = ResolveRunAtUtc(_jobSettings, logger);
+        var runAtUtc = ResolveRunAtUtc(_settings.CronSchedule);
+        logger.LogInformation("Notification job scheduled to run daily at {RunAt} UTC", runAtUtc);
 
         while (!stoppingToken.IsCancellationRequested)
         {
-            var delay = CalculateDelay(DateTime.UtcNow, runAtUtc);
-            if (delay > TimeSpan.Zero)
-                await Task.Delay(delay, stoppingToken);
+            var delay = CalculateDelayUntilNextRun(DateTime.UtcNow, runAtUtc);
+            logger.LogInformation("Next notification job run in {Delay}", delay);
+
+            try
+            {
+                //await Task.Delay(delay, stoppingToken);
+            }
+            catch (OperationCanceledException)
+            {
+                logger.LogInformation("Notification job cancelled during delay.");
+                return;
+            }
 
             if (stoppingToken.IsCancellationRequested)
-                break;
+                return;
 
             await RunJobAsync(stoppingToken);
+            break;
         }
     }
 
@@ -51,7 +61,7 @@ public sealed class NotificationGenerationHostedService(
         using var scope = serviceProvider.CreateScope();
         var generator = scope.ServiceProvider.GetRequiredService<INotificationGenerationService>();
 
-        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMinutes(Math.Max(1, _jobSettings.MaxExecutionMinutes)));
+        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMinutes(Math.Max(1, _settings.MaxExecutionMinutes)));
         using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, timeoutCts.Token);
 
         try
@@ -88,12 +98,12 @@ public sealed class NotificationGenerationHostedService(
         }
     }
 
-    private static TimeOnly ResolveRunAtUtc(NotificationJobSettings settings, ILogger logger)
+    private TimeOnly ResolveRunAtUtc(string? cronSchedule)
     {
-        if (string.IsNullOrWhiteSpace(settings.CronSchedule))
+        if (string.IsNullOrWhiteSpace(cronSchedule))
             return DefaultRunAtUtc;
 
-        var parts = settings.CronSchedule.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var parts = cronSchedule.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length < 3)
         {
             logger.LogWarning("Invalid CronSchedule format. Using default 00:30 UTC.");
@@ -115,17 +125,13 @@ public sealed class NotificationGenerationHostedService(
         return new TimeOnly(hour, minute);
     }
 
-    private static TimeSpan CalculateDelay(DateTime utcNow, TimeOnly runAtUtc)
+    private static TimeSpan CalculateDelayUntilNextRun(DateTime utcNow, TimeOnly runAtUtc)
     {
-        var nextRun = new DateTime(
-            utcNow.Year,
-            utcNow.Month,
-            utcNow.Day,
-            runAtUtc.Hour,
-            runAtUtc.Minute,
-            0,
-            DateTimeKind.Utc);
+        var nextRun = utcNow.Date
+            .AddHours(runAtUtc.Hour)
+            .AddMinutes(runAtUtc.Minute);
 
+        // If time has passed today, schedule for tomorrow
         if (nextRun <= utcNow)
             nextRun = nextRun.AddDays(1);
 

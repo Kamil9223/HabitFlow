@@ -123,7 +123,8 @@ public class CheckinEndpointsTests : IClassFixture<IntegrationTestFixture>
     [Fact]
     public async Task CreateCheckin_NotPlannedDay_Returns409()
     {
-        // Arrange: Create habit with specific days (e.g., Monday only = bit 1)
+        // Arrange: Create habit with specific days
+        // Mask bits: Monday=0 (bit 0 = 1), Tuesday=1 (bit 1 = 2), ..., Sunday=6 (bit 6 = 64)
         var (client, userId) = await CreateAuthenticatedClientAsync();
 
         // Find a day that is NOT Monday
@@ -134,8 +135,8 @@ public class CheckinEndpointsTests : IClassFixture<IntegrationTestFixture>
             targetDate = targetDate.AddDays(1);
         }
 
-        // Create habit with Monday only (bit 1 = 2)
-        var habitId = await CreateHabitAsync(userId, daysOfWeekMask: 2);
+        // Create habit with Monday only (bit 0 = 1)
+        var habitId = await CreateHabitAsync(userId, daysOfWeekMask: 1);
 
         var request = new CreateCheckinRequest(DateOnly.FromDateTime(targetDate), 5);
 
@@ -143,7 +144,7 @@ public class CheckinEndpointsTests : IClassFixture<IntegrationTestFixture>
         var response = await client.PostAsJsonAsync($"/api/v1/habits/{habitId}/checkins", request);
 
         // Assert
-        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+        Assert.Equal(HttpStatusCode.UnprocessableEntity, response.StatusCode);
     }
 
     [Fact]

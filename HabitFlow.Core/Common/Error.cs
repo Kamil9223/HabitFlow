@@ -7,6 +7,7 @@ public static class ErrorTitles
     public const string Conflict = "Conflict";
     public const string Unauthorized = "Unauthorized";
     public const string Forbidden = "Forbidden";
+    public const string UnprocessableEntity = "Unprocessable Entity";
 }
 
 /// <summary>
@@ -30,6 +31,9 @@ public record Error(string Code, string Title, string Description)
 
     public static Error Forbidden(string code, string description) =>
         new(code, ErrorTitles.Forbidden, description);
+
+    public static Error UnprocessableEntity(string code, string description) =>
+        new(code, ErrorTitles.UnprocessableEntity, description);
 
     public static Error Failure(string code, string description) =>
         new(code, "Failure", description);

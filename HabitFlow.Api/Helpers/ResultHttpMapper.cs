@@ -32,6 +32,10 @@ public static class ResultHttpMapper
                 title: result.Error.Title,
                 detail: result.Error.Description,
                 statusCode: 403),
+            ErrorTitles.UnprocessableEntity => Results.Problem(
+                title: result.Error.Title,
+                detail: result.Error.Description,
+                statusCode: 422),
             _ => Results.Problem(statusCode: 500)
         };
     }
@@ -63,6 +67,10 @@ public static class ResultHttpMapper
                 title: result.Error.Title,
                 detail: result.Error.Description,
                 statusCode: 403),
+            ErrorTitles.UnprocessableEntity => Results.Problem(
+                title: result.Error.Title,
+                detail: result.Error.Description,
+                statusCode: 422),
             _ => Results.Problem(statusCode: 500)
         };
     }

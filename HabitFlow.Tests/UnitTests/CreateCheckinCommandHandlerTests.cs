@@ -174,8 +174,10 @@ public class CreateCheckinCommandHandlerTests
     {
         // Arrange
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var dayOfWeek = (int)today.DayOfWeek;
-        var allDaysExceptToday = (byte)(127 & ~(1 << dayOfWeek)); // All days except today
+        // DayOfWeek: Sunday=0, Monday=1, ..., Saturday=6
+        // Mask bits: Monday=0, Tuesday=1, ..., Sunday=6
+        var bitIndex = today.DayOfWeek == DayOfWeek.Sunday ? 6 : (int)today.DayOfWeek - 1;
+        var allDaysExceptToday = (byte)(127 & ~(1 << bitIndex)); // All days except today
 
         var habit = new Habit
         {

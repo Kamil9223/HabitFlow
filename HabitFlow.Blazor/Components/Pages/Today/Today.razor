@@ -250,17 +250,15 @@
         }
         catch (ApiException ex) when (ex.StatusCode == 409)
         {
-            Snackbar.Add("Osiągnięto limit 20 nawyków", Severity.Error);
+            throw new InvalidOperationException("Osiągnięto limit 20 nawyków");
         }
         catch (ApiException ex) when (ex.StatusCode == 400)
         {
-            Snackbar.Add($"Błąd walidacji: {ex.Message}", Severity.Error);
-            throw;
+            throw new InvalidOperationException($"Błąd walidacji: {ex.Message}");
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Błąd podczas tworzenia nawyku: {ex.Message}", Severity.Error);
-            throw;
+            throw new InvalidOperationException($"Błąd podczas tworzenia nawyku: {ex.Message}");
         }
     }
 

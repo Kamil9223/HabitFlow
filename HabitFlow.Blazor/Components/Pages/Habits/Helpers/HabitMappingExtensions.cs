@@ -5,7 +5,7 @@ namespace HabitFlow.Blazor.Components.Pages.Habits.Helpers;
 
 public static class HabitMappingExtensions
 {
-    private static readonly string[] DayNames = ["Ndz", "Pn", "Wt", "Śr", "Czw", "Pt", "Sob"];
+    private static readonly string[] DayNames = ["Pn", "Wt", "Śr", "Czw", "Pt", "Sob", "Ndz"];
 
     public static HabitListItemVm ToListItemVm(this HabitResponse response)
     {

@@ -81,31 +81,31 @@ public sealed class FallbackContentGenerator : INotificationContentGenerator
             {
                 TemplateCategory.ShortStreak,
                 [
-                    "Wczoraj nie udalo sie zrobic: {habitName}. Jeden dzien nie przekresla postepow. Gotowy sprobowac dzis?",
-                    "Zdarza sie pominiety dzien. Zrob dzis {habitName} w najprostszej wersji i wracaj do rytmu.",
-                    "Wczoraj {habitName} sie nie wydarzylo. Zacznij od malego kroku dzis.",
-                    "Nie zrobiles wczoraj {habitName}? To nowy dzien. Jaki latwy krok mozesz zrobic teraz?",
-                    "Zacznij od nowa. {habitName} moze byc dzis szybkie, by utrzymac tempo."
+                    "Wczoraj nie udalo sie zrobic: '{habitName}'. Jeden dzien nie przekresla postepow. Gotowy sprobowac dzis?",
+                    "Zdarza sie pominiety dzien. Zrob dzis '{habitName}' w najprostszej wersji i wracaj do rytmu.",
+                    "Wczoraj '{habitName}' sie nie wydarzylo. Zacznij od malego kroku dzis.",
+                    "Nie zrobiles wczoraj '{habitName}'? To nowy dzien. Jaki latwy krok mozesz zrobic teraz?",
+                    "Zacznij od nowa. '{habitName}' moze byc dzis szybkie, by utrzymac tempo."
                 ]
             },
             {
                 TemplateCategory.MediumStreak,
                 [
-                    "Miales {streakDays}-dniowa serie w {habitName}. Jedno potkniecie jej nie kasuje. Kontynuuj dzis.",
-                    "Swietnie budujesz nawyk {habitName}. Pominiety dzien to norma. Wroc do niego teraz.",
-                    "Twoja {streakDays}-dniowa seria pokazuje, ze dasz rade z {habitName}. Zrob dzis maly krok.",
-                    "Postep jest wazniejszy niz perfekcja. Wroc do {habitName} dzis i chroń serie.",
-                    "Masz za soba {totalCompletions} dni z {habitName}. Utrzymaj ten postep dzis."
+                    "Miales {streakDays}-dniowa serie w '{habitName}'. Jedno potkniecie jej nie kasuje. Kontynuuj dzis.",
+                    "Swietnie budujesz nawyk '{habitName}'. Pominiety dzien to norma. Wroc do niego teraz.",
+                    "Twoja {streakDays}-dniowa seria pokazuje, ze dasz rade z '{habitName}'. Zrob dzis maly krok.",
+                    "Postep jest wazniejszy niz perfekcja. Wroc do '{habitName}' dzis i chroń serie.",
+                    "Masz za soba {totalCompletions} dni z '{habitName}'. Utrzymaj ten postep dzis."
                 ]
             },
             {
                 TemplateCategory.LongStreak,
                 [
-                    "Dluga seria {habitName} pokazuje prawdziwe zaangazowanie. Jedno potkniecie to tylko pauza. Dzialaj dzis.",
-                    "Zbudowales silna rutyna dla {habitName}. Podtrzymaj postep jednym krokiem dzis.",
-                    "Seria {streakDays} dni robi wrazenie. Odtworz lancuch z {habitName} dzis.",
-                    "Zrobiles {habitName} {totalCompletions} razy. Ten wysilek ma znaczenie. Kontynuuj dzis.",
-                    "Twoja sila nawyku jest widoczna. Zrob {habitName} latwo dzis i trzymaj kurs."
+                    "Dluga seria '{habitName}' pokazuje prawdziwe zaangazowanie. Jedno potkniecie to tylko pauza. Dzialaj dzis.",
+                    "Zbudowales silna rutyna dla '{habitName}'. Podtrzymaj postep jednym krokiem dzis.",
+                    "Seria {streakDays} dni robi wrazenie. Odtworz lancuch z '{habitName}' dzis.",
+                    "Zrobiles '{habitName}' {totalCompletions} razy. Ten wysilek ma znaczenie. Kontynuuj dzis.",
+                    "Twoja sila nawyku jest widoczna. Zrob '{habitName}' latwo dzis i trzymaj kurs."
                 ]
             }
         };

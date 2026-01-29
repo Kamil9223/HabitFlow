@@ -14,30 +14,26 @@
 
     <main>
         <div class="top-row px-4">
-            <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-
-                <div style="display: flex; align-items: center; gap: 8px;">
-                    <AuthorizeView>
-                        <Authorized>
-                            <NotificationsBell />
-                            <MudButton Href="/auth/logout"
-                                       Variant="Variant.Text"
-                                       Color="Color.Inherit"
-                                       StartIcon="@Icons.Material.Filled.Logout">
-                                Wyloguj
-                            </MudButton>
-                        </Authorized>
-                        <NotAuthorized>
-                            <MudButton Href="/auth/login"
-                                       Variant="Variant.Text"
-                                       Color="Color.Inherit"
-                                       StartIcon="@Icons.Material.Filled.Login">
-                                Zaloguj się
-                            </MudButton>
-                        </NotAuthorized>
-                    </AuthorizeView>
-                </div>
+            <div style="display: flex; justify-content: flex-end; align-items: center; width: 100%; gap: 8px;">
+                <AuthorizeView>
+                    <Authorized>
+                        <NotificationsBell />
+                        <MudButton Href="/auth/logout"
+                                   Variant="Variant.Text"
+                                   Color="Color.Inherit"
+                                   StartIcon="@Icons.Material.Filled.Logout">
+                            Wyloguj
+                        </MudButton>
+                    </Authorized>
+                    <NotAuthorized>
+                        <MudButton Href="/auth/login"
+                                   Variant="Variant.Text"
+                                   Color="Color.Inherit"
+                                   StartIcon="@Icons.Material.Filled.Login">
+                            Zaloguj się
+                        </MudButton>
+                    </NotAuthorized>
+                </AuthorizeView>
             </div>
         </div>
 

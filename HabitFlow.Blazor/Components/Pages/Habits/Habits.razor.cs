@@ -72,6 +72,19 @@ public partial class Habits : IDisposable
 
     private async Task LoadSuccessRatesAsync(CancellationToken token)
     {
+        // First, apply cached values to all items
+        foreach (var item in _state.Items)
+        {
+            if (_successRateCache.TryGetValue(item.Id, out var cachedRate))
+            {
+                item.SuccessRateShort = cachedRate;
+            }
+        }
+
+        // Trigger initial render with cached values
+        await InvokeAsync(StateHasChanged);
+
+        // Then load missing values
         foreach (var item in _state.Items.Where(i => !_successRateCache.ContainsKey(i.Id)))
         {
             if (token.IsCancellationRequested)
@@ -92,12 +105,13 @@ public partial class Habits : IDisposable
                 _successRateCache[item.Id] = formattedRate;
                 item.SuccessRateShort = formattedRate;
 
-                StateHasChanged();
+                await InvokeAsync(StateHasChanged);
             }
             catch
             {
                 _successRateCache[item.Id] = "-";
                 item.SuccessRateShort = "-";
+                await InvokeAsync(StateHasChanged);
             }
         }
     }
@@ -153,17 +167,15 @@ public partial class Habits : IDisposable
         }
         catch (ApiException ex) when (ex.StatusCode == 409)
         {
-            Snackbar.Add("Osiągnięto limit 20 nawyków", Severity.Error);
+            throw new InvalidOperationException("Osiągnięto limit 20 nawyków");
         }
         catch (ApiException ex) when (ex.StatusCode == 400)
         {
-            Snackbar.Add($"Błąd walidacji: {ex.Message}", Severity.Error);
-            throw;
+            throw new InvalidOperationException($"Błąd walidacji: {ex.Message}");
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Błąd podczas tworzenia nawyku: {ex.Message}", Severity.Error);
-            throw;
+            throw new InvalidOperationException($"Błąd podczas tworzenia nawyku: {ex.Message}");
         }
     }
 
@@ -222,18 +234,16 @@ public partial class Habits : IDisposable
         }
         catch (ApiException ex) when (ex.StatusCode == 404)
         {
-            Snackbar.Add("Nawyk nie istnieje", Severity.Error);
             await LoadHabitsAsync();
+            throw new InvalidOperationException("Nawyk nie istnieje");
         }
         catch (ApiException ex) when (ex.StatusCode == 400)
         {
-            Snackbar.Add($"Błąd walidacji: {ex.Message}", Severity.Error);
-            throw;
+            throw new InvalidOperationException($"Błąd walidacji: {ex.Message}");
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Błąd podczas aktualizacji nawyku: {ex.Message}", Severity.Error);
-            throw;
+            throw new InvalidOperationException($"Błąd podczas aktualizacji nawyku: {ex.Message}");
         }
     }
 
@@ -334,15 +344,15 @@ public partial class Habits : IDisposable
         }
         catch (ApiException ex) when (ex.StatusCode == 409)
         {
-            Snackbar.Add("Check-in dla tego nawyku i daty już istnieje", Severity.Warning);
+            throw new InvalidOperationException("Check-in dla tego nawyku i daty już istnieje");
         }
         catch (ApiException ex) when (ex.StatusCode == 422)
         {
-            Snackbar.Add("Check-in poza zakresem lub nawyk nie jest zaplanowany na ten dzień", Severity.Error);
+            throw new InvalidOperationException("Check-in poza zakresem lub nawyk nie jest zaplanowany na ten dzień");
         }
         catch (Exception ex)
         {
-            Snackbar.Add($"Błąd podczas zapisywania check-in: {ex.Message}", Severity.Error);
+            throw new InvalidOperationException($"Błąd podczas zapisywania check-in: {ex.Message}");
         }
         finally
         {
