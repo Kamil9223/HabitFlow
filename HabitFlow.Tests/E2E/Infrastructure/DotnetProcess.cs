@@ -23,8 +23,9 @@ internal sealed class DotnetProcess : IAsyncDisposable
             throw new FileNotFoundException($"Project not found: {projectPath}");
         }
 
+        var configuration = GetBuildConfiguration();
         var startInfo = new ProcessStartInfo("dotnet",
-            $"run --no-build --no-launch-profile --project \"{projectPath}\" --urls \"{baseUrl}\"")
+            $"run --no-build --no-launch-profile --configuration {configuration} --project \"{projectPath}\" --urls \"{baseUrl}\"")
         {
             WorkingDirectory = RepositoryPaths.Root,
             RedirectStandardOutput = true,
@@ -53,6 +54,15 @@ internal sealed class DotnetProcess : IAsyncDisposable
         process.BeginErrorReadLine();
 
         return wrapper;
+    }
+
+    private static string GetBuildConfiguration()
+    {
+#if DEBUG
+        return "Debug";
+#else
+        return "Release";
+#endif
     }
 
     private void AddOutput(string? line)
