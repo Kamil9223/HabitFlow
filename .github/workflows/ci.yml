@@ -1,0 +1,62 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build Backend
+      run: |
+        dotnet build HabitFlow.Core/HabitFlow.Core.csproj --configuration Release --no-restore
+        dotnet build HabitFlow.Data/HabitFlow.Data.csproj --configuration Release --no-restore
+        dotnet build HabitFlow.Api/HabitFlow.Api.csproj --configuration Release --no-restore
+
+    - name: Build Frontend
+      run: dotnet build HabitFlow.Blazor/HabitFlow.Blazor.csproj --configuration Release --no-restore
+
+    - name: Build Tests
+      run: dotnet build HabitFlow.Tests/HabitFlow.Tests.csproj --configuration Release --no-restore
+
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+
+    - name: Run Unit Tests
+      run: dotnet test HabitFlow.Tests/HabitFlow.Tests.csproj --configuration Release --no-build --filter "FullyQualifiedName!~E2E" --verbosity normal
+
+    - name: Install Playwright Browsers
+      run: pwsh HabitFlow.Tests/bin/Release/net9.0/playwright.ps1 install --with-deps
+
+    - name: Run E2E Tests
+      run: dotnet test HabitFlow.Tests/HabitFlow.Tests.csproj --configuration Release --no-build --filter "FullyQualifiedName~E2E" --verbosity normal
+      env:
+        E2E_STARTUP_TIMEOUT_SECONDS: 60
