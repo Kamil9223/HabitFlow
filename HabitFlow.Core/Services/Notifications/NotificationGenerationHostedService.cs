@@ -38,7 +38,7 @@ public sealed class NotificationGenerationHostedService(
 
             try
             {
-                //await Task.Delay(delay, stoppingToken);
+                await Task.Delay(delay, stoppingToken);
             }
             catch (OperationCanceledException)
             {
@@ -50,7 +50,6 @@ public sealed class NotificationGenerationHostedService(
                 return;
 
             await RunJobAsync(stoppingToken);
-            break;
         }
     }
 

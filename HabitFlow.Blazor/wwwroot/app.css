@@ -1,60 +1,337 @@
+/* ========================================
+   HabitFlow - Productivity Dark Mode
+   ======================================== */
+
+/* Import Inter font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* ========================================
+   Base Styles
+   ======================================== */
 html, body {
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: #1E1E1E;
+    color: #E5E5E5;
 }
 
-a, .btn-link {
-    color: #006bb7;
+* {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
-.btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
+/* ========================================
+   Custom Variables
+   ======================================== */
+:root {
+    --habit-success: #10B981;
+    --habit-primary: #10B981;
+    --habit-focus: #8B5CF6;
+    --habit-miss: #EF4444;
+    --habit-warning: #F59E0B;
+    
+    --surface-base: #1E1E1E;
+    --surface-card: #2D2D2D;
+    --surface-elevated: #3A3A3A;
+    --surface-darker: #171717;
+    
+    --text-primary: #E5E5E5;
+    --text-secondary: #A3A3A3;
+    --text-disabled: #6B6B6B;
+    
+    --glow-success: rgba(16, 185, 129, 0.25);
+    --glow-primary: rgba(16, 185, 129, 0.25);
+    --glow-focus: rgba(139, 92, 246, 0.25);
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+/* ========================================
+   Animations & Effects
+   ======================================== */
+@keyframes successPulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.9; transform: scale(1.02); }
 }
 
+@keyframes glowIn {
+    from { box-shadow: 0 0 0 0 transparent; }
+    to { box-shadow: 0 0 20px 4px var(--glow-success); }
+}
+
+@keyframes slideInUp {
+    from { 
+        opacity: 0; 
+        transform: translateY(20px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+/* ========================================
+   Habit Card Styles
+   ======================================== */
+.habit-card {
+    background: linear-gradient(135deg, var(--surface-card) 0%, rgba(45, 45, 45, 0.8) 100%);
+    border-radius: 12px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.habit-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+.habit-card-success {
+    border-left: 4px solid var(--habit-success);
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, var(--surface-card) 100%);
+}
+
+.habit-card-active:hover {
+    box-shadow: 0 0 20px 4px var(--glow-success);
+}
+
+/* ========================================
+   Check-in Button Styles
+   ======================================== */
+.checkin-button {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.checkin-button::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(16, 185, 129, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.checkin-button:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.checkin-button-success {
+    animation: successPulse 2s ease-in-out infinite;
+}
+
+/* ========================================
+   Calendar Styles
+   ======================================== */
+.calendar-day {
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.calendar-day-success {
+    background: linear-gradient(135deg, 
+        rgba(16, 185, 129, 0.3) 0%, 
+        rgba(16, 185, 129, 0.1) 100%);
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+.calendar-day-miss {
+    background: linear-gradient(135deg, 
+        rgba(239, 68, 68, 0.2) 0%, 
+        rgba(239, 68, 68, 0.05) 100%);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+.calendar-day-streak {
+    background: linear-gradient(135deg, 
+        rgba(16, 185, 129, 0.5) 0%, 
+        rgba(16, 185, 129, 0.2) 100%);
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+}
+
+/* ========================================
+   Chart Styles
+   ======================================== */
+.chart-container {
+    background: var(--surface-card);
+    border-radius: 12px;
+    padding: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* ========================================
+   Notification Styles
+   ======================================== */
+.notification-toast {
+    backdrop-filter: blur(12px);
+    background: rgba(45, 45, 45, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+.notification-success {
+    border-left: 4px solid var(--habit-success);
+}
+
+.notification-miss {
+    border-left: 4px solid var(--habit-miss);
+}
+
+.notification-info {
+    border-left: 4px solid var(--habit-focus);
+}
+
+/* ========================================
+   Form Styles
+   ======================================== */
+.valid.modified:not([type=checkbox]) {
+    outline: 2px solid var(--habit-success);
+    outline-offset: 2px;
+}
+
+.invalid {
+    outline: 2px solid var(--habit-miss);
+    outline-offset: 2px;
+}
+
+.validation-message {
+    color: var(--habit-miss);
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+/* ========================================
+   Loading & Empty States
+   ======================================== */
+.loading-spinner {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.empty-state {
+    opacity: 0;
+    animation: slideInUp 0.6s ease forwards;
+    animation-delay: 0.1s;
+}
+
+/* ========================================
+   Progress Bar
+   ======================================== */
+.progress-bar {
+    background: linear-gradient(90deg, 
+        var(--habit-success) 0%, 
+        rgba(16, 185, 129, 0.6) 100%);
+    border-radius: 8px;
+    box-shadow: 0 0 12px var(--glow-success);
+    transition: all 0.3s ease;
+}
+
+/* ========================================
+   Scrollbar
+   ======================================== */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--surface-base);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--surface-elevated);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #4A4A4A;
+}
+
+/* ========================================
+   Utility Classes
+   ======================================== */
+.glass-effect {
+    backdrop-filter: blur(12px);
+    background: rgba(45, 45, 45, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glow-on-hover:hover {
+    box-shadow: 0 0 20px 4px var(--glow-focus);
+    transition: box-shadow 0.3s ease;
+}
+
+.text-gradient-success {
+    background: linear-gradient(90deg, var(--habit-success), #34D399);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.text-gradient-focus {
+    background: linear-gradient(90deg, var(--habit-focus), #A78BFA);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ========================================
+   Error Boundary
+   ======================================== */
+.blazor-error-boundary {
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(239, 68, 68, 0.1));
+    border-left: 4px solid var(--habit-miss);
+    padding: 1rem 1rem 1rem 3.7rem;
+    color: white;
+    border-radius: 8px;
+    backdrop-filter: blur(8px);
+}
+
+.blazor-error-boundary::after {
+    content: "An error has occurred."
+}
+
+/* ========================================
+   Content Layout
+   ======================================== */
 .content {
-    padding-top: 1.1rem;
+    padding-top: 1.5rem;
 }
 
+/* ========================================
+   Focus States
+   ======================================== */
 h1:focus {
     outline: none;
 }
 
-.valid.modified:not([type=checkbox]) {
-    outline: 1px solid #26b050;
+.btn:focus, 
+.btn:active:focus, 
+.btn-link.nav-link:focus, 
+.form-control:focus, 
+.form-check-input:focus {
+    box-shadow: 0 0 0 3px var(--glow-focus);
+    outline: none;
 }
 
-.invalid {
-    outline: 1px solid #e50000;
-}
-
-.validation-message {
-    color: #e50000;
-}
-
-.blazor-error-boundary {
-    background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIG92ZXJmbG93PSJoaWRkZW4iPjxkZWZzPjxjbGlwUGF0aCBpZD0iY2xpcDAiPjxyZWN0IHg9IjIzNSIgeT0iNTEiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0OSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTUxKSI+PHBhdGggZD0iTTI2My41MDYgNTFDMjY0LjcxNyA1MSAyNjUuODEzIDUxLjQ4MzcgMjY2LjYwNiA1Mi4yNjU4TDI2Ny4wNTIgNTIuNzk4NyAyNjcuNTM5IDUzLjYyODMgMjkwLjE4NSA5Mi4xODMxIDI5MC41NDUgOTIuNzk1IDI5MC42NTYgOTIuOTk2QzI5MC44NzcgOTMuNTEzIDI5MSA5NC4wODE1IDI5MSA5NC42NzgyIDI5MSA5Ny4wNjUxIDI4OS4wMzggOTkgMjg2LjYxNyA5OUwyNDAuMzgzIDk5QzIzNy45NjMgOTkgMjM2IDk3LjA2NTEgMjM2IDk0LjY3ODIgMjM2IDk0LjM3OTkgMjM2LjAzMSA5NC4wODg2IDIzNi4wODkgOTMuODA3MkwyMzYuMzM4IDkzLjAxNjIgMjM2Ljg1OCA5Mi4xMzE0IDI1OS40NzMgNTMuNjI5NCAyNTkuOTYxIDUyLjc5ODUgMjYwLjQwNyA1Mi4yNjU4QzI2MS4yIDUxLjQ4MzcgMjYyLjI5NiA1MSAyNjMuNTA2IDUxWk0yNjMuNTg2IDY2LjAxODNDMjYwLjczNyA2Ni4wMTgzIDI1OS4zMTMgNjcuMTI0NSAyNTkuMzEzIDY5LjMzNyAyNTkuMzEzIDY5LjYxMDIgMjU5LjMzMiA2OS44NjA4IDI1OS4zNzEgNzAuMDg4N0wyNjEuNzk1IDg0LjAxNjEgMjY1LjM4IDg0LjAxNjEgMjY3LjgyMSA2OS43NDc1QzI2Ny44NiA2OS43MzA5IDI2Ny44NzkgNjkuNTg3NyAyNjcuODc5IDY5LjMxNzkgMjY3Ljg3OSA2Ny4xMTgyIDI2Ni40NDggNjYuMDE4MyAyNjMuNTg2IDY2LjAxODNaTTI2My41NzYgODYuMDU0N0MyNjEuMDQ5IDg2LjA1NDcgMjU5Ljc4NiA4Ny4zMDA1IDI1OS43ODYgODkuNzkyMSAyNTkuNzg2IDkyLjI4MzcgMjYxLjA0OSA5My41Mjk1IDI2My41NzYgOTMuNTI5NSAyNjYuMTE2IDkzLjUyOTUgMjY3LjM4NyA5Mi4yODM3IDI2Ny4zODcgODkuNzkyMSAyNjcuMzg3IDg3LjMwMDUgMjY2LjExNiA4Ni4wNTQ3IDI2My41NzYgODYuMDU0N1oiIGZpbGw9IiNGRkU1MDAiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvZz48L3N2Zz4=) no-repeat 1rem/1.8rem, #b32121;
-    padding: 1rem 1rem 1rem 3.7rem;
-    color: white;
-}
-
-    .blazor-error-boundary::after {
-        content: "An error has occurred."
+/* ========================================
+   Responsive Adjustments
+   ======================================== */
+@media (max-width: 768px) {
+    .habit-card {
+        border-radius: 8px;
     }
-
-.darker-border-checkbox.form-check-input {
-    border-color: #929292;
-}
-
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-    color: var(--bs-secondary-color);
-    text-align: end;
-}
-
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-    text-align: start;
+    
+    .chart-container {
+        padding: 1rem;
+    }
 }
