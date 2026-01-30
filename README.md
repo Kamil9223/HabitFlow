@@ -324,10 +324,6 @@ $env:LlmSettings__Enabled="true"
 - ✅ End-to-end tests with Playwright
 - ✅ CI/CD pipeline with GitHub Actions
 
-**In Progress:**
-- 🚧 Final bug fixes and polish
-- 🚧 Documentation updates
-
 **Definition of Done for MVP:**
 - ✅ All MUST features implemented and tested
 - ✅ Business logic covered by unit tests (≥80% coverage for Core layer)
