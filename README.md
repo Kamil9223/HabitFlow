@@ -45,7 +45,7 @@ The MVP focuses on simplicity and clarity, helping beginners easily adopt habit 
 
 ### Integrations & Services
 - **LLM provider** via HTTP for AI-generated motivational content with fallback to static templates
-- **Background job scheduler** (e.g., Hangfire or Quartz) for triggering "miss due" notifications
+- **Background job scheduler**: Hangfire for triggering "miss due" notifications
 
 ### CI/CD & Quality
 - **GitHub Actions** for continuous integration and deployment (build, tests, migrations)
@@ -62,15 +62,19 @@ The MVP focuses on simplicity and clarity, helping beginners easily adopt habit 
 ### Prerequisites
 
 - [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
-- [SQL Server 2022](https://www.microsoft.com/sql-server/sql-server-downloads) or SQL Server Express
-- Docker (optional, for local SQL Server and SMTP test inbox)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (recommended) for local SQL Server and SMTP test inbox
+  - Alternatively: [SQL Server 2022](https://www.microsoft.com/sql-server/sql-server-downloads) or SQL Server Express (if not using Docker)
 - Git
+- [.NET EF Core tools](https://learn.microsoft.com/en-us/ef/core/cli/dotnet) (for database migrations):
+  ```bash
+  dotnet tool install --global dotnet-ef
+  ```
 
 ### Installation
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/HabitFlow.git
+   git clone <repository-url>
    cd HabitFlow
    ```
 
@@ -86,8 +90,8 @@ The MVP focuses on simplicity and clarity, helping beginners easily adopt habit 
    ```
 
 4. **Configure connection strings:**
-   - Update `appsettings.Development.json` in both `HabitFlow.Api/` and `HabitFlow.Blazor/` with your SQL Server connection string
-   - For sensitive data, use `dotnet user-secrets`:
+   - The default configuration in `HabitFlow.Api/appsettings.Development.json` works with the Docker SQL Server
+   - For custom connection strings, use `dotnet user-secrets`:
      ```bash
      cd HabitFlow.Api
      dotnet user-secrets set "ConnectionStrings:DefaultConnection" "your-connection-string"
@@ -95,36 +99,31 @@ The MVP focuses on simplicity and clarity, helping beginners easily adopt habit 
 
 5. **Optional: run the dev setup script (user-secrets):**
    ```bash
-   # from repo root
-   ./dev-setup.ps1
+   # from repo root (PowerShell)
+   .\dev-setup.ps1
    ```
 
 6. **Configure SMTP for local email testing:**
-   - `smtp4dev` is available at `http://localhost:3000`
-   - Use these settings in `HabitFlow.Api/appsettings.Development.json`:
+   - `smtp4dev` web UI is available at `http://localhost:3000`
+   - Default configuration in `HabitFlow.Api/appsettings.Development.json` already points to smtp4dev:
       - `Email:Smtp:Host = localhost`
       - `Email:Smtp:Port = 2525`
-      - `Email:LinkBaseUrl = https://localhost:7231`
+      - `Email:Smtp:EnableSsl = false`
+      - `Email:LinkBaseUrl = https://localhost:7231` (Blazor app URL for email links)
       - `Email:FromEmail = no-reply@habitflow.local`
      - `Email:FromName = HabitFlow`
-     - `App:BaseUrl = http://localhost:5000` (or your app URL)
-   - If you need credentials, set user-secrets:
-     ```bash
-     cd HabitFlow.Api
-     dotnet user-secrets init
-     dotnet user-secrets set "Email:Smtp:Username" "dev"
-     dotnet user-secrets set "Email:Smtp:Password" "dev"
-     ```
+   - **Note:** smtp4dev doesn't require authentication (Username/Password are optional and can be left empty)
 
-7. **Apply database migrations:**
-   ```bash
-   dotnet ef database update --project HabitFlow.Api
-   ```
-
-8. **Trust the HTTPS development certificate:**
+7. **Trust the HTTPS development certificate:**
    ```bash
    dotnet dev-certs https --trust
    ```
+
+8. **Apply database migrations:**
+   ```bash
+   dotnet ef database update --project HabitFlow.Api
+   ```
+   **Important:** This must be done before running the application for the first time.
 
 9. **Run the application:**
 
@@ -145,12 +144,14 @@ The MVP focuses on simplicity and clarity, helping beginners easily adopt habit 
    ```
 
 10. **Access the application:**
-   - Blazor app: `https://localhost:5001` (or port specified in launch settings)
-   - API documentation (Development mode): `https://localhost:7001/swagger` (or port specified in launch settings)
+   - Blazor app: `https://localhost:7231` (or `http://localhost:5287`)
+   - API: `https://localhost:7044` (or `http://localhost:5191`)
+   - API documentation (Development mode): `https://localhost:7044/swagger`
+   - SMTP inbox (to view sent emails): `http://localhost:3000`
 
 ### AI Notifications (Optional)
 
-AI-generated notifications are optional. For local development, do not commit API keys.
+AI-generated notifications are optional. The application works without AI configuration and will use static templates as fallback. For local development, do not commit API keys.
 
 **Set API key via user-secrets:**
 ```bash
@@ -159,14 +160,16 @@ dotnet user-secrets set "LlmSettings:ApiKey" "sk-..."
 dotnet user-secrets set "LlmSettings:Enabled" "true"
 ```
 
-**Or set via environment variables:**
-```bash
+**Or set via environment variables (PowerShell):**
+```powershell
 $env:LlmSettings__ApiKey="sk-..."
 $env:LlmSettings__Enabled="true"
 ```
 
 **Cost guard (MVP):**
-- `LlmSettings:MaxDailyRequests` limits AI calls per daily job run. After the limit, the system falls back to templates.
+- `LlmSettings:MaxDailyRequests` (default: 50) limits AI calls per daily job run
+- After the limit, the system automatically falls back to static templates
+- `NotificationSettings:AiNotificationsPerUserPerDay` (default: 3) limits AI notifications per user
 
 ## Available Scripts
 
@@ -205,14 +208,36 @@ $env:LlmSettings__Enabled="true"
   dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=opencover
   ```
 
+- **Start Docker infrastructure (SQL Server + SMTP):**
+  ```bash
+  cd .docker
+  docker-compose up -d
+  ```
+
+- **Stop Docker infrastructure:**
+  ```bash
+  cd .docker
+  docker-compose down
+  ```
+
 - **Apply database migrations:**
   ```bash
   dotnet ef database update --project HabitFlow.Api
   ```
 
+- **Create a new migration:**
+  ```bash
+  dotnet ef migrations add <MigrationName> --project HabitFlow.Api
+  ```
+
 - **Format code:**
   ```bash
   dotnet format
+  ```
+
+- **Run E2E tests (requires Docker and built projects):**
+  ```powershell
+  .\run-e2e.ps1
   ```
 
 ## Project Scope
@@ -281,34 +306,33 @@ $env:LlmSettings__Enabled="true"
 
 ## Project Status
 
-**Current Phase:** MVP Development (Sprint 1 of 2)
+**Current Phase:** MVP Development
 
 **Completed:**
 - ✅ Initial project setup
 - ✅ Solution structure (Backend and Frontend)
 - ✅ Project documentation (PRD, Tech Stack, Agents)
+- ✅ Authentication and authorization (registration, login, email verification, password reset)
+- ✅ Database schema and Entity Framework setup
+- ✅ Core habit CRUD operations (create, read, update, delete)
+- ✅ Daily check-in functionality
+- ✅ Calendar and progress visualization
+- ✅ AI notification system with Hangfire background jobs
+- ✅ Unit tests for business logic and validators
+- ✅ Integration tests with TestContainers
+- ✅ Component tests with bUnit
+- ✅ End-to-end tests with Playwright
+- ✅ CI/CD pipeline with GitHub Actions
 
 **In Progress:**
-- 🚧 Authentication and authorization implementation
-- 🚧 Database schema and Entity Framework setup
-- 🚧 Core habit CRUD operations
-
-**Upcoming:**
-- ⏳ Daily check-in functionality
-- ⏳ Calendar and progress visualization
-- ⏳ AI notification system
-- ⏳ End-to-end testing
-- ⏳ CI/CD pipeline setup
+- 🚧 Final bug fixes and polish
+- 🚧 Documentation updates
 
 **Definition of Done for MVP:**
-- All MUST features implemented and tested
-- At least one business logic function covered by unit tests
-- End-to-end test passing in CI/CD (registration → habit creation → check-in → calendar/chart → notification)
-- GitHub Actions workflow configured
-
-**Timeline:**
-- Sprint 1: 2 weeks (Authentication, CRUD, basic check-ins)
-- Sprint 2: 2 weeks (Calendar, charts, notifications, testing, deployment)
+- ✅ All MUST features implemented and tested
+- ✅ Business logic covered by unit tests (≥80% coverage for Core layer)
+- ✅ End-to-end test passing in CI/CD (registration → habit creation → check-in → calendar/chart → notification)
+- ✅ GitHub Actions workflow configured
 
 ## License
 
@@ -318,6 +342,10 @@ This project is currently under development as an MVP. License information will 
 
 **Contributions:** This is currently a solo development project. Contribution guidelines will be established after MVP completion.
 
-**Feedback & Issues:** Please report issues or suggestions via the [GitHub Issues](https://github.com/yourusername/HabitFlow/issues) page.
+**Feedback & Issues:** Please report issues or suggestions via GitHub Issues.
 
-**Documentation:** Detailed PRD and technical specifications available in the `.ai/` directory.
+**Documentation:**
+- Product Requirements Document (PRD): `.ai/prd.md`
+- Tech Stack: `.ai/tech-stack.md`
+- Agent Guidelines: `AGENTS.md` and `CLAUDE.md`
+- Test Plan: `.ai/test-plan.md`
